@@ -1,0 +1,243 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 270 48% 56%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 260 15% 70%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 270 48% 56%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 240 29% 14%;
+    --foreground: 248 249 255;
+    --card: 210 25% 15%;
+    --card-foreground: 248 249 255;
+    --popover: 210 25% 15%;
+    --popover-foreground: 248 249 255;
+    --primary: 260 56% 66%;
+    --primary-foreground: 248 249 255;
+    --secondary: 186 100% 50%;
+    --secondary-foreground: 240 29% 14%;
+    --muted: 210 25% 22%;
+    --muted-foreground: 0 0% 100% / 0.5;
+    --accent: 339 100% 71%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 248 249 255;
+    --border: 210 25% 29%;
+    --input: 210 25% 22%;
+    --ring: 186 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  * {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Ensure proper dark mode rendering */
+  .dark {
+    color-scheme: dark;
+  }
+
+  /* Fix any remaining hardcoded colors */
+  .dark .bg-white {
+    @apply bg-card;
+  }
+
+  .dark .text-gray-900 {
+    @apply text-foreground;
+  }
+
+  .dark .text-gray-600 {
+    @apply text-muted-foreground;
+  }
+
+  .dark .border-gray-300 {
+    @apply border-border;
+  }
+}
+
+/* Pazzell Custom Styles */
+:root {
+  --pb-primary: #6C5CE7;
+  --pb-secondary: #00D9FF;
+  --pb-accent: #FF6B9D;
+  --pb-yellow: #FFEAA7;
+  --pb-green: #00E676;
+  --pb-orange: #FF9F43;
+  --pb-dark: #1A1A2E;
+  --pb-light: #F8F9FF;
+}
+
+.puzzle-brand-bg {
+  background: var(--pb-dark);
+  color: var(--pb-light);
+}
+
+.fredoka {
+  font-family: 'Fredoka', sans-serif;
+}
+
+.space-grotesk {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Background puzzle pieces animation */
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0) rotate(0deg); 
+  }
+  50% { 
+    transform: translateY(-30px) rotate(10deg); 
+  }
+}
+
+.puzzle-piece {
+  animation: float 20s infinite ease-in-out;
+}
+
+/* Puzzle tile animation */
+@keyframes tileFloat {
+  0%, 100% { 
+    transform: translateY(0); 
+  }
+  50% { 
+    transform: translateY(-8px); 
+  }
+}
+
+.tile-float {
+  animation: tileFloat 3s infinite ease-in-out;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease;
+}
+
+/* Gradient text utilities */
+.gradient-text-primary {
+  background: linear-gradient(135deg, var(--pb-secondary), var(--pb-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-secondary {
+  background: linear-gradient(135deg, var(--pb-yellow), var(--pb-orange));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-bg-primary {
+  background: linear-gradient(135deg, var(--pb-primary), var(--pb-accent));
+}
+
+.gradient-bg-earn {
+  background: linear-gradient(135deg, var(--pb-green), var(--pb-secondary));
+}
+
+.gradient-bg-stats {
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(0, 217, 255, 0.1));
+}
+
+/* Button hover effects */
+.btn-hover-up {
+  transition: all 0.3s ease;
+}
+
+.btn-hover-up:hover {
+  transform: translateY(-3px);
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* New animations for landing page */
+@keyframes animate-float {
+  0%, 100% { 
+    transform: translateY(0) rotate(0deg); 
+  }
+  50% { 
+    transform: translateY(-30px) rotate(10deg); 
+  }
+}
+
+@keyframes animate-tileFloat {
+  0%, 100% { 
+    transform: translateY(0); 
+  }
+  50% { 
+    transform: translateY(-8px); 
+  }
+}
+
+.animate-float {
+  animation: animate-float 20s infinite ease-in-out;
+}
+
+.animate-tileFloat {
+  animation: animate-tileFloat 3s infinite ease-in-out;
+}
+
+/* Scrollbar utilities */
+.scrollbar-hide {
+  /* Firefox */
+  scrollbar-width: none;
+  /* Safari and Chrome */
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
