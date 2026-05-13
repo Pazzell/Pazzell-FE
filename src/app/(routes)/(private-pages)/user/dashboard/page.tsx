@@ -78,6 +78,8 @@ const getInitials = (fullName: string): string => {
 
 export default function UserDashboardPage() {
   const [referralCopied, setReferralCopied] = useState(false);
+  const user = useAtomValue(userAtom);
+  console.log("userData", user);
   const { data: referralData } = useQuery({
     queryKey: ["referral-link"],
     queryFn: () =>
@@ -92,9 +94,6 @@ export default function UserDashboardPage() {
   });
 
   const referralLink = referralData?.referralLink || "";
-
-  const user = useAtomValue(userAtom);
-  console.log("userData", user);
 
   const {
     data: profiletData,
