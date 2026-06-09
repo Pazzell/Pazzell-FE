@@ -162,6 +162,7 @@ export default function NewCampaignPage() {
   const user = useAtomValue(userAtom);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [apiError, setApiError] = useState<string>("");
   const [currentActionType, setCurrentActionType] = useState<
     "draft" | "payment"
   >("draft");
@@ -360,7 +361,11 @@ export default function NewCampaignPage() {
         }
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ||
+        "Failed to create campaign. Please try again.";
+      setApiError(message);
       console.error("Failed to create campaign:", error);
       setShowCreateModal(false);
     },
@@ -386,7 +391,11 @@ export default function NewCampaignPage() {
         router.push(routes.BRAND.CAMPAIGNS);
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ||
+        "Failed to update campaign. Please try again.";
+      setApiError(message);
       console.error("Failed to update campaign:", error);
       setShowCreateModal(false);
     },
@@ -426,7 +435,7 @@ export default function NewCampaignPage() {
 
   const onSubmit = (data: CampaignFormData) => {
     console.log("Form submitted with data:", data);
-    // Show the modal instead of creating campaign directly
+    setApiError("");
     setShowCreateModal(true);
   };
 
@@ -642,9 +651,11 @@ export default function NewCampaignPage() {
                               disabled={isPaidCampaign}
                               className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
                               {...field}
-                              onChange={(e) =>
-                                field.onChange(parseInt(e.target.value))
-                              }
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                field.onChange(isNaN(val) ? undefined : val);
+                              }}
                             />
                           </FormControl>
                           {isPaidCampaign && (
@@ -1060,14 +1071,16 @@ export default function NewCampaignPage() {
 
               {/* Status Messages */}
               {(createCampaignMutation.isError ||
-                updateCampaignMutation.isError) && (
+                updateCampaignMutation.isError ||
+                apiError) && (
                 <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
                   <div className="flex items-center gap-2 text-red-400">
                     <AlertCircle className="h-4 w-4" />
                     <span className="text-sm">
-                      {isEditMode
-                        ? "Failed to update campaign. Please try again."
-                        : "Failed to create campaign. Please try again."}
+                      {apiError ||
+                        (isEditMode
+                          ? "Failed to update campaign. Please try again."
+                          : "Failed to create campaign. Please try again.")}
                     </span>
                   </div>
                 </div>
