@@ -63,6 +63,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '**',
       },
+      {
+        protocol: 'https',
+        hostname: 'pazzell-backend-storage-644724502006-eu-north-1-an.s3.eu-north-1.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   output: 'standalone',
