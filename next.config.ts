@@ -57,6 +57,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '**',
       },
+      {
+        protocol: 'https',
+        hostname: '*.s3.*.amazonaws.com',
+        port: '',
+        pathname: '**',
+      },
     ],
   },
   output: 'standalone',
