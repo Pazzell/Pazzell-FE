@@ -426,11 +426,12 @@ export default function UserDashboardPage() {
                             <Image
                               src={
                                 campaign.puzzleImageUrl ||
-                                "/api/placeholder/400/200"
+                                "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=1000"
                               }
                               alt={campaign.title}
                               width={400}
                               height={200}
+                              unoptimized
                               className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                             <div className="absolute top-3 right-3 flex gap-2">
@@ -506,11 +507,12 @@ export default function UserDashboardPage() {
                           <Image
                             src={
                               campaign.puzzleImageUrl ||
-                              "/api/placeholder/400/200"
+                              "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=1000"
                             }
                             alt={campaign.title}
                             width={400}
                             height={200}
+                            unoptimized
                             className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                           <div className="absolute top-3 right-3 flex gap-2">
