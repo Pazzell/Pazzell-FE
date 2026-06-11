@@ -116,6 +116,8 @@ export default function CampaignsPage() {
           }
         )
         .then((res) => {
+          console.log("[Brand Campaigns API] raw response:", res.data);
+          console.log("[Brand Campaigns API] first campaign sample:", res.data.campaigns?.[0]);
           return res.data.campaigns;
         }),
     enabled: !!user?.id && !!user?.accessToken,
@@ -440,6 +442,7 @@ export default function CampaignsPage() {
                   }
                   alt={campaign.title}
                   fill
+                  unoptimized
                   style={{ objectFit: "cover" }}
                   className=""
                 />

@@ -73,10 +73,16 @@ const getTimeLeft = (endDate: string | undefined) => {
   return `${hours}h left`;
 };
 
+const FALLBACK_IMG =
+  "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=1000";
+
 const CampaignCard = ({ campaign }: { campaign: CampaignData }) => {
   const isPremium = campaign.packageName === "premium";
   const timeLeft = getTimeLeft(campaign.endDate);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [imgSrc, setImgSrc] = useState(
+    campaign.puzzleImageUrl || FALLBACK_IMG
+  );
 
   return (
     <div
@@ -99,21 +105,18 @@ const CampaignCard = ({ campaign }: { campaign: CampaignData }) => {
         )}
 
         <Image
-          src={
-            campaign.puzzleImageUrl ||
-            "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=1000"
-          }
+          src={imgSrc}
           alt={campaign.title}
           fill
+          unoptimized
           style={{ objectFit: "cover" }}
           className={`transition-all duration-700 group-hover:scale-110 ${
             isImageLoaded ? "opacity-100" : "opacity-0"
           }`}
           onLoad={() => setIsImageLoaded(true)}
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src =
-              "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=1000";
+          onError={() => {
+            setImgSrc(FALLBACK_IMG);
+            setIsImageLoaded(true);
           }}
         />
 
@@ -206,6 +209,8 @@ export default function CampaignsPage() {
           },
         })
         .then((res) => {
+          console.log("[Campaigns API] raw response:", res.data);
+          console.log("[Campaigns API] first campaign sample:", res.data.campaigns?.[0]);
           return res.data.campaigns.filter((c) => c.status === "active");
         }),
   });
