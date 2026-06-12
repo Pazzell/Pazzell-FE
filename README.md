@@ -5,6 +5,7 @@ BrandPuzzle is an innovative gamified marketing platform where brands create eng
 ## 🎮 Features
 
 ### For Gamers
+
 - **Diverse Puzzle Types**: Enjoy trivia, word puzzles, image puzzles, memory games, and quizzes
 - **Earn Real Money**: Get paid for completing puzzles from brand campaigns
 - **Achievement System**: Unlock 30+ badges across different categories and skill levels
@@ -13,6 +14,7 @@ BrandPuzzle is an innovative gamified marketing platform where brands create eng
 - **Mobile Optimized**: Seamless experience across all devices with touch-friendly controls
 
 ### For Brands
+
 - **Campaign Management**: Create and manage puzzle campaigns with budget control
 - **Analytics Dashboard**: Track campaign performance and user engagement
 - **Target Audience**: Reach specific demographics through puzzle campaigns
@@ -32,22 +34,26 @@ BrandPuzzle is an innovative gamified marketing platform where brands create eng
 ## 📦 Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd brand-puzzle
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp .env.local.example .env.local
    ```
-   
+
    Fill in your environment variables:
+
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -55,12 +61,14 @@ BrandPuzzle is an innovative gamified marketing platform where brands create eng
    ```
 
 4. **Set up the database**
+
    - Create a new Supabase project
    - Run the SQL schema from `supabase-schema.sql` in your Supabase SQL editor
    - Enable Row Level Security (RLS) policies
    - Update your environment variables with the Supabase credentials
 
 5. **Run the development server**
+
    ```bash
    npm run dev
    ```
@@ -114,6 +122,7 @@ src/
 ## 🎯 Puzzle System
 
 ### Puzzle Types
+
 1. **Trivia**: Question-answer format with multiple choice
 2. **Word Puzzles**: Word-based challenges and games
 3. **Image Puzzles**: Visual recognition and matching challenges
@@ -121,11 +130,13 @@ src/
 5. **Quiz**: General knowledge and branded content quizzes
 
 ### Difficulty Levels
+
 - **Easy**: Entry-level puzzles with basic rewards
 - **Medium**: Moderate challenges with increased payouts
 - **Hard**: Complex puzzles with premium rewards
 
 ### Earning System
+
 - Users earn money based on puzzle difficulty and brand campaign budgets
 - Payments processed through secure payment gateways
 - Earnings tracked in real-time with detailed transaction history
@@ -133,6 +144,7 @@ src/
 ## 🏆 Achievement System
 
 ### Badge Categories (30+ Badges)
+
 - **Milestone Badges**: Puzzle completion milestones (8 badges)
 - **Earnings Badges**: Money earned achievements (6 badges)
 - **Specialist Badges**: Puzzle type mastery (5 badges)
@@ -140,6 +152,7 @@ src/
 - **Competitive Badges**: Leaderboard rankings (5 badges)
 
 ### Badge Difficulties
+
 - **Bronze**: Entry-level achievements
 - **Silver**: Moderate accomplishments
 - **Gold**: Significant milestones
@@ -148,6 +161,7 @@ src/
 ## 🏅 Leaderboard & Competition
 
 ### Weekly Competitions
+
 - Global leaderboards with weekly resets
 - Top 10 players receive exclusive badges
 - Monetary rewards for top 3 finishers:
@@ -156,6 +170,7 @@ src/
   - 3rd Place: $200 bonus
 
 ### Ranking System
+
 - Points based on puzzle completion and accuracy
 - Difficulty multipliers for complex puzzles
 - Streak bonuses for consecutive daily play
@@ -171,6 +186,7 @@ src/
 ## 👥 User Roles
 
 ### Gamers
+
 - Create profiles and track progress
 - Play puzzles to earn money
 - Unlock achievements and badges
@@ -178,6 +194,7 @@ src/
 - Refer friends for bonus rewards
 
 ### Brands
+
 - Create and manage puzzle campaigns
 - Set budgets and target audiences
 - Monitor campaign analytics
@@ -187,18 +204,21 @@ src/
 ## 🌟 Key Features
 
 ### Responsive Design
+
 - Mobile-first approach with touch optimization
 - Horizontal scrolling campaigns on mobile
 - Loading skeletons for smooth user experience
 - Adaptive layouts for all screen sizes
 
 ### Real-time Updates
+
 - Live leaderboard updates
 - Instant badge notifications
 - Real-time earnings tracking
 - Progress synchronization across devices
 
 ### Gamification Elements
+
 - Achievement system with visual progress
 - Streaks and daily challenges
 - Social features and referral system
@@ -207,6 +227,7 @@ src/
 ## 🚀 Getting Started
 
 ### For Gamers
+
 1. Register with email or social login
 2. Complete your profile setup
 3. Browse available puzzle campaigns
@@ -214,6 +235,7 @@ src/
 5. Track progress and unlock badges
 
 ### For Brands
+
 1. Register with company information
 2. Create your first puzzle campaign
 3. Set budget and target audience
@@ -223,10 +245,12 @@ src/
 ## 🎨 Design System
 
 ### Typography
+
 - **Primary Font**: Fredoka (playful, gamified feel)
 - **Secondary Font**: Space Grotesk (clean, modern)
 
 ### Color Palette
+
 - **Primary**: #6C5CE7 (Purple)
 - **Secondary**: #00D9FF (Cyan)
 - **Accent**: #FF6B9D (Pink)
@@ -235,6 +259,7 @@ src/
 - **Error**: #FF6B9D (Red)
 
 ### Components
+
 - Glassmorphism effects with backdrop blur
 - Gradient backgrounds and animated elements
 - Consistent spacing and border radius
@@ -268,6 +293,8 @@ For support, please contact [support@brandpuzzle.com](mailto:support@brandpuzzle
 - [ ] NFT rewards for special achievements
 - [ ] Brand partnership program
 - [ ] Advanced targeting and segmentation
+
+updated the remote origin
 
 ---
 
