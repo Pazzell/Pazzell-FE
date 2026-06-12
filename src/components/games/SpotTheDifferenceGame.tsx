@@ -8,6 +8,7 @@ import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/atom/user";
 import { CampaignData } from "@/types";
+import { useMutation } from "@tanstack/react-query";
 import {
   Play,
   ArrowLeft,
@@ -17,6 +18,8 @@ import {
   Target,
   Trophy,
   AlertTriangle,
+  Info,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { routes } from "@/app/_utils/routes";
@@ -35,12 +38,14 @@ interface Props {
   campaignId: string;
   previewMode?: boolean;
   availableCampaigns?: any[];
+  hasCompleted?: boolean;
 }
 
 export function SpotTheDifferenceGame({
   campaignDetails,
   campaignId,
   previewMode = false,
+  hasCompleted = false,
 }: Props) {
   const user = useAtomValue(userAtom);
   const router = useRouter();
@@ -50,8 +55,9 @@ export function SpotTheDifferenceGame({
   const [elapsedMs, setElapsedMs] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [showBackWarning, setShowBackWarning] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitResult, setSubmitResult] = useState<any>(null);
+  // Shown at idle when game was previously completed
+  const [showAlreadyPlayedModal, setShowAlreadyPlayedModal] = useState(hasCompleted);
+  const [pointsEarned, setPointsEarned] = useState(0);
 
   // Quiz state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -62,7 +68,12 @@ export function SpotTheDifferenceGame({
   const puzzleRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Timer - runs only during "playing" phase
+  // Sync hasCompleted prop → re-show modal when prop updates (e.g. data loaded later)
+  useEffect(() => {
+    if (hasCompleted) setShowAlreadyPlayedModal(true);
+  }, [hasCompleted]);
+
+  // Timer runs only while playing
   useEffect(() => {
     if (phase === "playing" && startedAt !== null) {
       timerRef.current = setInterval(() => {
@@ -82,6 +93,28 @@ export function SpotTheDifferenceGame({
     };
   }, [phase, startedAt]);
 
+  const submitMutation = useMutation({
+    mutationFn: async (payload: {
+      timeTaken: number;
+      movesTaken: number;
+      solved: boolean;
+      answers: number[];
+      differencesFound: { x: number; y: number; width: number; height: number }[];
+    }) =>
+      axios.post(
+        endpointUrl(ENDPOINTS.SUBMIT_CAMPAIGN(campaignId)),
+        payload,
+        { headers: { Authorization: `Bearer ${user?.accessToken}` } }
+      ),
+    onSuccess: (response) => {
+      setPointsEarned(response.data?.attempt?.pointsEarned ?? 0);
+      setPhase("success");
+    },
+    onError: (err) => {
+      console.error("Failed to submit game results:", err);
+    },
+  });
+
   const handleStartGame = () => {
     const now = Date.now();
     setStartedAt(now);
@@ -94,9 +127,7 @@ export function SpotTheDifferenceGame({
     setPhase("playing");
   };
 
-  const handleBackClick = () => {
-    setShowBackWarning(true);
-  };
+  const handleBackClick = () => setShowBackWarning(true);
 
   const handleConfirmBack = () => {
     setShowBackWarning(false);
@@ -118,9 +149,7 @@ export function SpotTheDifferenceGame({
     setMarks((m) => [...m, { x, y }]);
   };
 
-  const handleProceed = () => {
-    setPhase("quiz");
-  };
+  const handleProceed = () => setPhase("quiz");
 
   const handleAnswerSelect = (choiceIndex: number) => {
     if (answerStatus === "correct") return;
@@ -144,8 +173,7 @@ export function SpotTheDifferenceGame({
           setSelectedAnswer(null);
           setAnswerStatus("idle");
         } else {
-          // All answered correctly — advance index past end to reveal submit
-          setCurrentQuestionIndex((i) => i + 1);
+          setCurrentQuestionIndex((i) => i + 1); // past end → triggers submit view
         }
       }, 800);
     } else {
@@ -157,33 +185,20 @@ export function SpotTheDifferenceGame({
     }
   };
 
-  const handleSubmit = async () => {
-    if (submitting || previewMode) return;
-    setSubmitting(true);
-    try {
-      const response = await axios.post(
-        endpointUrl(ENDPOINTS.SUBMIT_PUZZLE_ANSWER(campaignId)),
-        {
-          timeTaken: elapsedMs,
-          movesTaken: marks.length,
-          solved: true,
-          answers: quizAnswers,
-          differencesFound: marks.map((p) => ({
-            x: p.x,
-            y: p.y,
-            width: 0.03,
-            height: 0.03,
-          })),
-        },
-        { headers: { Authorization: `Bearer ${user?.accessToken}` } }
-      );
-      setSubmitResult(response.data);
-      setPhase("success");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSubmitting(false);
-    }
+  const handleSubmit = () => {
+    if (previewMode) return;
+    submitMutation.mutate({
+      timeTaken: elapsedMs,
+      movesTaken: marks.length,
+      solved: true,
+      answers: quizAnswers,
+      differencesFound: marks.map((p) => ({
+        x: p.x,
+        y: p.y,
+        width: 0.03,
+        height: 0.03,
+      })),
+    });
   };
 
   const questions = campaignDetails.questions || [];
@@ -194,6 +209,41 @@ export function SpotTheDifferenceGame({
   if (phase === "idle") {
     return (
       <div className="max-w-7xl mx-auto">
+        {/* Already-played modal */}
+        {showAlreadyPlayedModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+            <div className="bg-card border border-white/10 rounded-2xl p-8 max-w-sm w-full mx-4 space-y-5">
+              <div className="flex items-center gap-3 text-yellow-400">
+                <Info className="w-6 h-6 flex-shrink-0" />
+                <h3 className="text-lg font-bold font-fredoka">
+                  Already Played
+                </h3>
+              </div>
+              <p className="text-white/80 leading-relaxed">
+                You&apos;ve already completed this puzzle. You can play again
+                for fun, but{" "}
+                <span className="text-yellow-300 font-semibold">
+                  no additional points will be awarded
+                </span>{" "}
+                for repeat plays.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-white/20 text-white hover:bg-white/10"
+                  onClick={() => router.push(routes.CAMPAIGNS)}>
+                  Back
+                </Button>
+                <Button
+                  className="flex-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                  onClick={() => setShowAlreadyPlayedModal(false)}>
+                  Play Anyway
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col items-center justify-center py-16 gap-8">
           <div className="text-center space-y-3">
             <h2 className="text-3xl font-bold text-white font-fredoka">
@@ -229,12 +279,6 @@ export function SpotTheDifferenceGame({
 
   // ── SUCCESS ───────────────────────────────────────────────────────────────
   if (phase === "success") {
-    const points =
-      submitResult?.attempt?.pointsEarned ??
-      submitResult?.attempt?.points ??
-      submitResult?.points ??
-      0;
-
     return (
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col items-center justify-center py-16">
@@ -245,15 +289,13 @@ export function SpotTheDifferenceGame({
             <h2 className="text-3xl font-bold text-white font-fredoka">
               Puzzle Complete!
             </h2>
-            <p className="text-white/70">
-              Great job! Here&apos;s your summary:
-            </p>
+            <p className="text-white/70">Great job! Here&apos;s your summary:</p>
 
             <div className="grid grid-cols-3 gap-4 py-2">
               <div className="bg-white/5 rounded-xl p-4 flex flex-col items-center gap-2">
                 <Trophy className="w-6 h-6 text-yellow-400" />
                 <span className="text-2xl font-bold text-white font-mono">
-                  {points}
+                  {pointsEarned}
                 </span>
                 <span className="text-xs text-white/60">Points</span>
               </div>
@@ -306,21 +348,25 @@ export function SpotTheDifferenceGame({
                 </div>
               </>
             )}
-            {questions.length === 0 && (
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-white font-fredoka">
-                  Ready to Submit
-                </h2>
-                <p className="text-white/70 mt-2">
-                  You&apos;ve completed the puzzle!
-                </p>
-              </div>
+
+            {submitMutation.isError && (
+              <p className="text-red-400 text-sm">
+                Submission failed — please try again.
+              </p>
             )}
+
             <Button
               onClick={handleSubmit}
-              disabled={submitting}
-              className="px-10 py-5 text-lg font-fredoka bg-secondary hover:bg-secondary/80 text-secondary-foreground">
-              {submitting ? "Submitting..." : "Submit"}
+              disabled={submitMutation.isPending}
+              className="px-10 py-5 text-lg font-fredoka bg-secondary hover:bg-secondary/80 text-secondary-foreground flex items-center gap-2">
+              {submitMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Submitting…
+                </>
+              ) : (
+                "Submit"
+              )}
             </Button>
           </div>
         </div>

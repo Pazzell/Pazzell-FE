@@ -13,7 +13,6 @@ import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
 import { PuzzlePageHeader } from "../components/puzzle-page-header";
 import { SpotTheDifferenceGame } from "@/components/games/SpotTheDifferenceGame";
-import { AlertCircle } from "lucide-react";
 
 export default function SpotTheDifferencePage() {
   const user = useAtomValue(userAtom);
@@ -30,11 +29,7 @@ export default function SpotTheDifferencePage() {
       axios
         .get<CampaignResponse>(
           endpointUrl(`${ENDPOINTS.CAMPAIGN_DETAILS(campaignId!)}`),
-          {
-            headers: {
-              Authorization: `Bearer ${user?.accessToken}`,
-            },
-          }
+          { headers: { Authorization: `Bearer ${user?.accessToken}` } }
         )
         .then((res) => res.data.campaign),
     enabled: !!campaignId,
@@ -45,9 +40,7 @@ export default function SpotTheDifferencePage() {
     queryFn: () =>
       axios
         .get(endpointUrl(ENDPOINTS.CAMPAIGN_COMPLETION(campaignId!)), {
-          headers: {
-            Authorization: `Bearer ${user?.accessToken}`,
-          },
+          headers: { Authorization: `Bearer ${user?.accessToken}` },
         })
         .then((res) => res.data),
     enabled: !!campaignId && !!user?.accessToken,
@@ -58,9 +51,7 @@ export default function SpotTheDifferencePage() {
     queryFn: () =>
       axios
         .get(endpointUrl(ENDPOINTS.CAMPAIGNS), {
-          headers: {
-            Authorization: `Bearer ${user?.accessToken}`,
-          },
+          headers: { Authorization: `Bearer ${user?.accessToken}` },
         })
         .then((res) => res.data.campaigns),
     enabled: !!user?.accessToken,
@@ -92,31 +83,11 @@ export default function SpotTheDifferencePage() {
   return (
     <MainLayout>
       <PuzzlePageHeader campaignDetails={campaignDetails} />
-
-      {completionStatus?.hasCompletedByCurrentUser && (
-        <div className="mb-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-yellow-400 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="text-yellow-200 font-semibold font-fredoka">
-                  Puzzle Already Completed
-                </h3>
-                <p className="text-yellow-200/80 text-sm">
-                  You&apos;ve already played this puzzle. Extra points
-                  won&apos;t be awarded for playing again, but you can still
-                  enjoy the game!
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       <SpotTheDifferenceGame
         campaignDetails={campaignDetails}
         campaignId={campaignId}
         availableCampaigns={availableCampaigns}
+        hasCompleted={!!completionStatus?.hasCompletedByCurrentUser}
       />
     </MainLayout>
   );
