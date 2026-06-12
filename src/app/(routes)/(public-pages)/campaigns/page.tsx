@@ -20,7 +20,6 @@ import {
   Crown,
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { formatPuzzleType } from "@/app/_utils/helper";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -80,9 +79,7 @@ const CampaignCard = ({ campaign }: { campaign: CampaignData }) => {
   const isPremium = campaign.packageName === "premium";
   const timeLeft = getTimeLeft(campaign.endDate);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const [imgSrc, setImgSrc] = useState(
-    campaign.puzzleImageUrl || FALLBACK_IMG
-  );
+  const [imgSrc, setImgSrc] = useState(campaign.puzzleImageUrl || FALLBACK_IMG);
 
   return (
     <div
@@ -104,13 +101,11 @@ const CampaignCard = ({ campaign }: { campaign: CampaignData }) => {
           <div className="absolute inset-0 bg-white/10 animate-pulse z-10" />
         )}
 
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={imgSrc}
           alt={campaign.title}
-          fill
-          unoptimized
-          style={{ objectFit: "cover" }}
-          className={`transition-all duration-700 group-hover:scale-110 ${
+          className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${
             isImageLoaded ? "opacity-100" : "opacity-0"
           }`}
           onLoad={() => setIsImageLoaded(true)}
@@ -210,7 +205,10 @@ export default function CampaignsPage() {
         })
         .then((res) => {
           console.log("[Campaigns API] raw response:", res.data);
-          console.log("[Campaigns API] first campaign sample:", res.data.campaigns?.[0]);
+          console.log(
+            "[Campaigns API] first campaign sample:",
+            res.data.campaigns?.[0]
+          );
           return res.data.campaigns.filter((c) => c.status === "active");
         }),
   });
