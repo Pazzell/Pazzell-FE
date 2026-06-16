@@ -374,6 +374,29 @@ export interface ReferralSummaryResponse {
   summary: ReferralSummaryRow[];
 }
 
+export interface ReferralEvent {
+  _id: string;
+  type: "signup" | "first_puzzle" | string;
+  referredUser?: {
+    _id?: string;
+    firstName?: string;
+    lastName?: string;
+    username?: string;
+    avatar?: string;
+  };
+  createdAt: string;
+}
+
+export interface ReferralEventsResponse {
+  success: true;
+  events: ReferralEvent[];
+}
+
+export interface ReferralLinkResponse {
+  success?: boolean;
+  referralLink: string;
+}
+
 // Puzzle campaign and submit types for new game behaviour
 export type GameType =
   | "spot_the_difference"

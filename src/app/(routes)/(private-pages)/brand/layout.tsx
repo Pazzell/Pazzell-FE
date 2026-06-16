@@ -8,16 +8,25 @@ import { userAtom } from '@/atom/user'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogoIcon } from '@/components/ui/logo-icon'
-import { 
-  LayoutDashboard, 
-  Megaphone, 
-  Settings, 
-  Menu, 
+import {
+  LayoutDashboard,
+  Megaphone,
+  Settings,
+  Menu,
   X,
-  LogOut
+  LogOut,
+  Building2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { routes } from '@/app/_utils/routes'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 const sidebarNavItems = [
   {
@@ -175,18 +184,76 @@ export default function BrandLayout({
         {/* Main Content */}
         <main className="flex-1 lg:pl-64">
           <div className="px-6 py-8">
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden mb-6">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSidebarOpen(true)}
-                className="text-white/70 hover:text-white"
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
+            {/* Top Bar */}
+            <div className="flex items-center justify-between mb-6">
+              {/* Mobile Menu Button */}
+              <div className="lg:hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSidebarOpen(true)}
+                  className="text-white/70 hover:text-white"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </div>
+
+              {/* Profile Dropdown */}
+              <div className="flex-1 flex justify-end">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="flex items-center gap-2 px-2 hover:bg-white/5"
+                    >
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-secondary/20 flex items-center justify-center shrink-0">
+                        {user?.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Building2 className="h-4 w-4 text-secondary" />
+                        )}
+                      </div>
+                      <span className="hidden sm:inline text-white text-sm font-medium">
+                        {user?.companyName || user?.fullName || 'Brand Account'}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          {user?.companyName || user?.fullName || 'Account'}
+                        </span>
+                        {user?.email && (
+                          <span className="text-sm text-muted-foreground font-normal">
+                            {user.email}
+                          </span>
+                        )}
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href={routes.BRAND.SETTINGS}>
+                        <Settings className="h-4 w-4 mr-2" />
+                        Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="text-red-600"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
-            
+
             {/* Page Content */}
             {children}
           </div>

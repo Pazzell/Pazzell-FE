@@ -34,6 +34,7 @@ export const routes = {
     EARNINGS: "/user/earnings",
     LEADERBOARD: "/user/leaderboard",
     BADGES: "/user/badges",
+    REFERRALS: "/user/referrals",
   },
 
   // Brand Routes

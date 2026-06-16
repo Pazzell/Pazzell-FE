@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAtomValue } from "jotai";
 import axios from "axios";
 
@@ -159,9 +159,11 @@ type CampaignFormData = z.infer<typeof baseCampaignSchema>;
 
 export default function NewCampaignPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const user = useAtomValue(userAtom);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showUpdateSuccessModal, setShowUpdateSuccessModal] = useState(false);
   const [apiError, setApiError] = useState<string>("");
   const [currentActionType, setCurrentActionType] = useState<
     "draft" | "payment"
@@ -387,8 +389,14 @@ export default function NewCampaignPage() {
     },
     onSuccess: (response) => {
       if (response.data.success) {
+        queryClient.invalidateQueries({ queryKey: ["brand-campaigns"] });
+        queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
+        queryClient.invalidateQueries({
+          queryKey: ["brand-campaign", campaignId],
+        });
+        queryClient.invalidateQueries({ queryKey: ["campaigns"] });
         setShowCreateModal(false);
-        router.push(routes.BRAND.CAMPAIGNS);
+        setShowUpdateSuccessModal(true);
       }
     },
     onError: (error: any) => {
@@ -1172,6 +1180,36 @@ export default function NewCampaignPage() {
                 </Button>
               </>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update Success Modal */}
+      <Dialog
+        open={showUpdateSuccessModal}
+        onOpenChange={setShowUpdateSuccessModal}>
+        <DialogContent className="bg-card border-white/20 max-w-md">
+          <DialogHeader>
+            <div className="mx-auto mb-2 flex items-center justify-center h-12 w-12 rounded-full bg-green-500/20">
+              <CheckCircle className="h-6 w-6 text-green-400" />
+            </div>
+            <DialogTitle className="text-white font-fredoka text-xl text-center">
+              Campaign Updated Successfully
+            </DialogTitle>
+            <DialogDescription className="text-white/70 text-center">
+              Your campaign changes have been saved.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="pt-4">
+            <Button
+              onClick={() => {
+                setShowUpdateSuccessModal(false);
+                router.push(routes.BRAND.CAMPAIGNS);
+              }}
+              className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground h-12">
+              Back to Campaigns
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

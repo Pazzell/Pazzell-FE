@@ -76,6 +76,11 @@ export function Header() {
                   className="text-white hover:text-secondary font-medium transition-colors">
                   Leaderboard
                 </Link>
+                <Link
+                  href={routes.USER.REFERRALS}
+                  className="text-white hover:text-secondary font-medium transition-colors">
+                  Referrals
+                </Link>
                 {/* <Link href={routes.USER.BADGES} className="text-white hover:text-secondary font-medium transition-colors">
                   Badges
                 </Link> */}
@@ -222,8 +227,14 @@ export function Header() {
                     onClick={closeMobileMenu}>
                     Leaderboard
                   </Link>
-                  {/* <Link 
-                    href={routes.USER.BADGES} 
+                  <Link
+                    href={routes.USER.REFERRALS}
+                    className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
+                    onClick={closeMobileMenu}>
+                    Referrals
+                  </Link>
+                  {/* <Link
+                    href={routes.USER.BADGES}
                     className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
                     onClick={closeMobileMenu}
                   >

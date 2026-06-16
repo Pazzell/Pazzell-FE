@@ -186,13 +186,11 @@ export default function UserDashboardPage() {
   const currentUser = {
     name: "You",
     points: weeklyUserStats?.totalPoints || 0,
-    earnings: `₦${
-      prizeTable
-        ?.find(
-          (prize) => prize.position === weeklyUserStats?.leaderboardPosition
-        )
-        ?.amount.toLocaleString() || "0"
-    }`,
+    earnings: `₦${(
+      prizeTable?.find(
+        (prize) => prize.position === weeklyUserStats?.leaderboardPosition
+      )?.amount ?? 0
+    ).toLocaleString()}`,
     rank: weeklyUserStats?.leaderboardPosition || null,
   };
 
@@ -638,18 +636,18 @@ export default function UserDashboardPage() {
                             @{player.username}
                           </p>
                           <p className="text-white/60 text-sm">
-                            {player.points.toLocaleString()} points
+                            {(player.points ?? 0).toLocaleString()} points
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-secondary font-semibold">
                           ₦
-                          {prizeTable
-                            ?.find(
+                          {(
+                            prizeTable?.find(
                               (prize) => prize.position === player.position
-                            )
-                            ?.amount.toLocaleString()}
+                            )?.amount ?? 0
+                          ).toLocaleString()}
                         </p>
                         <p className="text-white/60 text-sm">
                           #{player.position}
@@ -749,29 +747,45 @@ export default function UserDashboardPage() {
           </Card>
 
           {/* Referral Section */}
-          {/* <Card className="bg-card/50 backdrop-blur-sm border-white/10">
+          <Card className="bg-card/50 backdrop-blur-sm border-white/10">
             <CardHeader>
-              <CardTitle className="text-white font-fredoka text-xl flex items-center gap-2">
-                <Users className="h-5 w-5 text-secondary" />
-                Refer Friends
-              </CardTitle>
-              <CardDescription className="text-white/70">
-                Invite friends and earn bonus points for each successful referral
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-white font-fredoka text-xl flex items-center gap-2">
+                    <Users className="h-5 w-5 text-secondary" />
+                    Refer Friends
+                  </CardTitle>
+                  <CardDescription className="text-white/70">
+                    Invite friends and earn bonus points for each successful referral
+                  </CardDescription>
+                </div>
+                <Link href={routes.USER.REFERRALS}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-white/20 text-white/70 hover:bg-white/90">
+                    Leaderboard
+                    <ExternalLink className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="p-4 bg-secondary/10 border border-secondary/20 rounded-lg">
-                  <h4 className="text-white font-semibold mb-2">Earn +100 Points</h4>
+                  <h4 className="text-white font-semibold mb-2">Earn Bonus Points</h4>
                   <p className="text-white/70 text-sm mb-3">
-                    Get 100 bonus points when your friend completes their first puzzle!
+                    Get bonus points when your friend completes their first puzzle!
                   </p>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 p-2 bg-white/5 rounded border border-white/10">
-                      <code className="text-white/80 text-sm break-all">{referralLink}</code>
+                    <div className="flex-1 p-2 bg-white/5 rounded border border-white/10 overflow-hidden">
+                      <code className="text-white/80 text-sm break-all">
+                        {referralLink || "Loading your referral link..."}
+                      </code>
                     </div>
                     <Button
                       onClick={copyReferralLink}
+                      disabled={!referralLink}
                       size="sm"
                       className="bg-secondary hover:bg-secondary/80 text-secondary-foreground"
                     >
@@ -786,14 +800,29 @@ export default function UserDashboardPage() {
                     <p className="text-green-400 text-xs mt-2">Link copied to clipboard!</p>
                   )}
                 </div>
-                
-                <Button className="w-full bg-gradient-to-r from-secondary to-[#FF6B9D] text-white font-fredoka">
+
+                <Button
+                  onClick={() => {
+                    if (navigator.share && referralLink) {
+                      navigator
+                        .share({
+                          title: "Join me on Pazzell",
+                          text: "Play puzzles from top brands and earn real rewards. Sign up with my link!",
+                          url: referralLink,
+                        })
+                        .catch(() => {});
+                    } else {
+                      copyReferralLink();
+                    }
+                  }}
+                  disabled={!referralLink}
+                  className="w-full bg-gradient-to-r from-secondary to-[#FF6B9D] text-white font-fredoka">
                   <Share2 className="h-4 w-4 mr-2" />
                   Share Invitation
                 </Button>
               </div>
             </CardContent>
-          </Card> */}
+          </Card>
         </div>
       </div>
     </MainLayout>
