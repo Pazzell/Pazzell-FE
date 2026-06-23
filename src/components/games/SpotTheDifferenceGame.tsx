@@ -31,9 +31,9 @@ const formatTime = (ms: number) => {
   return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
 };
 
-const NUM_DIFFS = 5;
+const NUM_DIFFS = 10;
 // Extra hit area around each zone border (in normalized units)
-const HIT_PADDING = 0.03;
+const HIT_PADDING = 0.02;
 
 interface DiffZone {
   id: string;
@@ -44,27 +44,32 @@ interface DiffZone {
   color: string;
 }
 
-const DIFF_COLORS = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFEAA7", "#DDA0DD"];
+const DIFF_COLORS = [
+  "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFEAA7", "#DDA0DD",
+  "#98D8AA", "#FF8B64", "#C3B1E1", "#F4D35E", "#EE6C4D",
+];
 
-// Spread zones across a 3×3 grid so differences aren't clustered.
+// Spread zones across a 4×3 grid (12 cells) so 10 differences are well distributed.
 function generateDiffZones(n: number): DiffZone[] {
-  const cells = ([
-    [0, 0], [1, 0], [2, 0],
-    [0, 1], [1, 1], [2, 1],
-    [0, 2], [1, 2], [2, 2],
-  ] as [number, number][])
-    .sort(() => Math.random() - 0.5)
-    .slice(0, n);
+  const COLS = 4;
+  const ROWS = 3;
+  const allCells: [number, number][] = [];
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      allCells.push([c, r]);
+
+  const cells = allCells.sort(() => Math.random() - 0.5).slice(0, n);
 
   return cells.map(([col, row], i) => {
-    const step = 1 / 3;
-    const pad = 0.04;
-    const w = 0.09 + Math.random() * 0.07;
-    const h = 0.08 + Math.random() * 0.06;
+    const colStep = 1 / COLS;
+    const rowStep = 1 / ROWS;
+    const pad = 0.02;
+    const w = 0.05 + Math.random() * 0.04; // 0.05–0.09
+    const h = 0.05 + Math.random() * 0.03; // 0.05–0.08
     const cx =
-      col * step + pad + w / 2 + Math.random() * Math.max(0, step - w - pad * 2);
+      col * colStep + pad + w / 2 + Math.random() * Math.max(0, colStep - w - pad * 2);
     const cy =
-      row * step + pad + h / 2 + Math.random() * Math.max(0, step - h - pad * 2);
+      row * rowStep + pad + h / 2 + Math.random() * Math.max(0, rowStep - h - pad * 2);
     return {
       id: `d${i}`,
       cx: Math.min(Math.max(cx, w / 2 + 0.01), 1 - w / 2 - 0.01),
