@@ -355,6 +355,22 @@ export interface MonthlyLeaderboardResponse {
   jackpot?: { amount: number; drawn: boolean; winnerUserId?: string };
 }
 
+export interface ReferralAnalytics {
+  monthKey: string;
+  successfulCount: number;
+  pointsEarned: number;
+  leaderboardPosition: number | null;
+}
+
+export interface UserMeResponse {
+  profile: {
+    username: string;
+    analytics: {
+      referral: ReferralAnalytics;
+    };
+  };
+}
+
 export interface ReferralSummaryRow {
   rank: number;
   user: {

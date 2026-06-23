@@ -80,20 +80,10 @@ export default function UserDashboardPage() {
   const [referralCopied, setReferralCopied] = useState(false);
   const user = useAtomValue(userAtom);
   console.log("userData", user);
-  const { data: referralData } = useQuery({
-    queryKey: ["referral-link"],
-    queryFn: () =>
-      axios
-        .get(endpointUrl(ENDPOINTS.USER_REFERRAL_LINK), {
-          headers: {
-            Authorization: `Bearer ${user?.accessToken}`,
-          },
-        })
-        .then((res) => res.data),
-    enabled: !!user?.accessToken,
-  });
-
-  const referralLink = referralData?.referralLink || "";
+  const referralLink =
+    user?.username && typeof window !== "undefined"
+      ? `${window.location.origin}/register?ref=${user.username}`
+      : "";
 
   const {
     data: profiletData,

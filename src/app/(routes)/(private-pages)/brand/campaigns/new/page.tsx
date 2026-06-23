@@ -373,7 +373,9 @@ export default function NewCampaignPage() {
     },
   });
 
-  // Update campaign mutation
+  // Update campaign mutation — sends multipart/form-data.
+  // Do NOT set Content-Type manually; axios auto-sets it with the correct
+  // multipart boundary when the body is a FormData instance.
   const updateCampaignMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       return axios.patch(
@@ -381,23 +383,18 @@ export default function NewCampaignPage() {
         formData,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${user?.accessToken}`,
           },
         }
       );
     },
-    onSuccess: (response) => {
-      if (response.data.success) {
-        queryClient.invalidateQueries({ queryKey: ["brand-campaigns"] });
-        queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
-        queryClient.invalidateQueries({
-          queryKey: ["brand-campaign", campaignId],
-        });
-        queryClient.invalidateQueries({ queryKey: ["campaigns"] });
-        setShowCreateModal(false);
-        setShowUpdateSuccessModal(true);
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brand-campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["campaign", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["brand-campaign", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      setShowCreateModal(false);
+      setShowUpdateSuccessModal(true);
     },
     onError: (error: any) => {
       const message =
@@ -412,27 +409,22 @@ export default function NewCampaignPage() {
   const prepareFormData = (data: CampaignFormData): FormData => {
     const formData = new FormData();
 
-    // Basic fields
     formData.append("title", data.title);
     formData.append("description", data.description);
     formData.append("gameType", data.gameType);
-    formData.append("timeLimit", (data.weeksToRun * 7 * 24).toString()); // Convert weeks to hours
+    formData.append("timeLimit", (data.weeksToRun * 7 * 24).toString());
     formData.append("packageId", data.packageId);
 
-    // Only include image if a new file was uploaded
     if (data.image instanceof File && data.image.size > 0) {
       formData.append("image", data.image);
     }
 
-    // Campaign URL (optional)
     if (data.campaignUrl && data.campaignUrl.trim() !== "") {
       formData.append("campaignUrl", data.campaignUrl);
     }
 
-    // Questions
     formData.append("questions", JSON.stringify(data.questions));
 
-    // Words for word hunt
     if (data.gameType === "word_hunt" && data.words) {
       const validWords = data.words.filter((word) => word.trim().length > 0);
       formData.append("words", JSON.stringify(validWords));
@@ -440,6 +432,7 @@ export default function NewCampaignPage() {
 
     return formData;
   };
+
 
   const onSubmit = (data: CampaignFormData) => {
     console.log("Form submitted with data:", data);
@@ -449,13 +442,12 @@ export default function NewCampaignPage() {
 
   const handleCreateCampaign = (actionType: "draft" | "payment") => {
     const formValues = form.getValues();
-    const formData = prepareFormData(formValues);
     setCurrentActionType(actionType);
 
     if (isEditMode) {
-      updateCampaignMutation.mutate(formData);
+      updateCampaignMutation.mutate(prepareFormData(formValues));
     } else {
-      createCampaignMutation.mutate(formData);
+      createCampaignMutation.mutate(prepareFormData(formValues));
     }
   };
 
@@ -620,9 +612,10 @@ export default function NewCampaignPage() {
                           </FormLabel>
                           <Select
                             onValueChange={field.onChange}
-                            value={field.value}>
+                            value={field.value}
+                            disabled={isEditMode}>
                             <FormControl>
-                              <SelectTrigger className="bg-white/5 border-white/10 text-white h-12">
+                              <SelectTrigger className="bg-white/5 border-white/10 text-white h-12 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <SelectValue placeholder="Select game type" />
                               </SelectTrigger>
                             </FormControl>
@@ -637,6 +630,11 @@ export default function NewCampaignPage() {
                               ))}
                             </SelectContent>
                           </Select>
+                          {isEditMode && (
+                            <FormDescription className="text-yellow-400/80 text-xs">
+                              Game type cannot be changed after creation
+                            </FormDescription>
+                          )}
                           <FormMessage className="text-red-400" />
                         </FormItem>
                       )}

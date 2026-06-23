@@ -35,7 +35,9 @@ export const ENDPOINTS = {
   // Referrals
   REFERRALS_SUMMARY: "/referrals/summary",
   REFERRALS_EVENTS: "/referrals/events",
-  USER_REFERRAL_LINK: "/users/me/referral-link",
+
+  // Authenticated user profile (includes referral analytics)
+  USER_ME: "/user/me",
 
   // Admin
   ADMIN_REWARDS_FINALIZE: "/admin/rewards/finalize",

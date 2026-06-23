@@ -28,21 +28,22 @@ import { endpointUrl } from "@/app/_utils/helper";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import {
   ReferralEventsResponse,
-  ReferralLinkResponse,
   ReferralSummaryResponse,
+  UserMeResponse,
 } from "@/types";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/atom/user";
 import { PageLoader } from "@/components/ui/page-loader";
 
-const getInitials = (name: string): string => {
-  return name
+const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+
+const getInitials = (name: string): string =>
+  name
     .split(" ")
     .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase())
+    .map((p) => p.charAt(0).toUpperCase())
     .slice(0, 2)
     .join("");
-};
 
 const getRankIcon = (rank: number) => {
   switch (rank) {
@@ -53,9 +54,7 @@ const getRankIcon = (rank: number) => {
     case 3:
       return <Medal className="h-5 w-5 text-amber-600" />;
     default:
-      return (
-        <span className="text-sm font-bold text-white/60">#{rank}</span>
-      );
+      return <span className="text-sm font-bold text-white/60">#{rank}</span>;
   }
 };
 
@@ -63,59 +62,54 @@ export default function ReferralsPage() {
   const user = useAtomValue(userAtom);
   const [copied, setCopied] = useState(false);
 
-  const { data: referralLinkData, isLoading: loadingLink } = useQuery({
-    queryKey: ["referral-link"],
+  // Referral link is built purely on the frontend from the player's username.
+  // No backend call needed — the backend resolves ?ref=<username> at register time.
+  const referralLink =
+    user?.username && typeof window !== "undefined"
+      ? `${window.location.origin}/register?ref=${user.username}`
+      : "";
+
+  // Own referral stats for the current month
+  const { data: userMeData, isLoading: loadingMe } = useQuery({
+    queryKey: ["user-me"],
     queryFn: () =>
       axios
-        .get<ReferralLinkResponse>(
-          endpointUrl(ENDPOINTS.USER_REFERRAL_LINK),
-          {
-            headers: { Authorization: `Bearer ${user?.accessToken}` },
-          }
-        )
+        .get<UserMeResponse>(endpointUrl(ENDPOINTS.USER_ME), {
+          headers: { Authorization: `Bearer ${user?.accessToken}` },
+        })
         .then((res) => res.data),
     enabled: !!user?.accessToken,
   });
 
+  // Global leaderboard — public endpoint, no auth required
   const { data: summaryData, isLoading: loadingSummary } = useQuery({
-    queryKey: ["referrals-summary"],
+    queryKey: ["referrals-summary", currentMonth],
     queryFn: () =>
       axios
         .get<ReferralSummaryResponse>(
-          endpointUrl(ENDPOINTS.REFERRALS_SUMMARY),
-          {
-            headers: { Authorization: `Bearer ${user?.accessToken}` },
-          }
+          endpointUrl(`${ENDPOINTS.REFERRALS_SUMMARY}?month=${currentMonth}`)
         )
         .then((res) => res.data),
-    enabled: !!user?.accessToken,
   });
 
+  // Referral event log — public endpoint, no auth required
   const { data: eventsData } = useQuery({
-    queryKey: ["referrals-events"],
+    queryKey: ["referrals-events", currentMonth],
     queryFn: () =>
       axios
         .get<ReferralEventsResponse>(
-          endpointUrl(ENDPOINTS.REFERRALS_EVENTS),
-          {
-            headers: { Authorization: `Bearer ${user?.accessToken}` },
-          }
+          endpointUrl(`${ENDPOINTS.REFERRALS_EVENTS}?month=${currentMonth}`)
         )
         .then((res) => res.data),
-    enabled: !!user?.accessToken,
   });
 
-  const referralLink = referralLinkData?.referralLink || "";
+  const referralStats = userMeData?.profile?.analytics?.referral;
+  const myReferralCount = referralStats?.successfulCount ?? 0;
+  const myRank = referralStats?.leaderboardPosition ?? null;
 
   const leaderboard = [...(summaryData?.summary || [])].sort(
     (a, b) => (b.successfulCount ?? 0) - (a.successfulCount ?? 0)
   );
-
-  const myRow = leaderboard.find((row) => row.user?._id === user?.id);
-  const myReferralCount = myRow?.successfulCount ?? 0;
-  const myRank = myRow
-    ? leaderboard.findIndex((row) => row.user?._id === user?.id) + 1
-    : null;
 
   const events = eventsData?.events || [];
 
@@ -136,14 +130,14 @@ export default function ReferralsPage() {
           url: referralLink,
         });
       } catch {
-        // user cancelled share — no action needed
+        // user cancelled — no action needed
       }
     } else {
       copyReferralLink();
     }
   };
 
-  if (loadingLink && loadingSummary) {
+  if (loadingMe && loadingSummary) {
     return <PageLoader message="Loading your referrals..." />;
   }
 
@@ -157,8 +151,8 @@ export default function ReferralsPage() {
             Refer & Earn
           </h1>
           <p className="text-white/70">
-            Invite friends to Pazzell and earn bonus points when they
-            complete their first puzzle.
+            Invite friends to Pazzell and earn bonus points when they complete
+            their first puzzle.
           </p>
         </div>
 
@@ -175,34 +169,38 @@ export default function ReferralsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm:flex-row items-stretch gap-2">
-              <div className="flex-1 p-3 bg-white/5 rounded-lg border border-white/10 overflow-hidden">
-                <code className="text-white/80 text-sm break-all">
-                  {referralLink || "Loading your referral link..."}
-                </code>
+            {!user?.username ? (
+              <p className="text-white/50 text-sm">
+                Set a username on your profile to generate your referral link.
+              </p>
+            ) : (
+              <div className="flex flex-col sm:flex-row items-stretch gap-2">
+                <div className="flex-1 p-3 bg-white/5 rounded-lg border border-white/10 overflow-hidden">
+                  <code className="text-white/80 text-sm break-all">
+                    {referralLink}
+                  </code>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={copyReferralLink}
+                    variant="outline"
+                    className="border-white/20 text-white hover:bg-white/10">
+                    {copied ? (
+                      <CheckCircle2 className="h-4 w-4 mr-2 text-green-400" />
+                    ) : (
+                      <Copy className="h-4 w-4 mr-2" />
+                    )}
+                    {copied ? "Copied!" : "Copy"}
+                  </Button>
+                  <Button
+                    onClick={shareReferralLink}
+                    className="bg-gradient-to-r from-secondary to-[#FF6B9D] text-white font-fredoka">
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={copyReferralLink}
-                  disabled={!referralLink}
-                  variant="outline"
-                  className="border-white/20 text-white hover:bg-white/10">
-                  {copied ? (
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                  ) : (
-                    <Copy className="h-4 w-4 mr-2" />
-                  )}
-                  {copied ? "Copied" : "Copy"}
-                </Button>
-                <Button
-                  onClick={shareReferralLink}
-                  disabled={!referralLink}
-                  className="bg-gradient-to-r from-secondary to-[#FF6B9D] text-white font-fredoka">
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </Button>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
@@ -252,7 +250,7 @@ export default function ReferralsPage() {
               Top Referrers
             </CardTitle>
             <CardDescription className="text-white/70">
-              Players ranked by successful referrals
+              Players ranked by successful referrals this month
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -290,6 +288,7 @@ export default function ReferralsPage() {
                       </div>
                       <div className="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
                         {row.user?.avatar ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={row.user.avatar}
                             alt={fullName}

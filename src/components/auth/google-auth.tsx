@@ -20,10 +20,10 @@ type GoogleLoginPayload = {
   avatar: string;
   givenName: string;
   familyName: string;
-  referralCode?: string;
+  referrerUsername?: string;
 };
 
-const GoogleAuthBtn = ({ referralCode }: { referralCode?: string }) => {
+const GoogleAuthBtn = ({ referrerUsername }: { referrerUsername?: string }) => {
   const setUser = useSetAtom(userAtom);
   const router = useRouter();
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -143,7 +143,7 @@ const GoogleAuthBtn = ({ referralCode }: { referralCode?: string }) => {
             avatar: picture,
             givenName: given_name,
             familyName: family_name,
-            ...(referralCode ? { referralCode } : {}),
+            ...(referrerUsername ? { referrerUsername } : {}),
           });
           toast.info("Please wait, while we log you in.");
         } catch (error: any) {

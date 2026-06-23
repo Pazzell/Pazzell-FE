@@ -30,7 +30,7 @@ type RegisterUserPayload  = {
   lastName: string
   email: string
   password: string
-  referralCode?: string
+  referrerUsername?: string
 }
 
 type RegisterBrandPayload = {
@@ -74,7 +74,7 @@ function RegisterForm() {
   const [userType, setUserType] = useState<'user' | 'brand'>(
     (searchParams.get('type') as 'user' | 'brand') || 'user'
   )
-  const referralCode =
+  const referrerUsername =
     searchParams.get('ref') ||
     searchParams.get('referralCode') ||
     searchParams.get('referrerUsername') ||
@@ -179,7 +179,7 @@ function RegisterForm() {
   });
 
   const onSubmitUser = (data: UserRegistrationValues) => {
-    registerUser.mutate(referralCode ? { ...data, referralCode } : data)
+    registerUser.mutate(referrerUsername ? { ...data, referrerUsername } : data)
   }
   
   const onSubmitBrand = (data: BrandRegistrationValues) => {
@@ -467,7 +467,7 @@ function RegisterForm() {
             </div>
             
             {/* Google Button */}
-            <GoogleAuthBtn referralCode={userType === 'user' ? referralCode : undefined} />
+            <GoogleAuthBtn referrerUsername={userType === 'user' ? referrerUsername : undefined} />
             
             <p className="text-center text-white/50 text-sm mt-6">
               Already have an account?{' '}

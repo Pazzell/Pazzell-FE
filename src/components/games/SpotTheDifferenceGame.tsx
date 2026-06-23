@@ -31,13 +31,64 @@ const formatTime = (ms: number) => {
   return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
 };
 
+const NUM_DIFFS = 5;
+// Extra hit area around each zone border (in normalized units)
+const HIT_PADDING = 0.03;
+
+interface DiffZone {
+  id: string;
+  cx: number; // normalized centre x (0–1)
+  cy: number; // normalized centre y (0–1)
+  w: number;  // normalized width  (0–1)
+  h: number;  // normalized height (0–1)
+  color: string;
+}
+
+const DIFF_COLORS = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFEAA7", "#DDA0DD"];
+
+// Spread zones across a 3×3 grid so differences aren't clustered.
+function generateDiffZones(n: number): DiffZone[] {
+  const cells = ([
+    [0, 0], [1, 0], [2, 0],
+    [0, 1], [1, 1], [2, 1],
+    [0, 2], [1, 2], [2, 2],
+  ] as [number, number][])
+    .sort(() => Math.random() - 0.5)
+    .slice(0, n);
+
+  return cells.map(([col, row], i) => {
+    const step = 1 / 3;
+    const pad = 0.04;
+    const w = 0.09 + Math.random() * 0.07;
+    const h = 0.08 + Math.random() * 0.06;
+    const cx =
+      col * step + pad + w / 2 + Math.random() * Math.max(0, step - w - pad * 2);
+    const cy =
+      row * step + pad + h / 2 + Math.random() * Math.max(0, step - h - pad * 2);
+    return {
+      id: `d${i}`,
+      cx: Math.min(Math.max(cx, w / 2 + 0.01), 1 - w / 2 - 0.01),
+      cy: Math.min(Math.max(cy, h / 2 + 0.01), 1 - h / 2 - 0.01),
+      w,
+      h,
+      color: DIFF_COLORS[i % DIFF_COLORS.length],
+    };
+  });
+}
+
 type GamePhase = "idle" | "playing" | "quiz" | "success";
+
+interface WrongClick {
+  id: number;
+  x: number;
+  y: number;
+}
 
 interface Props {
   campaignDetails: CampaignData;
   campaignId: string;
   previewMode?: boolean;
-  availableCampaigns?: any[];
+  availableCampaigns?: unknown[];
   hasCompleted?: boolean;
 }
 
@@ -51,34 +102,38 @@ export function SpotTheDifferenceGame({
   const router = useRouter();
 
   const [phase, setPhase] = useState<GamePhase>("idle");
-  const [marks, setMarks] = useState<{ x: number; y: number }[]>([]);
+  const [diffZones, setDiffZones] = useState<DiffZone[]>([]);
+  const [foundIds, setFoundIds] = useState<Set<string>>(new Set());
+  const [wrongClicks, setWrongClicks] = useState<WrongClick[]>([]);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [showBackWarning, setShowBackWarning] = useState(false);
-  // Shown at idle when game was previously completed
-  const [showAlreadyPlayedModal, setShowAlreadyPlayedModal] = useState(hasCompleted);
+  const [showAlreadyPlayedModal, setShowAlreadyPlayedModal] =
+    useState(hasCompleted);
   const [pointsEarned, setPointsEarned] = useState(0);
 
   // Quiz state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [answerStatus, setAnswerStatus] = useState<"idle" | "correct" | "wrong">("idle");
+  const [answerStatus, setAnswerStatus] = useState<"idle" | "correct" | "wrong">(
+    "idle"
+  );
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
 
-  const puzzleRef = useRef<HTMLDivElement | null>(null);
+  const rightPanelRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const wrongClickCounter = useRef(0);
 
-  // Sync hasCompleted prop → re-show modal when prop updates (e.g. data loaded later)
   useEffect(() => {
     if (hasCompleted) setShowAlreadyPlayedModal(true);
   }, [hasCompleted]);
 
-  // Timer runs only while playing
   useEffect(() => {
     if (phase === "playing" && startedAt !== null) {
-      timerRef.current = setInterval(() => {
-        setElapsedMs(Date.now() - startedAt);
-      }, 1000);
+      timerRef.current = setInterval(
+        () => setElapsedMs(Date.now() - startedAt),
+        1000
+      );
     } else {
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -101,38 +156,20 @@ export function SpotTheDifferenceGame({
       answers: number[];
       differencesFound: { x: number; y: number; width: number; height: number }[];
     }) =>
-      axios.post(
-        endpointUrl(ENDPOINTS.SUBMIT_CAMPAIGN(campaignId)),
-        payload,
-        { headers: { Authorization: `Bearer ${user?.accessToken}` } }
-      ),
+      axios.post(endpointUrl(ENDPOINTS.SUBMIT_CAMPAIGN(campaignId)), payload, {
+        headers: { Authorization: `Bearer ${user?.accessToken}` },
+      }),
     onSuccess: (response) => {
       setPointsEarned(response.data?.attempt?.pointsEarned ?? 0);
       setPhase("success");
     },
-    onError: (err) => {
-      console.error("Failed to submit game results:", err);
-    },
+    onError: (err) => console.error("Failed to submit game results:", err),
   });
 
-  const handleStartGame = () => {
-    const now = Date.now();
-    setStartedAt(now);
-    setElapsedMs(0);
-    setMarks([]);
-    setCurrentQuestionIndex(0);
-    setSelectedAnswer(null);
-    setAnswerStatus("idle");
-    setQuizAnswers([]);
-    setPhase("playing");
-  };
-
-  const handleBackClick = () => setShowBackWarning(true);
-
-  const handleConfirmBack = () => {
-    setShowBackWarning(false);
-    setPhase("idle");
-    setMarks([]);
+  const resetPlayState = () => {
+    setDiffZones([]);
+    setFoundIds(new Set());
+    setWrongClicks([]);
     setElapsedMs(0);
     setStartedAt(null);
     setCurrentQuestionIndex(0);
@@ -141,15 +178,45 @@ export function SpotTheDifferenceGame({
     setQuizAnswers([]);
   };
 
-  const handleImageClick = (e: React.MouseEvent) => {
-    if (!puzzleRef.current || phase !== "playing") return;
-    const rect = puzzleRef.current.getBoundingClientRect();
-    const x = Math.round(((e.clientX - rect.left) / rect.width) * 1000) / 1000;
-    const y = Math.round(((e.clientY - rect.top) / rect.height) * 1000) / 1000;
-    setMarks((m) => [...m, { x, y }]);
+  const handleStartGame = () => {
+    resetPlayState();
+    setDiffZones(generateDiffZones(NUM_DIFFS));
+    setStartedAt(Date.now());
+    setPhase("playing");
   };
 
-  const handleProceed = () => setPhase("quiz");
+  const handleConfirmBack = () => {
+    setShowBackWarning(false);
+    resetPlayState();
+    setPhase("idle");
+  };
+
+  const handleRightPanelClick = (e: React.MouseEvent) => {
+    if (!rightPanelRef.current || phase !== "playing") return;
+    const rect = rightPanelRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+
+    const hit = diffZones.find(
+      (zone) =>
+        !foundIds.has(zone.id) &&
+        Math.abs(x - zone.cx) < zone.w / 2 + HIT_PADDING &&
+        Math.abs(y - zone.cy) < zone.h / 2 + HIT_PADDING
+    );
+
+    if (hit) {
+      setFoundIds((prev) => new Set([...prev, hit.id]));
+    } else {
+      const id = ++wrongClickCounter.current;
+      setWrongClicks((prev) => [...prev, { id, x, y }]);
+      setTimeout(
+        () => setWrongClicks((prev) => prev.filter((c) => c.id !== id)),
+        900
+      );
+    }
+  };
+
+  const allFound = foundIds.size >= NUM_DIFFS;
 
   const handleAnswerSelect = (choiceIndex: number) => {
     if (answerStatus === "correct") return;
@@ -166,14 +233,13 @@ export function SpotTheDifferenceGame({
       setAnswerStatus("correct");
       const newAnswers = [...quizAnswers, selectedAnswer];
       setQuizAnswers(newAnswers);
-
       setTimeout(() => {
         if (currentQuestionIndex + 1 < questions.length) {
           setCurrentQuestionIndex((i) => i + 1);
           setSelectedAnswer(null);
           setAnswerStatus("idle");
         } else {
-          setCurrentQuestionIndex((i) => i + 1); // past end → triggers submit view
+          setCurrentQuestionIndex((i) => i + 1);
         }
       }, 800);
     } else {
@@ -189,15 +255,13 @@ export function SpotTheDifferenceGame({
     if (previewMode) return;
     submitMutation.mutate({
       timeTaken: elapsedMs,
-      movesTaken: marks.length,
+      movesTaken: foundIds.size,
       solved: true,
       answers: quizAnswers,
-      differencesFound: marks.map((p) => ({
-        x: p.x,
-        y: p.y,
-        width: 0.03,
-        height: 0.03,
-      })),
+      differencesFound: Array.from(foundIds).map((id) => {
+        const z = diffZones.find((z) => z.id === id)!;
+        return { x: z.cx, y: z.cy, width: z.w, height: z.h };
+      }),
     });
   };
 
@@ -209,19 +273,16 @@ export function SpotTheDifferenceGame({
   if (phase === "idle") {
     return (
       <div className="max-w-7xl mx-auto">
-        {/* Already-played modal */}
         {showAlreadyPlayedModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
             <div className="bg-card border border-white/10 rounded-2xl p-8 max-w-sm w-full mx-4 space-y-5">
               <div className="flex items-center gap-3 text-yellow-400">
                 <Info className="w-6 h-6 flex-shrink-0" />
-                <h3 className="text-lg font-bold font-fredoka">
-                  Already Played
-                </h3>
+                <h3 className="text-lg font-bold font-fredoka">Already Played</h3>
               </div>
               <p className="text-white/80 leading-relaxed">
-                You&apos;ve already completed this puzzle. You can play again
-                for fun, but{" "}
+                You&apos;ve already completed this puzzle. You can play again for
+                fun, but{" "}
                 <span className="text-yellow-300 font-semibold">
                   no additional points will be awarded
                 </span>{" "}
@@ -250,7 +311,7 @@ export function SpotTheDifferenceGame({
               Spot the Difference
             </h2>
             <p className="text-white/70 max-w-md">
-              Find all the differences between the two images. Click on each
+              Find all {NUM_DIFFS} differences between the two images. Click each
               difference to mark it, then proceed to the quiz.
             </p>
           </div>
@@ -302,9 +363,9 @@ export function SpotTheDifferenceGame({
               <div className="bg-white/5 rounded-xl p-4 flex flex-col items-center gap-2">
                 <Target className="w-6 h-6 text-blue-400" />
                 <span className="text-2xl font-bold text-white font-mono">
-                  {marks.length}
+                  {foundIds.size}
                 </span>
-                <span className="text-xs text-white/60">Moves</span>
+                <span className="text-xs text-white/60">Found</span>
               </div>
               <div className="bg-white/5 rounded-xl p-4 flex flex-col items-center gap-2">
                 <Clock className="w-6 h-6 text-purple-400" />
@@ -406,16 +467,14 @@ export function SpotTheDifferenceGame({
             {current.choices.map((choice, idx) => {
               let cls =
                 "w-full text-left px-5 py-4 rounded-xl border transition-all duration-200 text-white ";
-              if (answerStatus === "correct" && idx === current.correctIndex) {
+              if (answerStatus === "correct" && idx === current.correctIndex)
                 cls += "bg-green-500/20 border-green-500/60 text-green-300";
-              } else if (answerStatus === "wrong" && idx === selectedAnswer) {
+              else if (answerStatus === "wrong" && idx === selectedAnswer)
                 cls += "bg-red-500/20 border-red-500/60 text-red-300";
-              } else if (selectedAnswer === idx) {
+              else if (selectedAnswer === idx)
                 cls += "bg-secondary/20 border-secondary";
-              } else {
-                cls +=
-                  "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/30";
-              }
+              else
+                cls += "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/30";
               return (
                 <button
                   key={idx}
@@ -452,7 +511,6 @@ export function SpotTheDifferenceGame({
   // ── PLAYING ───────────────────────────────────────────────────────────────
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Back warning dialog */}
       {showBackWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-card border border-white/10 rounded-2xl p-8 max-w-sm w-full mx-4 space-y-4">
@@ -461,8 +519,7 @@ export function SpotTheDifferenceGame({
               <h3 className="text-lg font-bold font-fredoka">Restart Game?</h3>
             </div>
             <p className="text-white/70">
-              Going back will restart the game from the beginning. All your
-              progress, marks, and time will be lost.
+              Going back will restart the game. All your progress will be lost.
             </p>
             <div className="flex gap-3">
               <Button
@@ -481,10 +538,10 @@ export function SpotTheDifferenceGame({
         </div>
       )}
 
-      {/* Game header bar */}
+      {/* Header bar */}
       <div className="flex items-center justify-between mb-4 bg-card/30 rounded-xl px-4 py-3 border border-white/10">
         <button
-          onClick={handleBackClick}
+          onClick={() => setShowBackWarning(true)}
           className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm font-medium">Back</span>
@@ -493,7 +550,9 @@ export function SpotTheDifferenceGame({
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 text-white/80">
             <Target className="w-4 h-4 text-blue-400" />
-            <span className="text-sm font-mono">Marks: {marks.length}</span>
+            <span className="text-sm font-mono">
+              {foundIds.size}/{NUM_DIFFS} found
+            </span>
           </div>
           <div className="flex items-center gap-2 text-white/80">
             <Clock className="w-4 h-4 text-purple-400" />
@@ -502,61 +561,140 @@ export function SpotTheDifferenceGame({
         </div>
 
         <Button
-          onClick={handleProceed}
-          className="bg-secondary hover:bg-secondary/80 text-secondary-foreground px-6 py-2 text-sm font-fredoka">
-          Proceed
+          onClick={() => setPhase("quiz")}
+          disabled={!allFound}
+          className="bg-secondary hover:bg-secondary/80 text-secondary-foreground px-6 py-2 text-sm font-fredoka disabled:opacity-40 disabled:cursor-not-allowed">
+          {allFound ? "Proceed →" : `Find ${NUM_DIFFS - foundIds.size} more`}
         </Button>
       </div>
 
       {/* Images grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Left: original */}
         <div className="bg-card/50 rounded-xl overflow-hidden border border-white/10">
           <div className="px-3 py-2 text-sm text-white/70 font-medium border-b border-white/10">
             Original
           </div>
-          {campaignDetails.originalImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={campaignDetails.originalImageUrl}
-              alt="original"
-              className="w-full h-auto object-contain"
-            />
-          ) : (
-            <div className="h-64 flex items-center justify-center text-white/50">
-              No original image provided
-            </div>
-          )}
+          <div className="relative">
+            {campaignDetails.puzzleImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={campaignDetails.puzzleImageUrl}
+                alt="original"
+                className="w-full h-auto object-contain"
+              />
+            ) : (
+              <div className="h-64 flex items-center justify-center text-white/50">
+                No image available
+              </div>
+            )}
+            {/* Reveal found zones on the original image */}
+            {diffZones
+              .filter((z) => foundIds.has(z.id))
+              .map((zone) => (
+                <div
+                  key={zone.id}
+                  className="absolute border-2 border-green-400 rounded pointer-events-none"
+                  style={{
+                    left: `${(zone.cx - zone.w / 2) * 100}%`,
+                    top: `${(zone.cy - zone.h / 2) * 100}%`,
+                    width: `${zone.w * 100}%`,
+                    height: `${zone.h * 100}%`,
+                  }}>
+                  <CheckCircle className="absolute -top-2 -right-2 w-4 h-4 text-green-400 bg-card rounded-full" />
+                </div>
+              ))}
+          </div>
         </div>
 
+        {/* Right: same image + colour-blend overlays as the "differences" */}
         <div className="bg-card/50 rounded-xl overflow-hidden border border-white/10">
           <div className="px-3 py-2 text-sm text-white/70 font-medium border-b border-white/10">
             Find the differences
           </div>
           <div
-            ref={puzzleRef}
-            onClick={handleImageClick}
-            className="relative cursor-crosshair">
+            ref={rightPanelRef}
+            onClick={handleRightPanelClick}
+            className="relative cursor-crosshair select-none">
             {campaignDetails.puzzleImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={campaignDetails.puzzleImageUrl}
-                alt="puzzle"
-                className="w-full h-auto object-contain"
+                alt="find differences"
+                className="w-full h-auto object-contain pointer-events-none"
               />
             ) : (
               <div className="h-64 flex items-center justify-center text-white/50">
-                No puzzle image provided
+                No image available
               </div>
             )}
-            {marks.map((m, idx) => (
+
+            {/* Colour-blend overlays — create a hue shift visible to the eye */}
+            {diffZones.map((zone) => {
+              const isFound = foundIds.has(zone.id);
+              return (
+                <div
+                  key={zone.id}
+                  className="absolute rounded pointer-events-none transition-opacity duration-300"
+                  style={{
+                    left: `${(zone.cx - zone.w / 2) * 100}%`,
+                    top: `${(zone.cy - zone.h / 2) * 100}%`,
+                    width: `${zone.w * 100}%`,
+                    height: `${zone.h * 100}%`,
+                    backgroundColor: zone.color,
+                    opacity: isFound ? 0 : 0.6,
+                    mixBlendMode: "hue" as React.CSSProperties["mixBlendMode"],
+                  }}
+                />
+              );
+            })}
+
+            {/* Green rings for found zones */}
+            {diffZones
+              .filter((z) => foundIds.has(z.id))
+              .map((zone) => (
+                <div
+                  key={`found-${zone.id}`}
+                  className="absolute border-2 border-green-400 rounded pointer-events-none"
+                  style={{
+                    left: `${(zone.cx - zone.w / 2) * 100}%`,
+                    top: `${(zone.cy - zone.h / 2) * 100}%`,
+                    width: `${zone.w * 100}%`,
+                    height: `${zone.h * 100}%`,
+                  }}>
+                  <CheckCircle className="absolute -top-2 -right-2 w-4 h-4 text-green-400 bg-card rounded-full" />
+                </div>
+              ))}
+
+            {/* Wrong-click indicators (fade out after 900 ms) */}
+            {wrongClicks.map((click) => (
               <div
-                key={idx}
-                style={{ left: `${m.x * 100}%`, top: `${m.y * 100}%` }}
-                className="absolute w-8 h-8 rounded-full border-2 border-red-400 bg-red-500/30 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
-                <span className="text-white text-xs font-bold">{idx + 1}</span>
+                key={click.id}
+                className="absolute pointer-events-none -translate-x-1/2 -translate-y-1/2 animate-ping"
+                style={{
+                  left: `${click.x * 100}%`,
+                  top: `${click.y * 100}%`,
+                }}>
+                <XCircle className="w-6 h-6 text-red-400" />
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="mt-4 bg-card/30 rounded-xl p-3 border border-white/10">
+        <div className="flex items-center justify-between mb-2 text-xs text-white/60">
+          <span>Progress</span>
+          <span>
+            {foundIds.size} of {NUM_DIFFS} differences found
+          </span>
+        </div>
+        <div className="w-full bg-white/10 rounded-full h-2">
+          <div
+            className="bg-green-400 h-2 rounded-full transition-all duration-500"
+            style={{ width: `${(foundIds.size / NUM_DIFFS) * 100}%` }}
+          />
         </div>
       </div>
     </div>

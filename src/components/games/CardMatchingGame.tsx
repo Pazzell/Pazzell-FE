@@ -28,11 +28,26 @@ import Image from "next/image";
 interface GameCard {
   id: string;
   imageUrl: string;
+  cropPosition: string; // CSS object-position — different per pair, same per match
   isFlipped: boolean;
   isMatched: boolean;
   isBrandCard: boolean;
   pairId: string;
 }
+
+// 8 distinct crop positions for 8 pairs.
+// Each value is a CSS object-position that reveals a different region of the
+// campaign image when rendered with object-fit:cover in a square container.
+const CROP_POSITIONS = [
+  "center",    // pair 0 — full view (brand card)
+  "15% 15%",   // pair 1 — top-left corner
+  "50% 10%",   // pair 2 — top-centre
+  "85% 15%",   // pair 3 — top-right corner
+  "15% 85%",   // pair 4 — bottom-left corner
+  "50% 90%",   // pair 5 — bottom-centre
+  "85% 85%",   // pair 6 — bottom-right corner
+  "50% 50%",   // pair 7 — centre (slightly different scale from pair 0 due to container)
+];
 
 interface CardMatchingGameProps {
   campaignDetails: CampaignData;
@@ -118,70 +133,48 @@ export function CardMatchingGame({
 
   const generateCards = useCallback(
     (brandData: CampaignData) => {
-      const gameCards: GameCard[] = [];
-      // Prefer server-supplied cardImages (expected length 16: 8 pairs)
-      if (
-        brandData.cardImages &&
-        Array.isArray(brandData.cardImages) &&
-        brandData.cardImages.length === 16
-      ) {
-        const supplied = brandData.cardImages.map((img, idx) => ({
-          id: `card-${idx}`,
-          imageUrl: img,
-          isFlipped: false,
-          isMatched: false,
-          isBrandCard: false,
-          pairId: `pair-${Math.floor(idx / 2)}`,
-        }));
-        return [...supplied].sort(() => Math.random() - 0.5);
+      const imageUrl = brandData.puzzleImageUrl;
+
+      // No campaign image — fall back to local icon set
+      if (!imageUrl) {
+        const shuffled = [...randomImages].sort(() => Math.random() - 0.5);
+        const fallback: GameCard[] = [];
+        // 1 brand pair (placeholder) + 7 icon pairs
+        for (let i = 0; i < 8; i++) {
+          const isBrand = i === 0;
+          const url = isBrand ? "/icons/puzzle-icon.png" : shuffled[i - 1];
+          for (let copy = 0; copy < 2; copy++) {
+            fallback.push({
+              id: `fb-${i}-${copy}`,
+              imageUrl: url,
+              cropPosition: "center",
+              isFlipped: false,
+              isMatched: false,
+              isBrandCard: isBrand,
+              pairId: `pair-${i}`,
+            });
+          }
+        }
+        return fallback.sort(() => Math.random() - 0.5);
       }
 
-      // Fallback behaviour (legacy): generate brand + random icons
-      const brandImageUrl =
-        brandData.puzzleImageUrl ||
-        "https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=400&fit=crop&auto=format";
-      const shuffledRandomImages = [...randomImages].sort(
-        () => Math.random() - 0.5
-      );
-
-      gameCards.push({
-        id: "brand-1",
-        imageUrl: brandImageUrl,
-        isFlipped: false,
-        isMatched: false,
-        isBrandCard: true,
-        pairId: "brand-pair",
+      // Primary path: 8 pairs, each showing a different CSS crop of the
+      // campaign image. Pair 0 is the "brand" card (full-view, gets the ★).
+      const cards: GameCard[] = [];
+      CROP_POSITIONS.forEach((cropPos, pairIdx) => {
+        for (let copy = 0; copy < 2; copy++) {
+          cards.push({
+            id: `card-${pairIdx}-${copy}`,
+            imageUrl,
+            cropPosition: cropPos,
+            isFlipped: false,
+            isMatched: false,
+            isBrandCard: pairIdx === 0,
+            pairId: `pair-${pairIdx}`,
+          });
+        }
       });
-      gameCards.push({
-        id: "brand-2",
-        imageUrl: brandImageUrl,
-        isFlipped: false,
-        isMatched: false,
-        isBrandCard: true,
-        pairId: "brand-pair",
-      });
-
-      for (let i = 0; i < 7; i++) {
-        const imageUrl = shuffledRandomImages[i % shuffledRandomImages.length];
-        gameCards.push({
-          id: `random-${i}-1`,
-          imageUrl,
-          isFlipped: false,
-          isMatched: false,
-          isBrandCard: false,
-          pairId: `pair-${i}`,
-        });
-        gameCards.push({
-          id: `random-${i}-2`,
-          imageUrl,
-          isFlipped: false,
-          isMatched: false,
-          isBrandCard: false,
-          pairId: `pair-${i}`,
-        });
-      }
-
-      return gameCards.sort(() => Math.random() - 0.5);
+      return cards.sort(() => Math.random() - 0.5);
     },
     [randomImages]
   );
@@ -504,6 +497,7 @@ export function CardMatchingGame({
                               card.isBrandCard ? "Brand image" : "Memory card"
                             }
                             className="w-full h-full object-cover"
+                            style={{ objectPosition: card.cropPosition }}
                           />
                           {card.isBrandCard && (
                             <div className="absolute top-1 right-1">
