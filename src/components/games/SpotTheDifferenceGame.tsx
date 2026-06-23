@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { endpointUrl } from "@/app/_utils/helper";
+import { endpointUrl, markPlayedToday } from "@/app/_utils/helper";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/atom/user";
@@ -165,7 +165,9 @@ export function SpotTheDifferenceGame({
         headers: { Authorization: `Bearer ${user?.accessToken}` },
       }),
     onSuccess: (response) => {
-      setPointsEarned(response.data?.attempt?.pointsEarned ?? 0);
+      const attempt = response.data?.attempt;
+      setPointsEarned(attempt?.pointsEarned ?? 0);
+      markPlayedToday(campaignId);
       setPhase("success");
     },
     onError: (err) => console.error("Failed to submit game results:", err),
@@ -356,6 +358,12 @@ export function SpotTheDifferenceGame({
               Puzzle Complete!
             </h2>
             <p className="text-white/70">Great job! Here&apos;s your summary:</p>
+
+            {pointsEarned === 0 && (
+              <div className="bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-4 py-3 text-sm text-yellow-200/90 text-center">
+                You already earned points for this campaign today. Come back tomorrow for more!
+              </div>
+            )}
 
             <div className="grid grid-cols-3 gap-4 py-2">
               <div className="bg-white/5 rounded-xl p-4 flex flex-col items-center gap-2">

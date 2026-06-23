@@ -4,7 +4,7 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { routes } from '@/app/_utils/routes'
 import { CampaignData, CampaignResponse } from '@/types'
 import axios from 'axios'
-import { endpointUrl } from '@/app/_utils/helper'
+import { endpointUrl, hasPlayedToday } from '@/app/_utils/helper'
 import { ENDPOINTS } from '@/app/_utils/endpoints'
 import { useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -82,7 +82,7 @@ export default function CardMatchingPage() {
         backText="Back to Campaigns"
       />
 
-      {completionStatus?.hasCompletedByCurrentUser && (
+      {hasPlayedToday(campaignId!) && (
         <div className="mb-6">
           <div className="max-w-7xl mx-auto">
             <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 flex items-center gap-3">

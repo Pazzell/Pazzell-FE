@@ -16,7 +16,7 @@ import Link from 'next/link'
 import { routes } from '@/app/_utils/routes'
 import { CampaignData } from '@/types'
 import axios from 'axios'
-import { endpointUrl } from '@/app/_utils/helper'
+import { endpointUrl, markPlayedToday } from '@/app/_utils/helper'
 import { ENDPOINTS } from '@/app/_utils/endpoints'
 import { getNextCampaignUrl } from '@/app/_utils/campaign-navigation'
 import { useMutation } from '@tanstack/react-query'
@@ -75,7 +75,8 @@ export function SlidingPuzzleGame({ campaignDetails, campaignId, previewMode = f
     },
     onSuccess: (response) => {
       if (response.data.success) {
-        setPointsEarned(response.data.attempt?.pointsEarned || 0);
+        setPointsEarned(response.data.attempt?.pointsEarned ?? 0);
+        markPlayedToday(campaignId);
       }
     },
     onError: (error) => {
@@ -519,9 +520,15 @@ export function SlidingPuzzleGame({ campaignDetails, campaignId, previewMode = f
                             <CheckCircle className="h-5 w-5" />
                             <span className="font-semibold">Results Submitted!</span>
                           </div>
-                          <p className="text-2xl font-bold text-secondary font-fredoka">
-                            +{pointsEarned} Points Earned!
-                          </p>
+                          {pointsEarned > 0 ? (
+                            <p className="text-2xl font-bold text-secondary font-fredoka">
+                              +{pointsEarned} Points Earned!
+                            </p>
+                          ) : (
+                            <p className="text-sm text-yellow-300/90 bg-yellow-500/15 border border-yellow-500/40 rounded-lg px-4 py-2">
+                              You already earned points for this campaign today. Come back tomorrow for more!
+                            </p>
+                          )}
                         </div>
                       )}
 

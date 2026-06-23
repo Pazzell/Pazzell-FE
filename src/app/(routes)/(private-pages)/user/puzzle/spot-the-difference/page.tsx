@@ -3,7 +3,7 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { CampaignData, CampaignResponse } from "@/types";
 import axios from "axios";
-import { endpointUrl } from "@/app/_utils/helper";
+import { endpointUrl, hasPlayedToday } from "@/app/_utils/helper";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -87,7 +87,7 @@ export default function SpotTheDifferencePage() {
         campaignDetails={campaignDetails}
         campaignId={campaignId}
         availableCampaigns={availableCampaigns}
-        hasCompleted={!!completionStatus?.hasCompletedByCurrentUser}
+        hasCompleted={hasPlayedToday(campaignId!)}
       />
     </MainLayout>
   );
