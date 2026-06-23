@@ -137,23 +137,30 @@ const createCampaignSchema = baseCampaignSchema
     }
   );
 
-// Form validation schema for editing (image optional)
-const editCampaignSchema = baseCampaignSchema.refine(
-  (data) => {
-    // If game type is word_hunt, words are required and must have valid entries
-    if (data.gameType === "word_hunt") {
-      const validWords =
-        data.words?.filter((word) => word.trim().length >= 2) || [];
-      return validWords.length >= 7;
+// Form validation schema for editing (image optional, locked fields not validated)
+const editCampaignSchema = baseCampaignSchema
+  .extend({
+    // gameType, packageId, weeksToRun cannot be changed on an existing campaign —
+    // relax their constraints so the form submits with the pre-filled server values.
+    gameType: z.string(),
+    packageId: z.string(),
+    weeksToRun: z.number(),
+  })
+  .refine(
+    (data) => {
+      if (data.gameType === "word_hunt") {
+        const validWords =
+          data.words?.filter((word) => word.trim().length >= 2) || [];
+        return validWords.length >= 7;
+      }
+      return true;
+    },
+    {
+      message:
+        "Word hunt requires at least 7 valid words (minimum 2 characters each)",
+      path: ["words"],
     }
-    return true;
-  },
-  {
-    message:
-      "Word hunt requires at least 7 valid words (minimum 2 characters each)",
-    path: ["words"],
-  }
-);
+  );
 
 type CampaignFormData = z.infer<typeof baseCampaignSchema>;
 
