@@ -464,7 +464,11 @@ export function SpotTheDifferenceGame({
           </div>
 
           {campaignDetails.passage && (
-            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+            <div
+              className="bg-white/5 border border-white/10 rounded-lg p-4 select-none"
+              onContextMenu={(e) => e.preventDefault()}
+              onCopy={(e) => e.preventDefault()}
+            >
               <p className="text-white/50 text-xs uppercase tracking-wider mb-2 font-semibold">Read the passage</p>
               <p className="text-white/80 text-sm leading-relaxed">{campaignDetails.passage}</p>
             </div>
