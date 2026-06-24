@@ -43,7 +43,6 @@ import {
   ArrowLeft,
   CheckCircle,
   AlertCircle,
-  Clock,
   DollarSign,
   Image as ImageIcon,
   FileText,
@@ -53,6 +52,8 @@ import {
   ExternalLink,
   CreditCard,
   Save,
+  Sparkles,
+  BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { routes } from "@/app/_utils/routes";
@@ -68,7 +69,7 @@ import {
 
 // Game types
 const GAME_TYPES = [
-  // { value: 'word_hunt', label: 'Word Hunt' },
+  { value: 'word_hunt', label: 'Word Hunt' },
   { value: "sliding_puzzle", label: "Sliding Puzzle" },
   { value: "card_matching", label: "Card Matching" },
   { value: "spot_the_difference", label: "Spot the Difference" },
@@ -100,7 +101,7 @@ const baseCampaignSchema = z.object({
         correctIndex: z.number().min(0).max(3),
       })
     )
-    .min(2, "Must have at least 2 questions")
+    .min(5, "Must have at least 5 questions")
     .max(10, "Cannot exceed 10 questions"),
   words: z.array(z.string()).optional(),
 });
@@ -175,6 +176,8 @@ export default function NewCampaignPage() {
   const [currentActionType, setCurrentActionType] = useState<
     "draft" | "payment"
   >("draft");
+  const [comprehensionPassage, setComprehensionPassage] = useState("");
+  const [generateError, setGenerateError] = useState("");
   const searchParams = useSearchParams();
   const campaignId = searchParams.get("edit");
 
@@ -221,6 +224,8 @@ export default function NewCampaignPage() {
   const isPaidCampaign =
     isEditMode && campaignDetails?.paymentStatus === "paid";
 
+  const emptyQuestion = () => ({ question: "", choices: ["", "", "", ""], correctIndex: 0 });
+
   const defaultFormValues: CampaignFormData = {
     title: "",
     description: "",
@@ -229,18 +234,7 @@ export default function NewCampaignPage() {
     weeksToRun: 1,
     campaignUrl: "",
     image: undefined as any,
-    questions: [
-      {
-        question: "",
-        choices: ["", "", "", ""],
-        correctIndex: 0,
-      },
-      {
-        question: "",
-        choices: ["", "", "", ""],
-        correctIndex: 0,
-      },
-    ],
+    questions: Array(5).fill(null).map(emptyQuestion),
     words: Array(7).fill(""),
   };
 
@@ -257,10 +251,7 @@ export default function NewCampaignPage() {
             choices: q.choices,
             correctIndex: q.correctIndex,
           }))
-        : [
-            { question: "", choices: ["", "", "", ""], correctIndex: 0 },
-            { question: "", choices: ["", "", "", ""], correctIndex: 0 },
-          ];
+        : Array(5).fill(null).map(() => ({ question: "", choices: ["", "", "", ""], correctIndex: 0 }));
 
     const formattedWords =
       campaignDetails.words?.length > 0
@@ -295,6 +286,7 @@ export default function NewCampaignPage() {
     fields: questionFields,
     append: appendQuestion,
     remove: removeQuestion,
+    replace: replaceQuestions,
   } = useFieldArray({
     control: form.control,
     name: "questions",
@@ -413,6 +405,34 @@ export default function NewCampaignPage() {
     },
   });
 
+  const generateQuestionsMutation = useMutation({
+    mutationFn: async (passage: string) => {
+      return axios.post(
+        endpointUrl(ENDPOINTS.GENERATE_QUESTIONS),
+        { passage },
+        { headers: { Authorization: `Bearer ${user?.accessToken}` } }
+      );
+    },
+    onSuccess: (response) => {
+      const questions = response.data.questions as {
+        question: string;
+        choices: string[];
+        correctIndex: number;
+      }[];
+      if (questions?.length) {
+        replaceQuestions(questions.map((q) => ({
+          question: q.question,
+          choices: q.choices,
+          correctIndex: q.correctIndex,
+        })));
+        setGenerateError("");
+      }
+    },
+    onError: () => {
+      setGenerateError("Failed to generate questions. Please try again.");
+    },
+  });
+
   const prepareFormData = (data: CampaignFormData): FormData => {
     const formData = new FormData();
 
@@ -428,6 +448,10 @@ export default function NewCampaignPage() {
 
     if (data.campaignUrl && data.campaignUrl.trim() !== "") {
       formData.append("campaignUrl", data.campaignUrl);
+    }
+
+    if (comprehensionPassage.trim()) {
+      formData.append("passage", comprehensionPassage.trim());
     }
 
     formData.append("questions", JSON.stringify(data.questions));
@@ -476,6 +500,9 @@ export default function NewCampaignPage() {
   useEffect(() => {
     if (campaignDetails?.puzzleImageUrl) {
       setImagePreview(campaignDetails.puzzleImageUrl);
+    }
+    if (campaignDetails?.passage) {
+      setComprehensionPassage(campaignDetails.passage);
     }
   }, [campaignDetails]);
 
@@ -792,12 +819,78 @@ export default function NewCampaignPage() {
                 </Card>
               )}
 
+              {/* AI Question Generation */}
+              <Card className="bg-card/50 backdrop-blur-sm border-white/10">
+                <CardHeader>
+                  <CardTitle className="text-white font-fredoka flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-secondary" />
+                    Brand Passage
+                    <span className="text-white/40 text-xs font-normal ml-1">(optional — for AI generation)</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Textarea
+                      placeholder="Paste a short passage about your brand (max 1000 characters). The AI will generate 5 quiz questions from it..."
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40 min-h-[140px] resize-none"
+                      maxLength={1000}
+                      value={comprehensionPassage}
+                      onChange={(e) => {
+                        setComprehensionPassage(e.target.value);
+                        setGenerateError("");
+                      }}
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/40 text-xs">
+                        {comprehensionPassage.length}/1000 characters
+                      </span>
+                      {generateError && (
+                        <span className="text-red-400 text-xs flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {generateError}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    disabled={
+                      comprehensionPassage.trim().length < 20 ||
+                      generateQuestionsMutation.isPending
+                    }
+                    onClick={() => generateQuestionsMutation.mutate(comprehensionPassage.trim())}
+                    className="w-full bg-secondary/20 hover:bg-secondary/30 border border-secondary/40 text-secondary h-11 font-fredoka disabled:opacity-40"
+                  >
+                    {generateQuestionsMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Generating Questions...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate 5 Questions with AI
+                      </>
+                    )}
+                  </Button>
+
+                  {generateQuestionsMutation.isSuccess && (
+                    <div className="flex items-center gap-2 text-green-400 text-sm">
+                      <CheckCircle className="h-4 w-4" />
+                      5 questions generated — review and edit them below.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Questions */}
               <Card className="bg-card/50 backdrop-blur-sm border-white/10">
                 <CardHeader>
                   <CardTitle className="text-white font-fredoka flex items-center gap-2">
                     <Target className="h-5 w-5 text-secondary" />
                     Campaign Questions
+                    <span className="text-white/40 text-xs font-normal ml-1">(min 5)</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -809,7 +902,7 @@ export default function NewCampaignPage() {
                         <h4 className="text-white font-medium">
                           Question {questionIndex + 1}
                         </h4>
-                        {questionFields.length > 2 && (
+                        {questionFields.length > 5 && (
                           <Button
                             type="button"
                             variant="outline"
@@ -910,11 +1003,7 @@ export default function NewCampaignPage() {
                       variant="outline"
                       className="w-full border-white/20 text-white hover:bg-white/90"
                       onClick={() =>
-                        appendQuestion({
-                          question: "",
-                          choices: ["", "", "", ""],
-                          correctIndex: 0,
-                        })
+                        appendQuestion(emptyQuestion())
                       }>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Question

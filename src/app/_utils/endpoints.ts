@@ -68,6 +68,9 @@ export const ENDPOINTS = {
   BRAND_ANALYTICS: "/brands/analytics",
   APP_ANALYTICS: "/analytics/app",
 
+  // AI
+  GENERATE_QUESTIONS: "/campaigns/generate-questions",
+
   // Packages
   PACKAGES: "/packages",
 

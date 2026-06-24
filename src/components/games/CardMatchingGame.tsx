@@ -322,14 +322,6 @@ export function CardMatchingGame({
     setSelectedAnswer(answerIndex);
   };
 
-  const checkQuizResults = (finalAnswers: number[]) => {
-    const correctAnswers = finalAnswers.filter(
-      (answer, index) =>
-        answer === campaignDetails?.questions[index]?.correctIndex
-    ).length;
-    return correctAnswers === campaignDetails?.questions.length;
-  };
-
   const restartQuiz = () => {
     setCurrentQuestion(0);
     setAnswers([]);
@@ -339,29 +331,27 @@ export function CardMatchingGame({
   };
 
   const handleNextQuestion = () => {
-    if (selectedAnswer !== null) {
-      const newAnswers = [...answers, selectedAnswer];
-      setAnswers(newAnswers);
+    if (selectedAnswer === null) return;
+    const newAnswers = [...answers, selectedAnswer];
+    setAnswers(newAnswers);
+    setSelectedAnswer(null);
 
-      if (currentQuestion < (campaignDetails?.questions.length || 0) - 1) {
-        setCurrentQuestion(currentQuestion + 1);
-        setSelectedAnswer(null);
-      } else {
-        const allCorrect = checkQuizResults(newAnswers);
-        if (allCorrect) {
-          setQuestionsCompleted(true);
-          if (!previewMode) {
-            submitGameMutation.mutate({
-              timeTaken: timeElapsed * 1000,
-              movesTaken: moves,
-              solved: true,
-              answers: newAnswers,
-            });
-          }
-        } else {
-          setShowQuizResults(true);
-        }
-      }
+    if (currentQuestion < (campaignDetails?.questions.length || 0) - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    } else {
+      setShowQuizResults(true);
+    }
+  };
+
+  const handleSubmitResults = () => {
+    setQuestionsCompleted(true);
+    if (!previewMode) {
+      submitGameMutation.mutate({
+        timeTaken: timeElapsed * 1000,
+        movesTaken: moves,
+        solved: true,
+        answers,
+      });
     }
   };
 
@@ -537,111 +527,25 @@ export function CardMatchingGame({
           <Card className="w-full max-w-2xl bg-card/95 border-white/20">
             <CardHeader className="text-center">
               <CardTitle className="text-white font-fredoka text-2xl mb-2">
-                Learn About {campaignDetails?.brandName}
+                {questionsCompleted ? 'Challenge Complete!' : showQuizResults ? 'Quiz Results' : `Learn About ${campaignDetails?.brandName}`}
               </CardTitle>
-              <p className="text-white/70">
-                Question {currentQuestion + 1} of{" "}
-                {campaignDetails?.questions.length || 0}
-              </p>
+              {!showQuizResults && !questionsCompleted && (
+                <p className="text-white/70">
+                  Question {currentQuestion + 1} of {campaignDetails?.questions.length || 0}
+                </p>
+              )}
             </CardHeader>
             <CardContent className="space-y-6">
-              {showQuizResults ? (
-                <div className="text-center space-y-4">
-                  <div className="text-red-400 mb-4">
-                    <h3 className="text-xl font-bold text-white font-fredoka mb-2">
-                      Quiz Results
-                    </h3>
-                    <p className="text-white/80 mb-4">
-                      You got{" "}
-                      {answers.reduce(
-                        (score, answer, index) =>
-                          score +
-                          (answer ===
-                          campaignDetails?.questions[index]?.correctIndex
-                            ? 1
-                            : 0),
-                        0
-                      )}{" "}
-                      out of {campaignDetails?.questions.length || 0} correct.
-                    </p>
-                    <p className="text-white/70 mb-6">
-                      You need to get all questions right to complete the
-                      challenge. Let&apos;s try again!
-                    </p>
-                    {quizAttempts > 0 && (
-                      <p className="text-white/60 text-sm mb-4">
-                        Attempt #{quizAttempts + 1}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex justify-center gap-3">
-                    <Button
-                      onClick={restartQuiz}
-                      className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka px-8">
-                      Try Again
-                    </Button>
-                  </div>
-                </div>
-              ) : !questionsCompleted ? (
-                <>
-                  <div className="text-center">
-                    <h3 className="text-white text-xl mb-4 font-medium">
-                      {campaignDetails?.questions[currentQuestion]?.question}
-                    </h3>
-                  </div>
-                  <div className="grid grid-cols-1 gap-3">
-                    {(
-                      campaignDetails?.questions[currentQuestion]?.choices || []
-                    ).map((option: string, index: number) => (
-                      <Button
-                        key={index}
-                        onClick={() => handleAnswerSelect(index)}
-                        variant={
-                          selectedAnswer === index ? "default" : "outline"
-                        }
-                        className={`p-4 text-left justify-start h-auto ${
-                          selectedAnswer === index
-                            ? "bg-secondary text-secondary-foreground"
-                            : "border-white/20 text-white hover:bg-white/90"
-                        }`}>
-                        <span className="font-medium mr-3">
-                          {String.fromCharCode(65 + index)}.
-                        </span>
-                        {option}
-                      </Button>
-                    ))}
-                  </div>
-                  <div className="flex justify-center pt-4">
-                    <Button
-                      onClick={handleNextQuestion}
-                      disabled={selectedAnswer === null}
-                      className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka px-8">
-                      {currentQuestion <
-                      (campaignDetails?.questions.length || 0) - 1
-                        ? "Next Question"
-                        : "Finish"}
-                    </Button>
-                  </div>
-                </>
-              ) : (
+              {questionsCompleted ? (
                 <div className="text-center space-y-4">
                   <Trophy className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
                   {previewMode ? (
                     <>
-                      <h3 className="text-2xl font-bold text-white font-fredoka">
-                        Preview Complete!
-                      </h3>
-                      <p className="text-white/80 mb-2">
-                        All pairs matched in {formatTime(timeElapsed)} with{" "}
-                        {moves} moves
-                      </p>
-                      <p className="text-white/60">
-                        This is how players will experience your campaign.
-                      </p>
+                      <h3 className="text-2xl font-bold text-white font-fredoka">Preview Complete!</h3>
+                      <p className="text-white/80 mb-2">All pairs matched in {formatTime(timeElapsed)} with {moves} moves</p>
+                      <p className="text-white/60">This is how players will experience your campaign.</p>
                       <div className="flex gap-3 justify-center pt-4">
-                        <Button
-                          onClick={resetGame}
-                          className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka">
+                        <Button onClick={resetGame} className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka">
                           <RotateCcw className="h-4 w-4 mr-2" />
                           Play Again
                         </Button>
@@ -649,26 +553,6 @@ export function CardMatchingGame({
                     </>
                   ) : (
                     <>
-                      <h3 className="text-2xl font-bold text-white font-fredoka">
-                        Great Job!
-                      </h3>
-                      <p className="text-white/80 mb-2">
-                        All pairs matched in {formatTime(timeElapsed)} with{" "}
-                        {moves} moves
-                      </p>
-                      <p className="text-white/70 text-lg">
-                        You scored{" "}
-                        {answers.reduce(
-                          (score, answer, index) =>
-                            score +
-                            (answer ===
-                            campaignDetails?.questions[index]?.correctIndex
-                              ? 1
-                              : 0),
-                          0
-                        )}{" "}
-                        out of {campaignDetails?.questions.length || 0} correct!
-                      </p>
                       {submitGameMutation.isPending && (
                         <div className="flex items-center justify-center gap-2 text-secondary my-4">
                           <Loader2 className="h-4 w-4 animate-spin text-secondary" />
@@ -679,9 +563,7 @@ export function CardMatchingGame({
                         <div className="my-4">
                           <div className="flex items-center justify-center gap-2 text-green-400 mb-2">
                             <CheckCircle className="h-5 w-5" />
-                            <span className="font-semibold">
-                              Results Submitted!
-                            </span>
+                            <span className="font-semibold">Results Submitted!</span>
                           </div>
                           {pointsEarned > 0 ? (
                             <p className="text-2xl font-bold text-secondary font-fredoka">
@@ -695,45 +577,26 @@ export function CardMatchingGame({
                         </div>
                       )}
                       {submitGameMutation.isError && (
-                        <div className="my-4">
-                          <p className="text-red-400 text-sm">
-                            Failed to submit results. Please try again.
-                          </p>
-                        </div>
+                        <p className="text-red-400 text-sm my-4">Failed to submit results. Please try again.</p>
                       )}
-                      <p className="text-white/60">
-                        Thanks for learning more about{" "}
-                        {campaignDetails?.brandName}!
-                      </p>
+                      <p className="text-white/60">Thanks for learning more about {campaignDetails?.brandName}!</p>
                       <div className="flex gap-3 justify-center pt-4">
                         <Link href={routes.USER.DASHBOARD}>
-                          <Button
-                            className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka"
-                            disabled={submitGameMutation.isPending}>
+                          <Button className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka" disabled={submitGameMutation.isPending}>
                             Dashboard
                           </Button>
                         </Link>
                         {(() => {
-                          const nextCampaignUrl = getNextCampaignUrl(
-                            availableCampaigns,
-                            campaignId,
-                            "card_matching"
-                          );
+                          const nextCampaignUrl = getNextCampaignUrl(availableCampaigns, campaignId, "card_matching");
                           return nextCampaignUrl ? (
                             <Link href={nextCampaignUrl}>
-                              <Button
-                                variant="outline"
-                                className="border-white/20 text-white hover:bg-white/90"
-                                disabled={submitGameMutation.isPending}>
+                              <Button variant="outline" className="border-white/20 text-white hover:bg-white/90" disabled={submitGameMutation.isPending}>
                                 Next Campaign
                               </Button>
                             </Link>
                           ) : (
                             <Link href={routes.CAMPAIGNS}>
-                              <Button
-                                variant="outline"
-                                className="border-white/20 text-white hover:bg-white/90"
-                                disabled={submitGameMutation.isPending}>
+                              <Button variant="outline" className="border-white/20 text-white hover:bg-white/90" disabled={submitGameMutation.isPending}>
                                 Browse Campaigns
                               </Button>
                             </Link>
@@ -743,6 +606,76 @@ export function CardMatchingGame({
                     </>
                   )}
                 </div>
+              ) : showQuizResults ? (
+                (() => {
+                  const total = campaignDetails?.questions.length || 0;
+                  const score = answers.reduce((acc, a, i) =>
+                    acc + (a === campaignDetails?.questions[i]?.correctIndex ? 1 : 0), 0);
+                  const allCorrect = score === total;
+                  return (
+                    <div className="text-center space-y-4">
+                      <div className={`text-6xl font-bold font-fredoka mb-2 ${allCorrect ? 'text-green-400' : 'text-secondary'}`}>
+                        {score}/{total}
+                      </div>
+                      {allCorrect ? (
+                        <>
+                          <CheckCircle className="h-12 w-12 text-green-400 mx-auto" />
+                          <h3 className="text-xl font-bold text-white font-fredoka">Perfect Score!</h3>
+                          <p className="text-white/70">You answered all questions correctly. Submit to claim your points!</p>
+                          <Button onClick={handleSubmitResults} className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka px-10 h-12 mt-4">
+                            Submit &amp; See Results
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-white/80">You need a perfect score to complete the challenge.</p>
+                          <p className="text-white/60 text-sm">{quizAttempts > 0 ? `Attempt #${quizAttempts + 1}` : 'Give it another shot!'}</p>
+                          <Button onClick={restartQuiz} className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka px-8 mt-4">
+                            Try Again
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()
+              ) : (
+                <>
+                  {campaignDetails?.passage && (
+                    <div className="bg-white/5 border border-white/10 rounded-lg p-4 mb-2">
+                      <p className="text-white/50 text-xs uppercase tracking-wider mb-2 font-semibold">Read the passage</p>
+                      <p className="text-white/80 text-sm leading-relaxed">{campaignDetails.passage}</p>
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <h3 className="text-white text-xl mb-4 font-medium">
+                      {campaignDetails?.questions[currentQuestion]?.question}
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
+                    {(campaignDetails?.questions[currentQuestion]?.choices || []).map((option: string, index: number) => (
+                      <Button
+                        key={index}
+                        onClick={() => handleAnswerSelect(index)}
+                        variant={selectedAnswer === index ? "default" : "outline"}
+                        className={`p-4 text-left justify-start h-auto ${
+                          selectedAnswer === index
+                            ? "bg-secondary text-secondary-foreground"
+                            : "border-white/20 text-white hover:bg-white/90"
+                        }`}>
+                        <span className="font-medium mr-3">{String.fromCharCode(65 + index)}.</span>
+                        {option}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex justify-center pt-4">
+                    <Button
+                      onClick={handleNextQuestion}
+                      disabled={selectedAnswer === null}
+                      className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka px-8">
+                      {currentQuestion < (campaignDetails?.questions.length || 0) - 1 ? "Next Question" : "Finish Quiz"}
+                    </Button>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>

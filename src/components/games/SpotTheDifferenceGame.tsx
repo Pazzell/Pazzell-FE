@@ -13,7 +13,6 @@ import {
   Play,
   ArrowLeft,
   CheckCircle,
-  XCircle,
   Clock,
   Target,
   Trophy,
@@ -120,10 +119,9 @@ export function SpotTheDifferenceGame({
   // Quiz state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [answerStatus, setAnswerStatus] = useState<"idle" | "correct" | "wrong">(
-    "idle"
-  );
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
+  const [showQuizResults, setShowQuizResults] = useState(false);
+  const [quizAttempts, setQuizAttempts] = useState(0);
 
   const rightPanelRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -181,8 +179,9 @@ export function SpotTheDifferenceGame({
     setStartedAt(null);
     setCurrentQuestionIndex(0);
     setSelectedAnswer(null);
-    setAnswerStatus("idle");
     setQuizAnswers([]);
+    setShowQuizResults(false);
+    setQuizAttempts(0);
   };
 
   const handleStartGame = () => {
@@ -226,45 +225,41 @@ export function SpotTheDifferenceGame({
   const allFound = foundIds.size >= NUM_DIFFS;
 
   const handleAnswerSelect = (choiceIndex: number) => {
-    if (answerStatus === "correct") return;
     setSelectedAnswer(choiceIndex);
-    setAnswerStatus("idle");
   };
 
-  const handleCheckAnswer = () => {
+  const handleNextQuestion = () => {
+    if (selectedAnswer === null) return;
     const questions = campaignDetails.questions || [];
-    const current = questions[currentQuestionIndex];
-    if (!current || selectedAnswer === null) return;
+    const newAnswers = [...quizAnswers, selectedAnswer];
+    setQuizAnswers(newAnswers);
+    setSelectedAnswer(null);
 
-    if (selectedAnswer === current.correctIndex) {
-      setAnswerStatus("correct");
-      const newAnswers = [...quizAnswers, selectedAnswer];
-      setQuizAnswers(newAnswers);
-      setTimeout(() => {
-        if (currentQuestionIndex + 1 < questions.length) {
-          setCurrentQuestionIndex((i) => i + 1);
-          setSelectedAnswer(null);
-          setAnswerStatus("idle");
-        } else {
-          setCurrentQuestionIndex((i) => i + 1);
-        }
-      }, 800);
+    if (currentQuestionIndex + 1 < questions.length) {
+      setCurrentQuestionIndex((i) => i + 1);
     } else {
-      setAnswerStatus("wrong");
-      setTimeout(() => {
-        setSelectedAnswer(null);
-        setAnswerStatus("idle");
-      }, 1200);
+      setShowQuizResults(true);
     }
   };
 
-  const handleSubmit = () => {
-    if (previewMode) return;
+  const restartQuiz = () => {
+    setCurrentQuestionIndex(0);
+    setQuizAnswers([]);
+    setSelectedAnswer(null);
+    setShowQuizResults(false);
+    setQuizAttempts((prev) => prev + 1);
+  };
+
+  const handleSubmit = (finalAnswers: number[]) => {
+    if (previewMode) {
+      setPhase("success");
+      return;
+    }
     submitMutation.mutate({
       timeTaken: elapsedMs,
       movesTaken: foundIds.size,
       solved: true,
-      answers: quizAnswers,
+      answers: finalAnswers,
       differencesFound: Array.from(foundIds).map((id) => {
         const z = diffZones.find((z) => z.id === id)!;
         return { x: z.cx, y: z.cy, width: z.w, height: z.h };
@@ -273,8 +268,6 @@ export function SpotTheDifferenceGame({
   };
 
   const questions = campaignDetails.questions || [];
-  const allQuestionsAnswered =
-    questions.length === 0 || currentQuestionIndex >= questions.length;
 
   // ── IDLE ──────────────────────────────────────────────────────────────────
   if (phase === "idle") {
@@ -402,52 +395,54 @@ export function SpotTheDifferenceGame({
 
   // ── QUIZ ──────────────────────────────────────────────────────────────────
   if (phase === "quiz") {
-    if (allQuestionsAnswered) {
+    const total = questions.length;
+    const score = quizAnswers.reduce((acc, a, i) =>
+      acc + (a === questions[i]?.correctIndex ? 1 : 0), 0);
+    const allCorrect = score === total;
+    const current = questions[currentQuestionIndex];
+
+    if (showQuizResults) {
       return (
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col items-center justify-center py-16 gap-6">
-            {questions.length > 0 && (
+        <div className="max-w-2xl mx-auto py-8">
+          <div className="bg-card/50 backdrop-blur-sm border border-white/10 rounded-2xl p-8 space-y-6 text-center">
+            <h2 className="text-2xl font-bold text-white font-fredoka">Quiz Results</h2>
+            <div className={`text-6xl font-bold font-fredoka ${allCorrect ? 'text-green-400' : 'text-secondary'}`}>
+              {score}/{total}
+            </div>
+            {allCorrect ? (
               <>
-                <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <CheckCircle className="w-8 h-8 text-green-400" />
-                </div>
-                <div className="text-center">
-                  <h2 className="text-2xl font-bold text-white font-fredoka">
-                    Quiz Complete!
-                  </h2>
-                  <p className="text-white/70 mt-2">
-                    You answered all questions correctly. Submit to save your
-                    results.
-                  </p>
-                </div>
+                <CheckCircle className="w-12 h-12 text-green-400 mx-auto" />
+                <p className="text-white font-bold text-xl font-fredoka">Perfect Score!</p>
+                <p className="text-white/70">You answered all questions correctly. Submit to claim your points!</p>
+                {submitMutation.isError && (
+                  <p className="text-red-400 text-sm">Submission failed — please try again.</p>
+                )}
+                <Button
+                  onClick={() => handleSubmit(quizAnswers)}
+                  disabled={submitMutation.isPending}
+                  className="px-10 py-5 text-lg font-fredoka bg-secondary hover:bg-secondary/80 text-secondary-foreground flex items-center gap-2 mx-auto">
+                  {submitMutation.isPending ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" />Submitting…</>
+                  ) : (
+                    "Submit & See Results"
+                  )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-white/80">You need a perfect score to complete the challenge.</p>
+                <p className="text-white/60 text-sm">{quizAttempts > 0 ? `Attempt #${quizAttempts + 1}` : 'Give it another shot!'}</p>
+                <Button
+                  onClick={restartQuiz}
+                  className="px-10 py-4 font-fredoka bg-secondary hover:bg-secondary/80 text-secondary-foreground mx-auto">
+                  Try Again
+                </Button>
               </>
             )}
-
-            {submitMutation.isError && (
-              <p className="text-red-400 text-sm">
-                Submission failed — please try again.
-              </p>
-            )}
-
-            <Button
-              onClick={handleSubmit}
-              disabled={submitMutation.isPending}
-              className="px-10 py-5 text-lg font-fredoka bg-secondary hover:bg-secondary/80 text-secondary-foreground flex items-center gap-2">
-              {submitMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Submitting…
-                </>
-              ) : (
-                "Submit"
-              )}
-            </Button>
           </div>
         </div>
       );
     }
-
-    const current = questions[currentQuestionIndex];
 
     return (
       <div className="max-w-2xl mx-auto py-8">
@@ -461,60 +456,42 @@ export function SpotTheDifferenceGame({
                 <div
                   key={i}
                   className={`w-2.5 h-2.5 rounded-full ${
-                    i < currentQuestionIndex
-                      ? "bg-green-400"
-                      : i === currentQuestionIndex
-                      ? "bg-secondary"
-                      : "bg-white/20"
+                    i < currentQuestionIndex ? "bg-secondary" : i === currentQuestionIndex ? "bg-white" : "bg-white/20"
                   }`}
                 />
               ))}
             </div>
           </div>
 
-          <h3 className="text-xl font-bold text-white font-fredoka">
-            {current.question}
-          </h3>
-
-          <div className="space-y-3">
-            {current.choices.map((choice, idx) => {
-              let cls =
-                "w-full text-left px-5 py-4 rounded-xl border transition-all duration-200 text-white ";
-              if (answerStatus === "correct" && idx === current.correctIndex)
-                cls += "bg-green-500/20 border-green-500/60 text-green-300";
-              else if (answerStatus === "wrong" && idx === selectedAnswer)
-                cls += "bg-red-500/20 border-red-500/60 text-red-300";
-              else if (selectedAnswer === idx)
-                cls += "bg-secondary/20 border-secondary";
-              else
-                cls += "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/30";
-              return (
-                <button
-                  key={idx}
-                  className={cls}
-                  onClick={() => handleAnswerSelect(idx)}
-                  disabled={answerStatus === "correct"}>
-                  <span className="font-semibold">
-                    {String.fromCharCode(65 + idx)}.
-                  </span>{" "}
-                  {choice}
-                </button>
-              );
-            })}
-          </div>
-
-          {answerStatus === "wrong" && (
-            <p className="text-red-400 text-sm flex items-center gap-2">
-              <XCircle className="w-4 h-4 flex-shrink-0" />
-              Incorrect answer, please try again.
-            </p>
+          {campaignDetails.passage && (
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <p className="text-white/50 text-xs uppercase tracking-wider mb-2 font-semibold">Read the passage</p>
+              <p className="text-white/80 text-sm leading-relaxed">{campaignDetails.passage}</p>
+            </div>
           )}
 
+          <h3 className="text-xl font-bold text-white font-fredoka">{current.question}</h3>
+
+          <div className="space-y-3">
+            {current.choices.map((choice, idx) => (
+              <button
+                key={idx}
+                className={`w-full text-left px-5 py-4 rounded-xl border transition-all duration-200 text-white ${
+                  selectedAnswer === idx
+                    ? "bg-secondary/20 border-secondary"
+                    : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/30"
+                }`}
+                onClick={() => handleAnswerSelect(idx)}>
+                <span className="font-semibold">{String.fromCharCode(65 + idx)}.</span>{" "}{choice}
+              </button>
+            ))}
+          </div>
+
           <Button
-            onClick={handleCheckAnswer}
-            disabled={selectedAnswer === null || answerStatus === "correct"}
-            className="w-full py-3 font-fredoka text-base">
-            Check Answer
+            onClick={handleNextQuestion}
+            disabled={selectedAnswer === null}
+            className="w-full py-3 font-fredoka text-base bg-secondary hover:bg-secondary/80 text-secondary-foreground">
+            {currentQuestionIndex < questions.length - 1 ? "Next Question" : "Finish Quiz"}
           </Button>
         </div>
       </div>

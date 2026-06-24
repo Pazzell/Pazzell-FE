@@ -60,6 +60,8 @@ export function WordHuntGame({ campaignDetails, campaignId, previewMode = false 
   const [answers, setAnswers] = useState<number[]>([])
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [questionsCompleted, setQuestionsCompleted] = useState(false)
+  const [showQuizResults, setShowQuizResults] = useState(false)
+  const [quizAttempts, setQuizAttempts] = useState(0)
   const [pointsEarned, setPointsEarned] = useState(0)
 
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -290,6 +292,8 @@ export function WordHuntGame({ campaignDetails, campaignId, previewMode = false 
     setAnswers([])
     setSelectedAnswer(null)
     setQuestionsCompleted(false)
+    setShowQuizResults(false)
+    setQuizAttempts(0)
     setPointsEarned(0)
   }
 
@@ -297,36 +301,39 @@ export function WordHuntGame({ campaignDetails, campaignId, previewMode = false 
     setSelectedAnswer(answerIndex)
   }
 
+  const restartQuiz = () => {
+    setCurrentQuestion(0)
+    setAnswers([])
+    setSelectedAnswer(null)
+    setShowQuizResults(false)
+    setQuizAttempts(prev => prev + 1)
+  }
+
   const handleNextQuestion = () => {
-    const newAnswers = [...answers]
-    newAnswers[currentQuestion] = selectedAnswer!
+    if (selectedAnswer === null) return
+    const newAnswers = [...answers, selectedAnswer]
     setAnswers(newAnswers)
     setSelectedAnswer(null)
 
     if (campaignDetails?.questions && currentQuestion < campaignDetails.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1)
     } else {
-      setQuestionsCompleted(true)
-      if (!previewMode) {
-        submitGameMutation.mutate({
-          timeTaken: timeElapsed * 1000,
-          movesTaken: foundWords.length,
-          solved: true,
-          answers: newAnswers
-        })
-      }
+      setShowQuizResults(true)
     }
   }
 
-  const calculateScore = () => {
-    if (!campaignDetails?.questions) return 0
-    return answers.reduce((score, answer, index) => {
-      const questionCorrectAnswer = campaignDetails.questions[index]?.options?.findIndex(
-        (option: any) => option.isCorrect
-      )
-      return score + (answer === questionCorrectAnswer ? 1 : 0)
-    }, 0)
+  const handleSubmitResults = () => {
+    setQuestionsCompleted(true)
+    if (!previewMode) {
+      submitGameMutation.mutate({
+        timeTaken: timeElapsed * 1000,
+        movesTaken: foundWords.length,
+        solved: true,
+        answers,
+      })
+    }
   }
+
 
   const isSelected = (row: number, col: number) => {
     return selectedCells.some(cell => cell.row === row && cell.col === col)
@@ -543,127 +550,156 @@ export function WordHuntGame({ campaignDetails, campaignId, previewMode = false 
       </div>
 
       {/* Brand Questions Modal */}
-      {showQuestions && !questionsCompleted && campaignDetails?.questions && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <Card className="bg-card/95 backdrop-blur-sm border-white/10 w-full max-w-2xl mx-4">
+      {showQuestions && campaignDetails?.questions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <Card className="bg-card/95 backdrop-blur-sm border-white/10 w-full max-w-2xl">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-white font-fredoka text-2xl">Brand Quiz</CardTitle>
-                  <CardDescription className="text-white/70">
-                    Answer questions about {campaignDetails.brandName} to complete the challenge
-                  </CardDescription>
+                  <CardTitle className="text-white font-fredoka text-2xl">
+                    {questionsCompleted ? 'Challenge Complete!' : showQuizResults ? 'Quiz Results' : 'Brand Quiz'}
+                  </CardTitle>
+                  {!showQuizResults && !questionsCompleted && (
+                    <CardDescription className="text-white/70">
+                      Answer questions about {campaignDetails.brandName} to complete the challenge
+                    </CardDescription>
+                  )}
                 </div>
-                <Badge className="bg-secondary/20 text-secondary border-secondary/30">
-                  {currentQuestion + 1} / {campaignDetails.questions.length}
-                </Badge>
+                {!showQuizResults && !questionsCompleted && (
+                  <Badge className="bg-secondary/20 text-secondary border-secondary/30">
+                    {currentQuestion + 1} / {campaignDetails.questions.length}
+                  </Badge>
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="text-center">
-                <h3 className="text-xl font-semibold text-white mb-6">
-                  {campaignDetails.questions[currentQuestion]?.questionText}
-                </h3>
-
-                <div className="grid grid-cols-1 gap-3">
-                  {campaignDetails.questions[currentQuestion]?.options?.map((option: any, index: number) => (
-                    <button
-                      key={index}
-                      onClick={() => handleAnswerSelect(index)}
-                      className={`p-4 rounded-lg text-left transition-all ${
-                        selectedAnswer === index
-                          ? 'bg-secondary/20 border-2 border-secondary text-white'
-                          : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/90 hover:text-white'
-                      }`}
-                    >
-                      <span className="font-medium">{String.fromCharCode(65 + index)}.</span> {option.optionText}
-                    </button>
-                  )) || []}
+              {questionsCompleted ? (
+                <div className="text-center space-y-4">
+                  <Trophy className="h-16 w-16 text-yellow-400 mx-auto mb-4 animate-bounce" />
+                  {previewMode ? (
+                    <>
+                      <h3 className="text-2xl font-bold text-white font-fredoka">Preview Complete!</h3>
+                      <p className="text-white/80">All words found in {formatTime(timeElapsed)}</p>
+                      <p className="text-white/60">This is how players will experience your campaign.</p>
+                      <Button onClick={resetGame} className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka mt-4">
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Play Again
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      {submitGameMutation.isPending && (
+                        <div className="flex items-center justify-center gap-2 text-secondary">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Submitting results...</span>
+                        </div>
+                      )}
+                      {submitGameMutation.isSuccess && (
+                        <div className="text-center">
+                          <div className="flex items-center justify-center gap-2 text-green-400 mb-2">
+                            <CheckCircle className="h-5 w-5" />
+                            <span className="font-semibold">Results Submitted!</span>
+                          </div>
+                          {pointsEarned > 0 ? (
+                            <p className="text-2xl font-bold text-secondary font-fredoka">+{pointsEarned} Points Earned!</p>
+                          ) : (
+                            <p className="text-sm text-yellow-300/90 bg-yellow-500/15 border border-yellow-500/40 rounded-lg px-4 py-2">
+                              You already earned points for this campaign today. Come back tomorrow!
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      {submitGameMutation.isError && (
+                        <p className="text-red-400 text-sm">Failed to submit results. Please try again.</p>
+                      )}
+                      <div className="flex gap-3 justify-center pt-2">
+                        <Link href={routes.USER.DASHBOARD}>
+                          <Button className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka" disabled={submitGameMutation.isPending}>
+                            Dashboard
+                          </Button>
+                        </Link>
+                        <Link href={routes.CAMPAIGNS}>
+                          <Button variant="outline" className="border-secondary text-white hover:bg-secondary hover:text-secondary-foreground" disabled={submitGameMutation.isPending}>
+                            More Campaigns
+                          </Button>
+                        </Link>
+                      </div>
+                    </>
+                  )}
                 </div>
-              </div>
-
-              <div className="flex justify-end">
-                <Button
-                  onClick={handleNextQuestion}
-                  disabled={selectedAnswer === null}
-                  className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {currentQuestion === campaignDetails.questions.length - 1 ? 'Complete Quiz' : 'Next Question'}
-                </Button>
-              </div>
+              ) : showQuizResults ? (
+                (() => {
+                  const total = campaignDetails.questions.length
+                  const score = answers.reduce((acc, a, i) =>
+                    acc + (a === campaignDetails.questions[i]?.correctIndex ? 1 : 0), 0)
+                  const allCorrect = score === total
+                  return (
+                    <div className="text-center space-y-4">
+                      <div className={`text-6xl font-bold font-fredoka mb-2 ${allCorrect ? 'text-green-400' : 'text-secondary'}`}>
+                        {score}/{total}
+                      </div>
+                      {allCorrect ? (
+                        <>
+                          <CheckCircle className="h-12 w-12 text-green-400 mx-auto" />
+                          <h3 className="text-xl font-bold text-white font-fredoka">Perfect Score!</h3>
+                          <p className="text-white/70">You answered all questions correctly. Submit to claim your points!</p>
+                          <Button onClick={handleSubmitResults} className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka px-10 h-12 mt-4">
+                            Submit &amp; See Results
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-white/80">You need a perfect score to complete the challenge.</p>
+                          <p className="text-white/60 text-sm">{quizAttempts > 0 ? `Attempt #${quizAttempts + 1}` : 'Give it another shot!'}</p>
+                          <Button onClick={restartQuiz} className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka px-8 mt-4">
+                            Try Again
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  )
+                })()
+              ) : (
+                <>
+                  {campaignDetails.passage && (
+                    <div className="bg-white/5 border border-white/10 rounded-lg p-4 mb-2">
+                      <p className="text-white/50 text-xs uppercase tracking-wider mb-2 font-semibold">Read the passage</p>
+                      <p className="text-white/80 text-sm leading-relaxed">{campaignDetails.passage}</p>
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <h3 className="text-xl font-semibold text-white mb-6">
+                      {campaignDetails.questions[currentQuestion]?.question}
+                    </h3>
+                    <div className="grid grid-cols-1 gap-3">
+                      {(campaignDetails.questions[currentQuestion]?.choices || []).map((choice: string, index: number) => (
+                        <button
+                          key={index}
+                          onClick={() => handleAnswerSelect(index)}
+                          className={`p-4 rounded-lg text-left transition-all ${
+                            selectedAnswer === index
+                              ? 'bg-secondary/20 border-2 border-secondary text-white'
+                              : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          <span className="font-medium">{String.fromCharCode(65 + index)}.</span> {choice}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleNextQuestion}
+                      disabled={selectedAnswer === null}
+                      className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {currentQuestion === campaignDetails.questions.length - 1 ? 'Finish Quiz' : 'Next Question'}
+                    </Button>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
-        </div>
-      )}
-
-      {/* Win Overlay */}
-      {isSolved && questionsCompleted && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
-          <Trophy className="h-16 w-16 text-yellow-400 mb-4 animate-bounce" />
-          {previewMode ? (
-            <>
-              <h2 className="text-3xl font-bold text-white mb-2 font-fredoka">Preview Complete!</h2>
-              <p className="text-white/80 mb-2">All words found in {formatTime(timeElapsed)}</p>
-              <p className="text-white/60 mb-6">This is how players will experience your campaign.</p>
-              <div className="flex gap-3">
-                <Button onClick={resetGame} className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka">
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Play Again
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h2 className="text-3xl font-bold text-white mb-2 font-fredoka">Completed!</h2>
-              <p className="text-white/80 mb-2">All words found in {formatTime(timeElapsed)}</p>
-              <p className="text-white/60 mb-4">Quiz Score: {calculateScore()}/{campaignDetails?.questions?.length || 0}</p>
-
-              {submitGameMutation.isPending && (
-                <div className="flex items-center gap-2 text-secondary mb-4">
-                  <Loader2 className="h-4 w-4 animate-spin text-secondary" />
-                  <span>Submitting results...</span>
-                </div>
-              )}
-
-              {submitGameMutation.isSuccess && (
-                <div className="text-center mb-6">
-                  <div className="flex items-center justify-center gap-2 text-green-400 mb-2">
-                    <CheckCircle className="h-5 w-5" />
-                    <span className="font-semibold">Results Submitted!</span>
-                  </div>
-                  <p className="text-2xl font-bold text-secondary font-fredoka">
-                    +{pointsEarned} Points Earned!
-                  </p>
-                </div>
-              )}
-
-              {submitGameMutation.isError && (
-                <div className="text-center mb-6">
-                  <p className="text-red-400 text-sm">Failed to submit results. Please try again.</p>
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <Link href={routes.USER.DASHBOARD}>
-                  <Button
-                    className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka"
-                    disabled={submitGameMutation.isPending}
-                  >
-                    Dashboard
-                  </Button>
-                </Link>
-                <Link href={routes.CAMPAIGNS}>
-                  <Button
-                    variant="outline"
-                    className="border-secondary text-white hover:bg-secondary hover:text-secondary-foreground"
-                    disabled={submitGameMutation.isPending}
-                  >
-                    More Campaigns
-                  </Button>
-                </Link>
-              </div>
-            </>
-          )}
         </div>
       )}
     </>

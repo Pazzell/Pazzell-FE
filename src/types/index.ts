@@ -93,6 +93,7 @@ export interface CampaignData {
   cardImages?: string[];
   timeLimit: number; // in hours
   questions: CampaignQuestion[];
+  passage?: string;
   words: string[];
   createdAt: string;
   endDate: string;
