@@ -13,6 +13,7 @@ import {
   Play,
   ArrowLeft,
   CheckCircle,
+  XCircle,
   Clock,
   Target,
   Trophy,
