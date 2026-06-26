@@ -665,12 +665,12 @@ export function SpotTheDifferenceGame({
             {wrongClicks.map((click) => (
               <div
                 key={click.id}
-                className="absolute pointer-events-none -translate-x-1/2 -translate-y-1/2 animate-ping"
+                className="absolute pointer-events-none -translate-x-1/2 -translate-y-1/2 [animation:ping_0.9s_ease-out_1_forwards]"
                 style={{
                   left: `${click.x * 100}%`,
                   top: `${click.y * 100}%`,
                 }}>
-                <XCircle className="w-6 h-6 text-red-400" />
+                <XCircle className="w-8 h-8 text-red-400 drop-shadow-lg" />
               </div>
             ))}
           </div>

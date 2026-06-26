@@ -410,26 +410,39 @@ export default function NewCampaignPage() {
       return axios.post(
         endpointUrl(ENDPOINTS.GENERATE_QUESTIONS),
         { passage },
-        { headers: { Authorization: `Bearer ${user?.accessToken}` } }
+        {
+          headers: {
+            Authorization: `Bearer ${user?.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
       );
     },
     onSuccess: (response) => {
-      const questions = response.data.questions as {
+      // Backend may return { questions: [...] } or { data: { questions: [...] } }
+      const payload = response.data?.data ?? response.data;
+      const questions = payload?.questions as {
         question: string;
         choices: string[];
         correctIndex: number;
       }[];
       if (questions?.length) {
-        replaceQuestions(questions.map((q) => ({
-          question: q.question,
-          choices: q.choices,
-          correctIndex: q.correctIndex,
-        })));
+        replaceQuestions(
+          questions.map((q) => ({
+            question: q.question,
+            choices: q.choices,
+            correctIndex: q.correctIndex,
+          }))
+        );
         setGenerateError("");
+      } else {
+        setGenerateError("AI returned no questions. Check your passage and try again.");
       }
     },
-    onError: () => {
-      setGenerateError("Failed to generate questions. Please try again.");
+    onError: (error: unknown) => {
+      const msg =
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setGenerateError(msg ?? "Failed to generate questions. Please try again.");
     },
   });
 
