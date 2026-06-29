@@ -98,24 +98,24 @@ export function FloatingAnalytics() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Activity className="w-3 h-3 text-green-400" />
-                  <span className="text-white font-semibold">{analytics?.currentlyPlaying || 0}</span>
+                  <GamepadIcon className="w-3 h-3 text-yellow-400" />
+                  <span className="text-white font-semibold">{analytics?.totalGamesPlayed || 0}</span>
                 </div>
-                <span className="text-xs text-white/60">Playing</span>
+                <span className="text-xs text-white/60">Total</span>
               </div>
-              {/* <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="w-3 h-3 text-blue-400" />
-                  <span className="text-white font-semibold">{analytics?.onlineUsers || 0}</span>
-                </div>
-                <span className="text-xs text-white/60">Online</span>
-              </div> */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Puzzle className="w-3 h-3 text-purple-400" />
                   <span className="text-white font-semibold">{analytics?.gamesPlayedToday || 0}</span>
                 </div>
                 <span className="text-xs text-white/60">Today</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="w-3 h-3 text-blue-400" />
+                  <span className="text-white font-semibold">{analytics?.onlineUsers || 0}</span>
+                </div>
+                <span className="text-xs text-white/60">Online</span>
               </div>
             </div>
           )}
