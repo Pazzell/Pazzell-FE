@@ -835,16 +835,23 @@ export default function NewCampaignPage() {
               {/* AI Question Generation */}
               <Card className="bg-card/50 backdrop-blur-sm border-white/10">
                 <CardHeader>
-                  <CardTitle className="text-white font-fredoka flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-secondary" />
-                    Brand Passage
-                    <span className="text-white/40 text-xs font-normal ml-1">(optional — for AI generation)</span>
-                  </CardTitle>
+                  <div className="flex items-start justify-between gap-4">
+                    <CardTitle className="text-white font-fredoka flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-secondary" />
+                      Brand Passage
+                    </CardTitle>
+                    <span className="shrink-0 text-xs font-medium px-2 py-0.5 rounded-full bg-secondary/10 border border-secondary/30 text-secondary/80">
+                      Optional — AI shortcut
+                    </span>
+                  </div>
+                  <p className="text-white/50 text-sm mt-1">
+                    Paste a passage and let AI pre-fill your questions. If AI is unavailable, skip this and fill in the questions below manually.
+                  </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Textarea
-                      placeholder="Paste a short passage about your brand (max 1000 characters). The AI will generate 5 quiz questions from it..."
+                      placeholder="Paste a short passage about your brand (max 1000 characters)..."
                       className="bg-white/5 border-white/10 text-white placeholder:text-white/40 min-h-[140px] resize-none"
                       maxLength={1000}
                       value={comprehensionPassage}
@@ -860,7 +867,7 @@ export default function NewCampaignPage() {
                       {generateError && (
                         <span className="text-red-400 text-xs flex items-center gap-1">
                           <AlertCircle className="h-3 w-3" />
-                          {generateError}
+                          {generateError} — fill in questions below instead.
                         </span>
                       )}
                     </div>
@@ -891,11 +898,25 @@ export default function NewCampaignPage() {
                   {generateQuestionsMutation.isSuccess && (
                     <div className="flex items-center gap-2 text-green-400 text-sm">
                       <CheckCircle className="h-4 w-4" />
-                      5 questions generated — review and edit them below.
+                      Questions pre-filled below — review and edit before submitting.
+                    </div>
+                  )}
+
+                  {generateQuestionsMutation.isError && (
+                    <div className="flex items-start gap-2 text-amber-400 text-sm p-3 bg-amber-400/10 rounded-lg border border-amber-400/20">
+                      <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                      <span>AI service is currently unavailable. You can still fill in your questions manually in the section below.</span>
                     </div>
                   )}
                 </CardContent>
               </Card>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-white/30 text-xs uppercase tracking-widest">or fill in manually</span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
 
               {/* Questions */}
               <Card className="bg-card/50 backdrop-blur-sm border-white/10">
