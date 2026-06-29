@@ -340,20 +340,24 @@ export interface PrizeTableResponse {
 export interface LeaderboardEntry {
   position: number;
   userId: string;
+  fullName: string;
   username?: string;
   avatar?: string;
   points: number;
   puzzlesSolved: number;
   avgTime?: number | null;
-  prize?: number | null;
+  prizeAmount?: number | null;
 }
 
 export interface MonthlyLeaderboardResponse {
   success: true;
-  month: string;
-  entries: LeaderboardEntry[];
-  prizeStructure?: number[];
-  jackpot?: { amount: number; drawn: boolean; winnerUserId?: string };
+  leaderboard: {
+    type: string;
+    monthKey: string;
+    totalPlayers: number;
+    entries: LeaderboardEntry[];
+    jackpot?: { amount: number; note: string };
+  };
 }
 
 export interface ReferralAnalytics {

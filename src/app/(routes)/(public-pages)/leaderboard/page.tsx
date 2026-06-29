@@ -11,8 +11,6 @@ import { ENDPOINTS } from "@/app/_utils/endpoints";
 import {
   MonthlyLeaderboardResponse,
   LeaderboardEntry,
-  PrizeTableData,
-  PrizeTableResponse,
 } from "@/types";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/atom/user";
@@ -83,27 +81,6 @@ export default function LeaderboardPage() {
         }),
   });
 
-  const {
-    data: prizeTableData,
-    error: prizeTableError,
-    isLoading: loadingPrizeTable,
-  } = useQuery<PrizeTableData>({
-    queryKey: ["prize-table"],
-    queryFn: () =>
-      axios
-        .get<PrizeTableResponse>(
-          endpointUrl(`${ENDPOINTS.DAILY_PRIZE_TABLE}`),
-          {
-            headers: {
-              Authorization: `Bearer ${user?.accessToken}`,
-            },
-          }
-        )
-        .then((res) => {
-          return res.data.prizeTable;
-        }),
-  });
-
   // Calculate days until next month reset (first day of next month)
   const today = new Date();
   const firstOfNextMonth = new Date(
@@ -117,13 +94,12 @@ export default function LeaderboardPage() {
 
   // Transform leaderboard entries to include initials
   const leaderboardData: (LeaderboardEntry & { initials?: string })[] =
-    leaderboardResponse?.entries?.map((entry) => ({
+    leaderboardResponse?.leaderboard?.entries?.map((entry) => ({
       ...entry,
-      initials: entry.username ? getInitials(entry.username) : undefined,
+      initials: entry.fullName ? getInitials(entry.fullName) : undefined,
     })) || [];
 
-  const monthLabel = leaderboardResponse?.month || "";
-  const prizeStructure = leaderboardResponse?.prizeStructure || [];
+  const monthLabel = leaderboardResponse?.leaderboard?.monthKey || "";
 
   if (loadingLeaderboard || !leaderboardResponse) {
     return <PageLoader message="Loading leaderboard..." />;
@@ -166,7 +142,7 @@ export default function LeaderboardPage() {
         </p>
         {monthLabel && (
           <p className="text-white/60 text-xs sm:text-sm mb-4 px-4">
-            Month: {monthLabel} • {leaderboardData.length} players
+            Month: {monthLabel} • {leaderboardResponse?.leaderboard?.totalPlayers ?? leaderboardData.length} players
           </p>
         )}
 
@@ -330,14 +306,7 @@ export default function LeaderboardPage() {
                 <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-3">
                   <div className="text-left sm:text-right">
                     <p className="text-white font-bold text-lg font-fredoka">
-                      ₦
-                      {(
-                        (player.prize ??
-                          prizeTable?.find(
-                            (prize) => prize.position === player.position
-                          )?.amount) ||
-                        0
-                      ).toLocaleString()}
+                      ₦{(player.prizeAmount ?? 0).toLocaleString()}
                     </p>
                     <p className="text-white/60 text-xs">this month</p>
                   </div>
