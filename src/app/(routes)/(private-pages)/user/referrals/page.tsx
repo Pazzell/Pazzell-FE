@@ -21,6 +21,7 @@ import {
   Medal,
   Gift,
   UserPlus,
+  Zap,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -29,7 +30,7 @@ import { ENDPOINTS } from "@/app/_utils/endpoints";
 import {
   ReferralEventsResponse,
   ReferralSummaryResponse,
-  UserMeResponse,
+  GamerProfileResponse,
 } from "@/types";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/atom/user";
@@ -71,10 +72,10 @@ export default function ReferralsPage() {
 
   // Own referral stats for the current month
   const { data: userMeData, isLoading: loadingMe } = useQuery({
-    queryKey: ["user-me"],
+    queryKey: ["gamer-profile"],
     queryFn: () =>
       axios
-        .get<UserMeResponse>(endpointUrl(ENDPOINTS.USER_ME), {
+        .get<GamerProfileResponse>(endpointUrl(ENDPOINTS.GAMER_PROFILE), {
           headers: { Authorization: `Bearer ${user?.accessToken}` },
         })
         .then((res) => res.data),
@@ -104,7 +105,8 @@ export default function ReferralsPage() {
   });
 
   const referralStats = userMeData?.profile?.analytics?.referral;
-  const myReferralCount = referralStats?.successfulCount ?? 0;
+  const myReferralCount = referralStats?.successfulReferrals ?? 0;
+  const myPointsEarned = referralStats?.totalPointsEarned ?? 0;
   const myRank = referralStats?.leaderboardPosition ?? null;
 
   const leaderboard = [...(summaryData?.summary || [])].sort(
@@ -205,7 +207,7 @@ export default function ReferralsPage() {
         </Card>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <Card className="bg-card/50 backdrop-blur-sm border-white/10">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -217,13 +219,30 @@ export default function ReferralsPage() {
                     {myReferralCount}
                   </p>
                   <p className="text-xs text-white/60 uppercase tracking-wider">
-                    Successful Referrals
+                    Referrals
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card className="bg-card/50 backdrop-blur-sm border-white/10">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-500/20 rounded-lg">
+                  <Zap className="h-5 w-5 text-green-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-white font-fredoka">
+                    {myPointsEarned.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-white/60 uppercase tracking-wider">
+                    Points Earned
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-card/50 backdrop-blur-sm border-white/10 col-span-2 sm:col-span-1">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-yellow-500/20 rounded-lg">

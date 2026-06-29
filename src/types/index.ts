@@ -362,14 +362,21 @@ export interface MonthlyLeaderboardResponse {
 
 export interface ReferralAnalytics {
   monthKey: string;
-  successfulCount: number;
-  pointsEarned: number;
+  totalReferrals: number;
+  successfulReferrals: number;
+  pendingReferrals: number;
+  totalPointsEarned: number;
   leaderboardPosition: number | null;
 }
 
-export interface UserMeResponse {
+export interface GamerProfileResponse {
+  success: true;
   profile: {
+    _id: string;
+    firstName: string;
+    lastName: string;
     username: string;
+    avatar?: string;
     analytics: {
       referral: ReferralAnalytics;
     };
