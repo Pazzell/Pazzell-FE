@@ -68,41 +68,48 @@ import {
 
 // ── Billing period helpers ─────────────────────────────────────────────────
 
-function getBillingMonthOptions(): {
-  value: string;
-  label: string;
-  isCurrentMonth: boolean;
-}[] {
+const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+/** Returns 12 rolling months from today, labelled "Jan-end", "Feb-end", etc. */
+function getBillingMonthEndOptions(): { value: string; label: string }[] {
   const today = new Date();
   const options = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 12; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
     const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleString("default", { month: "long", year: "numeric" });
-    options.push({ value, label: i === 0 ? `${label} (pro-rated)` : label, isCurrentMonth: i === 0 });
+    options.push({ value, label: `${MONTH_SHORT[d.getMonth()]}-end` });
   }
   return options;
 }
+
+const ALL_BILLING_OPTIONS = getBillingMonthEndOptions();
+
+/** Today as YYYY-MM-DD for the date input min attribute. */
+const TODAY_STR = new Date().toISOString().slice(0, 10);
 
 function daysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
 }
 
-function calculateProratedCost(billingEndMonth: string, monthlyRate: number): number {
-  if (!billingEndMonth) return 0;
-  const today = new Date();
+function calculateProratedCost(
+  startDateStr: string,
+  billingEndMonth: string,
+  monthlyRate: number
+): number {
+  if (!startDateStr || !billingEndMonth) return 0;
+  const start = new Date(startDateStr);
   const endYear = parseInt(billingEndMonth.slice(0, 4));
   const endMonth = parseInt(billingEndMonth.slice(5, 7)) - 1;
 
   let total = 0;
-  let year = today.getFullYear();
-  let month = today.getMonth();
+  let year = start.getFullYear();
+  let month = start.getMonth();
   let first = true;
 
   while (year < endYear || (year === endYear && month <= endMonth)) {
+    const dim = daysInMonth(year, month);
     if (first) {
-      const dim = daysInMonth(year, month);
-      const remaining = dim - today.getDate() + 1;
+      const remaining = dim - start.getDate() + 1;
       total += (remaining / dim) * monthlyRate;
       first = false;
     } else {
@@ -114,23 +121,27 @@ function calculateProratedCost(billingEndMonth: string, monthlyRate: number): nu
   return Math.round(total);
 }
 
-function getProratedBreakdown(billingEndMonth: string, monthlyRate: number): { label: string; amount: number }[] {
-  if (!billingEndMonth) return [];
-  const today = new Date();
+function getProratedBreakdown(
+  startDateStr: string,
+  billingEndMonth: string,
+  monthlyRate: number
+): { label: string; amount: number }[] {
+  if (!startDateStr || !billingEndMonth) return [];
+  const start = new Date(startDateStr);
   const endYear = parseInt(billingEndMonth.slice(0, 4));
   const endMonth = parseInt(billingEndMonth.slice(5, 7)) - 1;
 
   const rows: { label: string; amount: number }[] = [];
-  let year = today.getFullYear();
-  let month = today.getMonth();
+  let year = start.getFullYear();
+  let month = start.getMonth();
   let first = true;
 
   while (year < endYear || (year === endYear && month <= endMonth)) {
     const d = new Date(year, month, 1);
     const monthName = d.toLocaleString("default", { month: "long", year: "numeric" });
+    const dim = daysInMonth(year, month);
     if (first) {
-      const dim = daysInMonth(year, month);
-      const remaining = dim - today.getDate() + 1;
+      const remaining = dim - start.getDate() + 1;
       const amount = Math.round((remaining / dim) * monthlyRate);
       rows.push({ label: `${monthName} (${remaining}/${dim} days, pro-rated)`, amount });
       first = false;
@@ -143,14 +154,17 @@ function getProratedBreakdown(billingEndMonth: string, monthlyRate: number): { l
   return rows;
 }
 
-function calculateTimeLimitHours(billingEndMonth: string): number {
-  if (!billingEndMonth) return 0;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+function calculateTimeLimitHours(
+  startDateStr: string,
+  billingEndMonth: string
+): number {
+  if (!startDateStr || !billingEndMonth) return 0;
+  const start = new Date(startDateStr);
+  start.setHours(0, 0, 0, 0);
   const endYear = parseInt(billingEndMonth.slice(0, 4));
   const endMonth = parseInt(billingEndMonth.slice(5, 7)) - 1;
   const endDate = new Date(endYear, endMonth + 1, 0, 23, 59, 59);
-  return Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60));
+  return Math.ceil((endDate.getTime() - start.getTime()) / (1000 * 60 * 60));
 }
 
 // Game types
@@ -167,7 +181,8 @@ const baseCampaignSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
   gameType: z.string().min(1, "Please select a game type"),
   packageId: z.string().min(1, "Please select a package"),
-  billingEndMonth: z.string().min(1, "Please select a billing period"),
+  campaignStartDate: z.string().min(1, "Please select a start date"),
+  billingEndMonth: z.string().min(1, "Please select a billing end month"),
   campaignUrl: z
     .string()
     .url("Please enter a valid URL")
@@ -189,46 +204,36 @@ const baseCampaignSchema = z.object({
   words: z.array(z.string()).optional(),
 });
 
+// Cross-field: billing end month must not be before start date
+function billingEndAfterStart(data: { campaignStartDate?: string; billingEndMonth?: string }) {
+  if (!data.campaignStartDate || !data.billingEndMonth) return true;
+  const start = new Date(data.campaignStartDate);
+  const [y, m] = data.billingEndMonth.split("-").map(Number);
+  const lastDay = new Date(y, m, 0); // last day of billing month
+  return lastDay >= start;
+}
+
 // Form validation schema for creating (image required)
 const createCampaignSchema = baseCampaignSchema
   .refine(
     (data) => {
-      // Image is required for new campaigns
-      if (!(data.image instanceof File) || data.image.size === 0) {
-        return false;
-      }
+      if (!(data.image instanceof File) || data.image.size === 0) return false;
       return true;
     },
-    {
-      message: "Please upload an image",
-      path: ["image"],
-    }
+    { message: "Please upload an image", path: ["image"] }
   )
   .refine(
     (data) => {
-      // If game type is word_hunt, words are required and must have valid entries
-      if (data.gameType === "word_hunt") {
-        const validWords =
-          data.words?.filter((word) => word.trim().length >= 2) || [];
-        return validWords.length >= 7;
-      }
-      return true;
+      if (!data.campaignStartDate) return true;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return new Date(data.campaignStartDate) >= today;
     },
-    {
-      message:
-        "Word hunt requires at least 7 valid words (minimum 2 characters each)",
-      path: ["words"],
-    }
-  );
-
-// Form validation schema for editing (image optional, locked fields not validated)
-const editCampaignSchema = baseCampaignSchema
-  .extend({
-    // gameType, packageId, billingEndMonth cannot be changed on an existing campaign —
-    // relax their constraints so the form submits with the pre-filled server values.
-    gameType: z.string(),
-    packageId: z.string(),
-    billingEndMonth: z.string(),
+    { message: "Start date cannot be in the past", path: ["campaignStartDate"] }
+  )
+  .refine(billingEndAfterStart, {
+    message: "Billing end month must be after the start date",
+    path: ["billingEndMonth"],
   })
   .refine(
     (data) => {
@@ -240,8 +245,35 @@ const editCampaignSchema = baseCampaignSchema
       return true;
     },
     {
-      message:
-        "Word hunt requires at least 7 valid words (minimum 2 characters each)",
+      message: "Word hunt requires at least 7 valid words (minimum 2 characters each)",
+      path: ["words"],
+    }
+  );
+
+// Form validation schema for editing (image optional, locked fields not validated)
+const editCampaignSchema = baseCampaignSchema
+  .extend({
+    // These cannot be changed on an existing campaign — relax constraints.
+    gameType: z.string(),
+    packageId: z.string(),
+    campaignStartDate: z.string(),
+    billingEndMonth: z.string(),
+  })
+  .refine(billingEndAfterStart, {
+    message: "Billing end month must be after the start date",
+    path: ["billingEndMonth"],
+  })
+  .refine(
+    (data) => {
+      if (data.gameType === "word_hunt") {
+        const validWords =
+          data.words?.filter((word) => word.trim().length >= 2) || [];
+        return validWords.length >= 7;
+      }
+      return true;
+    },
+    {
+      message: "Word hunt requires at least 7 valid words (minimum 2 characters each)",
       path: ["words"],
     }
   );
@@ -309,14 +341,13 @@ export default function NewCampaignPage() {
 
   const emptyQuestion = () => ({ question: "", choices: ["", "", "", ""], correctIndex: 0 });
 
-  const billingOptions = getBillingMonthOptions();
-
   const defaultFormValues: CampaignFormData = {
     title: "",
     description: "",
     gameType: "",
     packageId: "",
-    billingEndMonth: billingOptions[0]?.value ?? "",
+    campaignStartDate: TODAY_STR,
+    billingEndMonth: "",
     campaignUrl: "",
     image: undefined as any,
     questions: Array(5).fill(null).map(emptyQuestion),
@@ -326,7 +357,11 @@ export default function NewCampaignPage() {
   const editFormValues = useMemo(() => {
     if (!campaignDetails) return undefined;
 
-    // Derive billing end month from endDate on the campaign
+    // Derive start date and billing end month from campaign dates
+    const startDate = (campaignDetails as any).startDate
+      ? new Date((campaignDetails as any).startDate).toISOString().slice(0, 10)
+      : new Date(campaignDetails.createdAt).toISOString().slice(0, 10);
+
     const endDate = campaignDetails.endDate ? new Date(campaignDetails.endDate) : new Date();
     const billingEndMonthFromServer =
       `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}`;
@@ -353,6 +388,7 @@ export default function NewCampaignPage() {
       description: campaignDetails.description,
       gameType: campaignDetails.gameType,
       packageId: campaignDetails.packageId,
+      campaignStartDate: startDate,
       billingEndMonth: billingEndMonthFromServer,
       campaignUrl: campaignDetails.campaignUrl || "",
       image: undefined,
@@ -381,21 +417,45 @@ export default function NewCampaignPage() {
 
   const selectedGameType = form.watch("gameType");
   const selectedPackageId = form.watch("packageId");
+  const campaignStartDate = form.watch("campaignStartDate");
   const billingEndMonth = form.watch("billingEndMonth");
 
-  // Get selected package data
-  const getSelectedPackage = () => {
-    if (!selectedPackageId || !packagesData) return null;
-    return packagesData.find((pkg) => pkg._id === selectedPackageId);
-  };
+  // Clear billingEndMonth if the selected start date moves past it
+  useEffect(() => {
+    if (!campaignStartDate || !billingEndMonth) return;
+    const [y, m] = billingEndMonth.split("-").map(Number);
+    const lastDay = new Date(y, m, 0);
+    if (lastDay < new Date(campaignStartDate)) {
+      form.setValue("billingEndMonth", "");
+    }
+  }, [campaignStartDate]);
 
-  const selectedPackage = getSelectedPackage();
-  const proratedTotal = selectedPackage && billingEndMonth
-    ? calculateProratedCost(billingEndMonth, selectedPackage.amount)
-    : 0;
-  const proratedBreakdown = selectedPackage && billingEndMonth
-    ? getProratedBreakdown(billingEndMonth, selectedPackage.amount)
-    : [];
+  // Filter billing options to only months whose end is >= selected start date
+  const validBillingOptions = useMemo(() => {
+    if (!campaignStartDate) return ALL_BILLING_OPTIONS;
+    const start = new Date(campaignStartDate);
+    return ALL_BILLING_OPTIONS.filter((opt) => {
+      const [y, m] = opt.value.split("-").map(Number);
+      return new Date(y, m, 0) >= start;
+    });
+  }, [campaignStartDate]);
+
+  // Get selected package data
+  const selectedPackage = packagesData?.find((pkg) => pkg._id === selectedPackageId) ?? null;
+
+  const proratedTotal =
+    selectedPackage && campaignStartDate && billingEndMonth
+      ? calculateProratedCost(campaignStartDate, billingEndMonth, selectedPackage.amount)
+      : 0;
+  const proratedBreakdown =
+    selectedPackage && campaignStartDate && billingEndMonth
+      ? getProratedBreakdown(campaignStartDate, billingEndMonth, selectedPackage.amount)
+      : [];
+
+  // Last calendar day of the selected billing end month (for display)
+  const billingEndDate = billingEndMonth
+    ? new Date(parseInt(billingEndMonth.slice(0, 4)), parseInt(billingEndMonth.slice(5, 7)), 0)
+    : null;
 
   // Initialize payment mutation
   const initializePayment = useMutation({
@@ -536,7 +596,8 @@ export default function NewCampaignPage() {
     formData.append("title", data.title);
     formData.append("description", data.description);
     formData.append("gameType", data.gameType);
-    formData.append("timeLimit", calculateTimeLimitHours(data.billingEndMonth).toString());
+    formData.append("startDate", data.campaignStartDate);
+    formData.append("timeLimit", calculateTimeLimitHours(data.campaignStartDate, data.billingEndMonth).toString());
     formData.append("packageId", data.packageId);
 
     if (data.image instanceof File && data.image.size > 0) {
@@ -731,38 +792,83 @@ export default function NewCampaignPage() {
                     )}
                   />
 
+                  <FormField
+                    control={form.control}
+                    name="gameType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white">Game Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={isEditMode}>
+                          <FormControl>
+                            <SelectTrigger className="bg-white/5 border-white/10 text-white h-12 disabled:opacity-50 disabled:cursor-not-allowed">
+                              <SelectValue placeholder="Select game type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-card border-white/10">
+                            {GAME_TYPES.map((type) => (
+                              <SelectItem
+                                key={type.value}
+                                value={type.value}
+                                className="text-white hover:bg-white/10">
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {isEditMode && (
+                          <FormDescription className="text-yellow-400/80 text-xs">
+                            Game type cannot be changed after creation
+                          </FormDescription>
+                        )}
+                        <FormMessage className="text-red-400" />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Campaign Duration */}
+              <Card className="bg-card/50 backdrop-blur-sm border-white/10">
+                <CardHeader>
+                  <CardTitle className="text-white font-fredoka flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-secondary" />
+                    Campaign Duration
+                  </CardTitle>
+                  <p className="text-white/60 text-sm mt-1">
+                    Choose when the campaign starts and which month-end it runs through.
+                    The cost is calculated based on these dates.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Start Date */}
                     <FormField
                       control={form.control}
-                      name="gameType"
+                      name="campaignStartDate"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-white">
-                            Game Type
+                            Start Date
                           </FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            disabled={isEditMode}>
-                            <FormControl>
-                              <SelectTrigger className="bg-white/5 border-white/10 text-white h-12 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <SelectValue placeholder="Select game type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="bg-card border-white/10">
-                              {GAME_TYPES.map((type) => (
-                                <SelectItem
-                                  key={type.value}
-                                  value={type.value}
-                                  className="text-white hover:bg-white/10">
-                                  {type.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {isEditMode && (
+                          <FormControl>
+                            <Input
+                              type="date"
+                              min={TODAY_STR}
+                              disabled={isEditMode}
+                              className="bg-white/5 border-white/10 text-white h-12 [color-scheme:dark] disabled:opacity-50 disabled:cursor-not-allowed"
+                              {...field}
+                            />
+                          </FormControl>
+                          {isEditMode ? (
                             <FormDescription className="text-yellow-400/80 text-xs">
-                              Game type cannot be changed after creation
+                              Start date cannot be changed after creation
+                            </FormDescription>
+                          ) : (
+                            <FormDescription className="text-white/50 text-xs">
+                              Cannot be earlier than today
                             </FormDescription>
                           )}
                           <FormMessage className="text-red-400" />
@@ -770,25 +876,32 @@ export default function NewCampaignPage() {
                       )}
                     />
 
+                    {/* Billing End Month */}
                     <FormField
                       control={form.control}
                       name="billingEndMonth"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-white">
-                            Billing Period
+                            Campaign Ends
                           </FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
-                            disabled={isPaidCampaign}>
+                            disabled={isPaidCampaign || (!isEditMode && !campaignStartDate)}>
                             <FormControl>
                               <SelectTrigger className="bg-white/5 border-white/10 text-white h-12 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <SelectValue placeholder="Select billing end month" />
+                                <SelectValue
+                                  placeholder={
+                                    !campaignStartDate && !isEditMode
+                                      ? "Select a start date first"
+                                      : "Select end month"
+                                  }
+                                />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-card border-white/10">
-                              {billingOptions.map((opt) => (
+                              {validBillingOptions.map((opt) => (
                                 <SelectItem
                                   key={opt.value}
                                   value={opt.value}
@@ -798,9 +911,13 @@ export default function NewCampaignPage() {
                               ))}
                             </SelectContent>
                           </Select>
-                          {isPaidCampaign && (
+                          {isPaidCampaign ? (
                             <FormDescription className="text-yellow-400/80 text-xs">
                               Billing period cannot be changed after payment
+                            </FormDescription>
+                          ) : (
+                            <FormDescription className="text-white/50 text-xs">
+                              Campaign runs until end of selected month
                             </FormDescription>
                           )}
                           <FormMessage className="text-red-400" />
@@ -808,6 +925,31 @@ export default function NewCampaignPage() {
                       )}
                     />
                   </div>
+
+                  {/* Duration summary pill */}
+                  {campaignStartDate && billingEndDate && (
+                    <div className="flex items-center gap-2 p-3 bg-secondary/10 border border-secondary/20 rounded-lg text-sm">
+                      <Calendar className="h-4 w-4 text-secondary flex-shrink-0" />
+                      <span className="text-white/70">
+                        Runs from{" "}
+                        <span className="text-white font-medium">
+                          {new Date(campaignStartDate + "T00:00:00").toLocaleDateString("en-NG", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </span>{" "}
+                        to{" "}
+                        <span className="text-white font-medium">
+                          {billingEndDate.toLocaleDateString("en-NG", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1189,7 +1331,7 @@ export default function NewCampaignPage() {
                                         ₦{pkg.amount.toLocaleString()}
                                       </p>
                                       <p className="text-xs text-white/60">
-                                        per week
+                                        per month
                                       </p>
                                     </div>
                                   </div>
@@ -1212,39 +1354,62 @@ export default function NewCampaignPage() {
               </Card>
 
               {/* Cost Summary */}
-              {selectedPackage && billingEndMonth && proratedBreakdown.length > 0 && (
-                <Card className="bg-card/50 backdrop-blur-sm border-white/10">
+              {selectedPackage && campaignStartDate && billingEndMonth && proratedBreakdown.length > 0 && (
+                <Card className="bg-card/50 backdrop-blur-sm border-secondary/30 border">
                   <CardHeader>
                     <CardTitle className="text-white font-fredoka flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-secondary" />
+                      <DollarSign className="h-5 w-5 text-secondary" />
                       Cost Summary
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex justify-between text-white/70">
-                      <span>Plan:</span>
-                      <span className="capitalize">{selectedPackage.name}</span>
+                      <span>Plan</span>
+                      <span className="capitalize text-white">{selectedPackage.name}</span>
                     </div>
                     <div className="flex justify-between text-white/70">
-                      <span>Monthly Rate:</span>
-                      <span>₦{selectedPackage.amount.toLocaleString()}/month</span>
+                      <span>Monthly Rate</span>
+                      <span className="text-white">₦{selectedPackage.amount.toLocaleString()}/month</span>
                     </div>
-                    <div className="border-t border-white/10 pt-2 space-y-2">
+                    <div className="flex justify-between text-white/70">
+                      <span>Start Date</span>
+                      <span className="text-white">
+                        {new Date(campaignStartDate + "T00:00:00").toLocaleDateString("en-NG", {
+                          day: "numeric", month: "short", year: "numeric"
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-white/70">
+                      <span>End Date</span>
+                      <span className="text-white">
+                        {billingEndDate?.toLocaleDateString("en-NG", {
+                          day: "numeric", month: "short", year: "numeric"
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Per-month breakdown */}
+                    <div className="border-t border-white/10 pt-3 space-y-2">
+                      <p className="text-white/50 text-xs uppercase tracking-wider">Breakdown</p>
                       {proratedBreakdown.map((row) => (
-                        <div key={row.label} className="flex justify-between text-white/60 text-sm">
+                        <div key={row.label} className="flex justify-between text-white/70 text-sm">
                           <span>{row.label}</span>
                           <span>₦{row.amount.toLocaleString()}</span>
                         </div>
                       ))}
                     </div>
-                    <div className="border-t border-white/10 pt-3">
-                      <div className="flex justify-between text-lg font-bold text-white">
-                        <span>Total:</span>
-                        <span className="text-secondary">
-                          ₦{proratedTotal.toLocaleString()}
-                        </span>
-                      </div>
+
+                    {/* Total */}
+                    <div className="border-t border-white/10 pt-3 flex justify-between items-center">
+                      <span className="text-white font-semibold text-lg">Total to Pay</span>
+                      <span className="text-secondary font-bold text-2xl font-fredoka">
+                        ₦{proratedTotal.toLocaleString()}
+                      </span>
                     </div>
+
+                    <p className="text-white/40 text-xs pt-1">
+                      First month is pro-rated from your selected start date. Subsequent months are billed at the full rate.
+                    </p>
                   </CardContent>
                 </Card>
               )}
