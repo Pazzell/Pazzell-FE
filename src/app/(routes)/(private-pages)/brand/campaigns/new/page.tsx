@@ -61,11 +61,97 @@ import { userAtom } from "@/atom/user";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { endpointUrl } from "@/app/_utils/helper";
 import {
-  CampaignData,
   CampaignResponse,
   Package,
   PackagesResponse,
 } from "@/types";
+
+// ── Billing period helpers ─────────────────────────────────────────────────
+
+function getBillingMonthOptions(): {
+  value: string;
+  label: string;
+  isCurrentMonth: boolean;
+}[] {
+  const today = new Date();
+  const options = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleString("default", { month: "long", year: "numeric" });
+    options.push({ value, label: i === 0 ? `${label} (pro-rated)` : label, isCurrentMonth: i === 0 });
+  }
+  return options;
+}
+
+function daysInMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function calculateProratedCost(billingEndMonth: string, monthlyRate: number): number {
+  if (!billingEndMonth) return 0;
+  const today = new Date();
+  const endYear = parseInt(billingEndMonth.slice(0, 4));
+  const endMonth = parseInt(billingEndMonth.slice(5, 7)) - 1;
+
+  let total = 0;
+  let year = today.getFullYear();
+  let month = today.getMonth();
+  let first = true;
+
+  while (year < endYear || (year === endYear && month <= endMonth)) {
+    if (first) {
+      const dim = daysInMonth(year, month);
+      const remaining = dim - today.getDate() + 1;
+      total += (remaining / dim) * monthlyRate;
+      first = false;
+    } else {
+      total += monthlyRate;
+    }
+    month++;
+    if (month > 11) { month = 0; year++; }
+  }
+  return Math.round(total);
+}
+
+function getProratedBreakdown(billingEndMonth: string, monthlyRate: number): { label: string; amount: number }[] {
+  if (!billingEndMonth) return [];
+  const today = new Date();
+  const endYear = parseInt(billingEndMonth.slice(0, 4));
+  const endMonth = parseInt(billingEndMonth.slice(5, 7)) - 1;
+
+  const rows: { label: string; amount: number }[] = [];
+  let year = today.getFullYear();
+  let month = today.getMonth();
+  let first = true;
+
+  while (year < endYear || (year === endYear && month <= endMonth)) {
+    const d = new Date(year, month, 1);
+    const monthName = d.toLocaleString("default", { month: "long", year: "numeric" });
+    if (first) {
+      const dim = daysInMonth(year, month);
+      const remaining = dim - today.getDate() + 1;
+      const amount = Math.round((remaining / dim) * monthlyRate);
+      rows.push({ label: `${monthName} (${remaining}/${dim} days, pro-rated)`, amount });
+      first = false;
+    } else {
+      rows.push({ label: monthName, amount: monthlyRate });
+    }
+    month++;
+    if (month > 11) { month = 0; year++; }
+  }
+  return rows;
+}
+
+function calculateTimeLimitHours(billingEndMonth: string): number {
+  if (!billingEndMonth) return 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const endYear = parseInt(billingEndMonth.slice(0, 4));
+  const endMonth = parseInt(billingEndMonth.slice(5, 7)) - 1;
+  const endDate = new Date(endYear, endMonth + 1, 0, 23, 59, 59);
+  return Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60));
+}
 
 // Game types
 const GAME_TYPES = [
@@ -81,10 +167,7 @@ const baseCampaignSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
   gameType: z.string().min(1, "Please select a game type"),
   packageId: z.string().min(1, "Please select a package"),
-  weeksToRun: z
-    .number()
-    .min(1, "Campaign must run for at least 1 week")
-    .max(52, "Campaign cannot exceed 52 weeks"),
+  billingEndMonth: z.string().min(1, "Please select a billing period"),
   campaignUrl: z
     .string()
     .url("Please enter a valid URL")
@@ -141,11 +224,11 @@ const createCampaignSchema = baseCampaignSchema
 // Form validation schema for editing (image optional, locked fields not validated)
 const editCampaignSchema = baseCampaignSchema
   .extend({
-    // gameType, packageId, weeksToRun cannot be changed on an existing campaign —
+    // gameType, packageId, billingEndMonth cannot be changed on an existing campaign —
     // relax their constraints so the form submits with the pre-filled server values.
     gameType: z.string(),
     packageId: z.string(),
-    weeksToRun: z.number(),
+    billingEndMonth: z.string(),
   })
   .refine(
     (data) => {
@@ -226,12 +309,14 @@ export default function NewCampaignPage() {
 
   const emptyQuestion = () => ({ question: "", choices: ["", "", "", ""], correctIndex: 0 });
 
+  const billingOptions = getBillingMonthOptions();
+
   const defaultFormValues: CampaignFormData = {
     title: "",
     description: "",
     gameType: "",
     packageId: "",
-    weeksToRun: 1,
+    billingEndMonth: billingOptions[0]?.value ?? "",
     campaignUrl: "",
     image: undefined as any,
     questions: Array(5).fill(null).map(emptyQuestion),
@@ -241,8 +326,10 @@ export default function NewCampaignPage() {
   const editFormValues = useMemo(() => {
     if (!campaignDetails) return undefined;
 
-    const weeksFromHours =
-      Math.round(campaignDetails.timeLimit / (7 * 24)) || 1;
+    // Derive billing end month from endDate on the campaign
+    const endDate = campaignDetails.endDate ? new Date(campaignDetails.endDate) : new Date();
+    const billingEndMonthFromServer =
+      `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}`;
 
     const formattedQuestions =
       campaignDetails.questions?.length > 0
@@ -266,7 +353,7 @@ export default function NewCampaignPage() {
       description: campaignDetails.description,
       gameType: campaignDetails.gameType,
       packageId: campaignDetails.packageId,
-      weeksToRun: weeksFromHours,
+      billingEndMonth: billingEndMonthFromServer,
       campaignUrl: campaignDetails.campaignUrl || "",
       image: undefined,
       questions: formattedQuestions,
@@ -294,24 +381,21 @@ export default function NewCampaignPage() {
 
   const selectedGameType = form.watch("gameType");
   const selectedPackageId = form.watch("packageId");
-  const weeksToRun = form.watch("weeksToRun");
-
-  // Calculate total cost
-  const calculateTotalCost = () => {
-    if (!selectedPackageId || !weeksToRun || !packagesData) return 0;
-    const selectedPackage = packagesData.find(
-      (pkg) => pkg._id === selectedPackageId
-    );
-    if (!selectedPackage) return 0;
-    const discountFactor = weeksToRun >= 2 ? 0.9 : 1;
-    return selectedPackage.amount * weeksToRun * discountFactor; // Amount is already in naira
-  };
+  const billingEndMonth = form.watch("billingEndMonth");
 
   // Get selected package data
   const getSelectedPackage = () => {
     if (!selectedPackageId || !packagesData) return null;
     return packagesData.find((pkg) => pkg._id === selectedPackageId);
   };
+
+  const selectedPackage = getSelectedPackage();
+  const proratedTotal = selectedPackage && billingEndMonth
+    ? calculateProratedCost(billingEndMonth, selectedPackage.amount)
+    : 0;
+  const proratedBreakdown = selectedPackage && billingEndMonth
+    ? getProratedBreakdown(billingEndMonth, selectedPackage.amount)
+    : [];
 
   // Initialize payment mutation
   const initializePayment = useMutation({
@@ -452,7 +536,7 @@ export default function NewCampaignPage() {
     formData.append("title", data.title);
     formData.append("description", data.description);
     formData.append("gameType", data.gameType);
-    formData.append("timeLimit", (data.weeksToRun * 7 * 24).toString());
+    formData.append("timeLimit", calculateTimeLimitHours(data.billingEndMonth).toString());
     formData.append("packageId", data.packageId);
 
     if (data.image instanceof File && data.image.size > 0) {
@@ -479,7 +563,6 @@ export default function NewCampaignPage() {
 
 
   const onSubmit = (data: CampaignFormData) => {
-    console.log("Form submitted with data:", data);
     setApiError("");
     setShowCreateModal(true);
   };
@@ -689,31 +772,35 @@ export default function NewCampaignPage() {
 
                     <FormField
                       control={form.control}
-                      name="weeksToRun"
+                      name="billingEndMonth"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-white">
-                            Duration (Weeks)
+                            Billing Period
                           </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="1"
-                              max="52"
-                              placeholder="1"
-                              disabled={isPaidCampaign}
-                              className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
-                              {...field}
-                              value={field.value ?? ""}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value);
-                                field.onChange(isNaN(val) ? undefined : val);
-                              }}
-                            />
-                          </FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isPaidCampaign}>
+                            <FormControl>
+                              <SelectTrigger className="bg-white/5 border-white/10 text-white h-12 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <SelectValue placeholder="Select billing end month" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="bg-card border-white/10">
+                              {billingOptions.map((opt) => (
+                                <SelectItem
+                                  key={opt.value}
+                                  value={opt.value}
+                                  className="text-white hover:bg-white/10">
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           {isPaidCampaign && (
                             <FormDescription className="text-yellow-400/80 text-xs">
-                              Duration cannot be changed after payment
+                              Billing period cannot be changed after payment
                             </FormDescription>
                           )}
                           <FormMessage className="text-red-400" />
@@ -1125,7 +1212,7 @@ export default function NewCampaignPage() {
               </Card>
 
               {/* Cost Summary */}
-              {getSelectedPackage() && weeksToRun && (
+              {selectedPackage && billingEndMonth && proratedBreakdown.length > 0 && (
                 <Card className="bg-card/50 backdrop-blur-sm border-white/10">
                   <CardHeader>
                     <CardTitle className="text-white font-fredoka flex items-center gap-2">
@@ -1135,28 +1222,26 @@ export default function NewCampaignPage() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex justify-between text-white/70">
-                      <span>Package:</span>
-                      <span className="capitalize">
-                        {getSelectedPackage()?.name}
-                      </span>
+                      <span>Plan:</span>
+                      <span className="capitalize">{selectedPackage.name}</span>
                     </div>
                     <div className="flex justify-between text-white/70">
-                      <span>Duration:</span>
-                      <span>
-                        {weeksToRun} week{weeksToRun > 1 ? "s" : ""}
-                      </span>
+                      <span>Monthly Rate:</span>
+                      <span>₦{selectedPackage.amount.toLocaleString()}/month</span>
                     </div>
-                    <div className="flex justify-between text-white/70">
-                      <span>Rate:</span>
-                      <span>
-                        ₦{getSelectedPackage()?.amount.toLocaleString()}/week
-                      </span>
+                    <div className="border-t border-white/10 pt-2 space-y-2">
+                      {proratedBreakdown.map((row) => (
+                        <div key={row.label} className="flex justify-between text-white/60 text-sm">
+                          <span>{row.label}</span>
+                          <span>₦{row.amount.toLocaleString()}</span>
+                        </div>
+                      ))}
                     </div>
                     <div className="border-t border-white/10 pt-3">
                       <div className="flex justify-between text-lg font-bold text-white">
-                        <span>Total Cost:</span>
+                        <span>Total:</span>
                         <span className="text-secondary">
-                          ₦{calculateTotalCost().toLocaleString()}
+                          ₦{proratedTotal.toLocaleString()}
                         </span>
                       </div>
                     </div>

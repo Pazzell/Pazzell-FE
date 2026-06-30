@@ -344,6 +344,10 @@ export interface LeaderboardEntry {
   username?: string;
   avatar?: string;
   points: number;
+  puzzlePoints?: number;
+  referralPoints?: number;
+  referralCount?: number;
+  totalPoints?: number;
   puzzlesSolved: number;
   avgTime?: number | null;
   prizeAmount?: number | null;
@@ -423,6 +427,26 @@ export interface ReferralEventsResponse {
 export interface ReferralLinkResponse {
   success?: boolean;
   referralLink: string;
+}
+
+export interface ReferralMyStatsResponse {
+  success: true;
+  month: string;
+  stats: {
+    totalReferrals: number;
+    pendingReferrals: number;
+    successfulReferralsThisMonth: number;
+    referralPointsThisMonth: number;
+    totalReferralPointsAllTime: number;
+    referredUsersThisMonth: {
+      userId: string;
+      fullName: string;
+      username: string;
+      avatar?: string;
+      successfulAt: string;
+      pointsAwarded: number;
+    }[];
+  };
 }
 
 // Puzzle campaign and submit types for new game behaviour

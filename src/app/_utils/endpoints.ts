@@ -35,6 +35,8 @@ export const ENDPOINTS = {
   // Referrals
   REFERRALS_SUMMARY: "/referrals/summary",
   REFERRALS_EVENTS: "/referrals/events",
+  REFERRALS_MY_STATS: (month?: string) =>
+    month ? `/referrals/my-stats?month=${month}` : `/referrals/my-stats`,
 
   // Authenticated user profile (includes referral analytics)
   USER_ME: "/user/me",

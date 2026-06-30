@@ -16,7 +16,6 @@ import {
   Trophy,
   Clock,
   CheckCircle2,
-  DollarSign,
   Users,
   Share2,
   Copy,
@@ -35,8 +34,6 @@ import {
   CampaignData,
   LeaderboardResponse,
   LeaderboardData,
-  PrizeTableResponse,
-  PrizeTableData,
 } from "@/types";
 import axios from "axios";
 import { endpointUrl, formatPuzzleType } from "@/app/_utils/helper";
@@ -142,45 +139,13 @@ export default function UserDashboardPage() {
         }),
   });
 
-  const {
-    data: prizeTableData,
-    error: prizeTableError,
-    isLoading: loadingPrizeTable,
-  } = useQuery<PrizeTableData>({
-    queryKey: ["prize-table"],
-    queryFn: () =>
-      axios
-        .get<PrizeTableResponse>(
-          endpointUrl(`${ENDPOINTS.DAILY_PRIZE_TABLE}`),
-          {
-            headers: {
-              Authorization: `Bearer ${user?.accessToken}`,
-            },
-          }
-        )
-        .then((res) => {
-          return res.data.prizeTable;
-        }),
-  });
-
-  console.log("leaderboard", leaderboard);
-
-  console.log("profileData", profiletData);
-  console.log("campaigns", campaigns);
 
   const userStats = profiletData?.analytics?.lifetime;
   const weeklyUserStats = profiletData?.analytics?.weekly;
 
-  const prizeTable = prizeTableData?.prizeTable;
-
   const currentUser = {
     name: "You",
     points: weeklyUserStats?.totalPoints || 0,
-    earnings: `₦${(
-      prizeTable?.find(
-        (prize) => prize.position === weeklyUserStats?.leaderboardPosition
-      )?.amount ?? 0
-    ).toLocaleString()}`,
     rank: weeklyUserStats?.leaderboardPosition || null,
   };
 
@@ -318,23 +283,6 @@ export default function UserDashboardPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-card/50 backdrop-blur-sm border-white/10">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-emerald-500/20 rounded-lg">
-                      <DollarSign className="h-5 w-5 text-emerald-400" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-white font-fredoka">
-                        ₦{userStats?.totalEarnings}
-                      </p>
-                      <p className="text-xs text-white/60 uppercase tracking-wider">
-                        Earned
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </>
           )}
         </div>
@@ -631,13 +579,8 @@ export default function UserDashboardPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-secondary font-semibold">
-                          ₦
-                          {(
-                            prizeTable?.find(
-                              (prize) => prize.position === player.position
-                            )?.amount ?? 0
-                          ).toLocaleString()}
+                        <p className="text-secondary font-semibold font-fredoka">
+                          {(player.points ?? 0).toLocaleString()} pts
                         </p>
                         <p className="text-white/60 text-sm">
                           #{player.position}
@@ -688,8 +631,8 @@ export default function UserDashboardPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-secondary font-semibold">
-                          {currentUser.earnings}
+                        <p className="text-secondary font-semibold font-fredoka">
+                          {currentUser.points.toLocaleString()} pts
                         </p>
                         <p className="text-white/60 text-sm">
                           #{currentUser.rank}
@@ -726,7 +669,7 @@ export default function UserDashboardPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-white/60 font-semibold">₦0</p>
+                        <p className="text-white/60 font-semibold">0 pts</p>
                         <p className="text-white/60 text-sm">Unranked</p>
                       </div>
                     </div>

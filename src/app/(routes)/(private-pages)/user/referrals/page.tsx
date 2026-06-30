@@ -22,6 +22,8 @@ import {
   Gift,
   UserPlus,
   Zap,
+  Info,
+  Clock,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -30,7 +32,7 @@ import { ENDPOINTS } from "@/app/_utils/endpoints";
 import {
   ReferralEventsResponse,
   ReferralSummaryResponse,
-  GamerProfileResponse,
+  ReferralMyStatsResponse,
 } from "@/types";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/atom/user";
@@ -63,26 +65,26 @@ export default function ReferralsPage() {
   const user = useAtomValue(userAtom);
   const [copied, setCopied] = useState(false);
 
-  // Referral link is built purely on the frontend from the player's username.
-  // No backend call needed — the backend resolves ?ref=<username> at register time.
   const referralLink =
     user?.username && typeof window !== "undefined"
       ? `${window.location.origin}/register?ref=${user.username}`
       : "";
 
-  // Own referral stats for the current month
-  const { data: userMeData, isLoading: loadingMe } = useQuery({
-    queryKey: ["gamer-profile"],
-    queryFn: () =>
-      axios
-        .get<GamerProfileResponse>(endpointUrl(ENDPOINTS.GAMER_PROFILE), {
-          headers: { Authorization: `Bearer ${user?.accessToken}` },
-        })
-        .then((res) => res.data),
-    enabled: !!user?.accessToken,
-  });
+  // Own referral stats for the current month (authenticated endpoint)
+  const { data: myStatsData, isLoading: loadingMyStats } =
+    useQuery<ReferralMyStatsResponse>({
+      queryKey: ["referrals-my-stats", currentMonth],
+      queryFn: () =>
+        axios
+          .get<ReferralMyStatsResponse>(
+            endpointUrl(ENDPOINTS.REFERRALS_MY_STATS(currentMonth)),
+            { headers: { Authorization: `Bearer ${user?.accessToken}` } }
+          )
+          .then((res) => res.data),
+      enabled: !!user?.accessToken,
+    });
 
-  // Global leaderboard — public endpoint, no auth required
+  // Global referral leaderboard — public
   const { data: summaryData, isLoading: loadingSummary } = useQuery({
     queryKey: ["referrals-summary", currentMonth],
     queryFn: () =>
@@ -93,7 +95,7 @@ export default function ReferralsPage() {
         .then((res) => res.data),
   });
 
-  // Referral event log — public endpoint, no auth required
+  // Referral event log — public
   const { data: eventsData } = useQuery({
     queryKey: ["referrals-events", currentMonth],
     queryFn: () =>
@@ -104,10 +106,11 @@ export default function ReferralsPage() {
         .then((res) => res.data),
   });
 
-  const referralStats = userMeData?.profile?.analytics?.referral;
-  const myReferralCount = referralStats?.successfulReferrals ?? 0;
-  const myPointsEarned = referralStats?.totalPointsEarned ?? 0;
-  const myRank = referralStats?.leaderboardPosition ?? null;
+  const stats = myStatsData?.stats;
+  const referralCount = stats?.successfulReferralsThisMonth ?? 0;
+  const referralPoints = stats?.referralPointsThisMonth ?? 0;
+  const pendingCount = stats?.pendingReferrals ?? 0;
+  const referredUsers = stats?.referredUsersThisMonth ?? [];
 
   const leaderboard = [...(summaryData?.summary || [])].sort(
     (a, b) => (b.successfulCount ?? 0) - (a.successfulCount ?? 0)
@@ -132,14 +135,14 @@ export default function ReferralsPage() {
           url: referralLink,
         });
       } catch {
-        // user cancelled — no action needed
+        // user cancelled
       }
     } else {
       copyReferralLink();
     }
   };
 
-  if (loadingMe && loadingSummary) {
+  if (loadingMyStats && loadingSummary) {
     return <PageLoader message="Loading your referrals..." />;
   }
 
@@ -150,12 +153,27 @@ export default function ReferralsPage() {
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 font-fredoka flex items-center gap-3">
             <Gift className="h-8 w-8 text-secondary" />
-            Refer & Earn
+            Refer &amp; Earn
           </h1>
           <p className="text-white/70">
-            Invite friends to Pazzell and earn bonus points when they complete
-            their first puzzle.
+            Invite friends to Pazzell and earn bonus points when they play their first puzzle.
           </p>
+        </div>
+
+        {/* How it works banner */}
+        <div className="p-4 bg-secondary/10 border border-secondary/30 rounded-xl flex items-start gap-3">
+          <Info className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-white/80 space-y-1">
+            <p>
+              <span className="text-secondary font-semibold">Your friend gets +1 point</span> just for signing up with your link.
+            </p>
+            <p>
+              <span className="text-secondary font-semibold">You earn +3 bonus points</span> when your referred friend completes their first puzzle.
+            </p>
+            <p className="text-white/50 text-xs">
+              Referral bonus points are added to your monthly leaderboard total and reset at month end.
+            </p>
+          </div>
         </div>
 
         {/* Referral Link Card */}
@@ -166,8 +184,7 @@ export default function ReferralsPage() {
               Your Referral Link
             </CardTitle>
             <CardDescription className="text-white/70">
-              Share this link with friends. You&apos;ll earn points once they
-              sign up and complete their first puzzle.
+              Share this link. You&apos;ll earn 3 bonus points once they complete their first puzzle.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -206,7 +223,7 @@ export default function ReferralsPage() {
           </CardContent>
         </Card>
 
-        {/* Stats */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <Card className="bg-card/50 backdrop-blur-sm border-white/10">
             <CardContent className="pt-6">
@@ -216,15 +233,16 @@ export default function ReferralsPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-white font-fredoka">
-                    {myReferralCount}
+                    {referralCount}
                   </p>
                   <p className="text-xs text-white/60 uppercase tracking-wider">
-                    Referrals
+                    Referrals This Month
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
+
           <Card className="bg-card/50 backdrop-blur-sm border-white/10">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -233,27 +251,28 @@ export default function ReferralsPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-white font-fredoka">
-                    {myPointsEarned.toLocaleString()}
+                    +{referralPoints}
                   </p>
                   <p className="text-xs text-white/60 uppercase tracking-wider">
-                    Points Earned
+                    Points This Month
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
+
           <Card className="bg-card/50 backdrop-blur-sm border-white/10 col-span-2 sm:col-span-1">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-yellow-500/20 rounded-lg">
-                  <Crown className="h-5 w-5 text-yellow-400" />
+                  <Clock className="h-5 w-5 text-yellow-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-white font-fredoka">
-                    {myRank ? `#${myRank}` : "—"}
+                    {pendingCount}
                   </p>
                   <p className="text-xs text-white/60 uppercase tracking-wider">
-                    Your Rank
+                    Pending (signed up, not played)
                   </p>
                 </div>
               </div>
@@ -261,7 +280,56 @@ export default function ReferralsPage() {
           </Card>
         </div>
 
-        {/* Leaderboard */}
+        {/* Referred users this month */}
+        {referredUsers.length > 0 && (
+          <Card className="bg-card/50 backdrop-blur-sm border-white/10">
+            <CardHeader>
+              <CardTitle className="text-white font-fredoka flex items-center gap-2">
+                <UserPlus className="h-5 w-5 text-secondary" />
+                Successful Referrals This Month
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="space-y-1">
+                {referredUsers.map((ru) => (
+                  <div
+                    key={ru.userId}
+                    className="flex items-center justify-between p-4 border-b border-white/5 last:border-b-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-secondary/20 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {ru.avatar ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={ru.avatar}
+                            alt={ru.fullName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-white font-semibold text-sm">
+                            {getInitials(ru.fullName)}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-white font-semibold text-sm">
+                          {ru.username ? `@${ru.username}` : ru.fullName}
+                        </p>
+                        <p className="text-white/50 text-xs">
+                          {new Date(ru.successfulAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 border">
+                      +{ru.pointsAwarded} pts
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Top Referrers Leaderboard */}
         <Card className="bg-card/50 backdrop-blur-sm border-white/10">
           <CardHeader>
             <CardTitle className="text-white font-fredoka flex items-center gap-2">
@@ -364,7 +432,7 @@ export default function ReferralsPage() {
                       : "A friend");
                   const label =
                     event.type === "first_puzzle"
-                      ? `${name} completed their first puzzle`
+                      ? `${name} completed their first puzzle — you earned +3 pts`
                       : `${name} signed up using your link`;
 
                   return (

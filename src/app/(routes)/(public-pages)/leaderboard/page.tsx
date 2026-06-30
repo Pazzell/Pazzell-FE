@@ -3,7 +3,7 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Crown, Medal, Calendar } from "lucide-react";
+import { Trophy, Crown, Medal, Info } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { endpointUrl } from "@/app/_utils/helper";
@@ -17,7 +17,6 @@ import { userAtom } from "@/atom/user";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
 
-// Helper function to get user initials from full name
 const getInitials = (fullName: string): string => {
   return fullName
     .split(" ")
@@ -59,7 +58,6 @@ const getRankBadgeColor = (rank: number) => {
 export default function LeaderboardPage() {
   const user = useAtomValue(userAtom);
 
-  // Fetch monthly leaderboard data
   const {
     data: leaderboardResponse,
     error: leaderboardError,
@@ -76,23 +74,9 @@ export default function LeaderboardPage() {
             },
           }
         )
-        .then((res) => {
-          return res.data;
-        }),
+        .then((res) => res.data),
   });
 
-  // Calculate days until next month reset (first day of next month)
-  const today = new Date();
-  const firstOfNextMonth = new Date(
-    today.getFullYear(),
-    today.getMonth() + 1,
-    1
-  );
-  const daysUntilReset = Math.ceil(
-    (firstOfNextMonth.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  // Transform leaderboard entries to include initials
   const leaderboardData: (LeaderboardEntry & { initials?: string })[] =
     leaderboardResponse?.leaderboard?.entries?.map((entry) => ({
       ...entry,
@@ -123,7 +107,7 @@ export default function LeaderboardPage() {
             No Leaderboard Data
           </h3>
           <p className="text-white/60">
-            Check back soon to see this month's top performers!
+            Check back soon to see this month&apos;s top performers!
           </p>
         </div>
       </MainLayout>
@@ -138,27 +122,40 @@ export default function LeaderboardPage() {
           Monthly Leaderboard
         </h1>
         <p className="text-white/70 text-base sm:text-lg mb-4 sm:mb-6 px-4">
-          Compete with players worldwide and win monthly prizes
+          Compete with players worldwide and top the monthly rankings
         </p>
         {monthLabel && (
           <p className="text-white/60 text-xs sm:text-sm mb-4 px-4">
-            Month: {monthLabel} • {leaderboardResponse?.leaderboard?.totalPlayers ?? leaderboardData.length} players
+            Month: {monthLabel} &bull; {leaderboardResponse?.leaderboard?.totalPlayers ?? leaderboardData.length} players
           </p>
         )}
 
-        {/* Reset Timer */}
+        {/* Reset notice */}
         <div className="inline-flex items-center gap-2 bg-card/50 backdrop-blur-sm border border-white/10 rounded-full px-3 sm:px-4 py-2">
-          <Calendar className="h-4 w-4 text-secondary" />
+          <Info className="h-4 w-4 text-secondary" />
           <span className="text-white/80 text-xs sm:text-sm">
-            Resets in {daysUntilReset} day{daysUntilReset !== 1 ? "s" : ""}
+            Leaderboard resets at the end of each month
           </span>
         </div>
+      </div>
+
+      {/* Points legend */}
+      <div className="flex flex-wrap justify-center gap-3 mb-6">
+        <span className="inline-flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/20 rounded-full px-3 py-1 text-xs text-purple-300">
+          <Trophy className="h-3 w-3" /> Puzzle Pts
+        </span>
+        <span className="inline-flex items-center gap-1.5 bg-green-500/10 border border-green-500/20 rounded-full px-3 py-1 text-xs text-green-300">
+          + Referral Bonus
+        </span>
+        <span className="inline-flex items-center gap-1.5 bg-secondary/10 border border-secondary/20 rounded-full px-3 py-1 text-xs text-secondary">
+          = Total Points
+        </span>
       </div>
 
       {/* Top 3 Podium */}
       {leaderboardData.length >= 3 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          {/* Mobile: 1st Place First */}
+          {/* 1st Place */}
           <Card className="bg-card/50 backdrop-blur-sm border-white/10 sm:order-2 sm:h-52 h-44 flex flex-col justify-between">
             <CardContent className="p-4 text-center flex flex-col justify-between h-full">
               <div className="flex justify-center mb-2">{getRankIcon(1)}</div>
@@ -180,7 +177,7 @@ export default function LeaderboardPage() {
                   {leaderboardData[0].fullName}
                 </h3>
                 <p className="text-secondary font-bold text-xl font-fredoka">
-                  {leaderboardData[0].points}p
+                  {(leaderboardData[0].totalPoints ?? leaderboardData[0].points)} pts
                 </p>
               </div>
             </CardContent>
@@ -208,7 +205,7 @@ export default function LeaderboardPage() {
                   {leaderboardData[1].fullName}
                 </h3>
                 <p className="text-secondary font-bold text-lg font-fredoka">
-                  {leaderboardData[1].points}p
+                  {(leaderboardData[1].totalPoints ?? leaderboardData[1].points)} pts
                 </p>
               </div>
             </CardContent>
@@ -236,7 +233,7 @@ export default function LeaderboardPage() {
                   {leaderboardData[2].fullName}
                 </h3>
                 <p className="text-secondary font-bold text-lg font-fredoka">
-                  {leaderboardData[2].points}p
+                  {(leaderboardData[2].totalPoints ?? leaderboardData[2].points)} pts
                 </p>
               </div>
             </CardContent>
@@ -253,126 +250,140 @@ export default function LeaderboardPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
+          {/* Column headers */}
+          <div className="hidden sm:grid grid-cols-[auto_1fr_auto] gap-4 px-4 pb-2 border-b border-white/5">
+            <div className="w-8" />
+            <span className="text-white/40 text-xs uppercase tracking-wider">Player</span>
+            <div className="flex gap-6 text-white/40 text-xs uppercase tracking-wider">
+              <span className="w-20 text-right">Puzzle</span>
+              <span className="w-20 text-right">Referral</span>
+              <span className="w-20 text-right">Total</span>
+            </div>
+          </div>
+
           <div className="space-y-1">
-            {leaderboardData.map((player) => (
-              <div
-                key={player.userId}
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 gap-3 sm:gap-4">
-                <div className="flex items-center gap-3 sm:gap-4 flex-1">
-                  {/* Rank */}
-                  <div className="flex items-center justify-center w-8 flex-shrink-0">
-                    {player.position <= 3 ? (
-                      getRankIcon(player.position)
-                    ) : (
-                      <span className="text-lg font-bold text-white/60">
-                        #{player.position}
-                      </span>
+            {leaderboardData.map((player) => {
+              const puzzlePts = player.puzzlePoints ?? player.points;
+              const referralPts = player.referralPoints ?? 0;
+              const totalPts = player.totalPoints ?? player.points;
+
+              return (
+                <div
+                  key={player.userId}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 gap-3 sm:gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                    {/* Rank */}
+                    <div className="flex items-center justify-center w-8 flex-shrink-0">
+                      {player.position <= 3 ? (
+                        getRankIcon(player.position)
+                      ) : (
+                        <span className="text-lg font-bold text-white/60">
+                          #{player.position}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Avatar */}
+                    <div className="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {player.avatar ? (
+                        <img
+                          src={player.avatar}
+                          alt={player.username}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-white font-semibold">
+                          {player.initials}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Name */}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-white font-semibold truncate">
+                        @{player.username}
+                      </h3>
+                      <p className="text-white/60 text-sm">
+                        {player.puzzlesSolved} puzzle{player.puzzlesSolved !== 1 ? "s" : ""} solved
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Points breakdown */}
+                  <div className="flex items-center gap-3 sm:gap-6 justify-between sm:justify-end">
+                    {/* Mobile: compact total */}
+                    <div className="sm:hidden flex items-center gap-2">
+                      <span className="text-white/60 text-xs">{puzzlePts}+{referralPts}</span>
+                      <span className="text-secondary font-bold font-fredoka">{totalPts} pts</span>
+                    </div>
+
+                    {/* Desktop: three columns */}
+                    <div className="hidden sm:flex items-center gap-6">
+                      <div className="w-20 text-right">
+                        <p className="text-purple-300 font-semibold font-fredoka">{puzzlePts}</p>
+                        <p className="text-white/40 text-xs">puzzle</p>
+                      </div>
+                      <div className="w-20 text-right">
+                        <p className="text-green-400 font-semibold font-fredoka">+{referralPts}</p>
+                        <p className="text-white/40 text-xs">referral</p>
+                      </div>
+                      <div className="w-20 text-right">
+                        <p className="text-secondary font-bold text-lg font-fredoka">{totalPts}</p>
+                        <p className="text-white/40 text-xs">total</p>
+                      </div>
+                    </div>
+
+                    {player.position <= 3 && (
+                      <Badge
+                        className={`${getRankBadgeColor(
+                          player.position
+                        )} border flex-shrink-0`}>
+                        <span className="sm:hidden">#{player.position}</span>
+                        <span className="hidden sm:inline">
+                          Top {player.position}
+                        </span>
+                      </Badge>
                     )}
                   </div>
-
-                  {/* Avatar */}
-                  <div className="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
-                    {player.avatar ? (
-                      <img
-                        src={player.avatar}
-                        alt={player.username}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-white font-semibold">
-                        {player.initials}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Name and Stats */}
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold truncate">
-                      @{player.username}
-                    </h3>
-                    <p className="text-white/60 text-sm">
-                      <span className="sm:hidden">
-                        {player.puzzlesSolved} puzzles • {player.points} pts
-                      </span>
-                      <span className="hidden sm:inline">
-                        {player.puzzlesSolved} puzzles solved • {player.points}{" "}
-                        points
-                      </span>
-                    </p>
-                  </div>
                 </div>
-
-                {/* Earnings and Badge */}
-                <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-3">
-                  <div className="text-left sm:text-right">
-                    <p className="text-white font-bold text-lg font-fredoka">
-                      ₦{(player.prizeAmount ?? 0).toLocaleString()}
-                    </p>
-                    <p className="text-white/60 text-xs">this month</p>
-                  </div>
-
-                  {player.position <= 3 && (
-                    <Badge
-                      className={`${getRankBadgeColor(
-                        player.position
-                      )} border flex-shrink-0`}>
-                      <span className="sm:hidden">#{player.position}</span>
-                      <span className="hidden sm:inline">
-                        Top {player.position}
-                      </span>
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
 
-      {/* Rewards Info */}
+      {/* How points work */}
       <Card className="bg-card/50 backdrop-blur-sm border-white/10 mt-6 sm:mt-8">
         <CardHeader>
           <CardTitle className="text-white font-fredoka flex items-center gap-2 text-lg sm:text-xl">
             <Trophy className="h-5 w-5 text-secondary" />
-            Monthly Rewards
+            How Points Work
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            <div className="text-center p-3 sm:p-4 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
-              <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500 mx-auto mb-2" />
-              <h3 className="text-white font-semibold mb-1 text-sm sm:text-base">
-                1st Place
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="p-3 sm:p-4 bg-purple-500/10 rounded-xl border border-purple-500/20">
+              <h3 className="text-white font-semibold mb-2 text-sm sm:text-base">
+                Puzzle Points
               </h3>
-              <p className="text-yellow-500 font-bold text-lg sm:text-xl font-fredoka">
-                ₦500,000
-              </p>
-              <p className="text-yellow-500/80 text-xs">Bonus</p>
+              <ul className="space-y-1 text-white/70 text-sm">
+                <li>Any game type: <span className="text-purple-300 font-semibold">+1 pt</span></li>
+                <li>Sliding Puzzle: <span className="text-purple-300 font-semibold">+2 pts</span></li>
+                <li className="text-white/40 text-xs">(first solve per day counts)</li>
+              </ul>
             </div>
-            <div className="text-center p-3 sm:p-4 bg-gray-400/10 rounded-xl border border-gray-400/20">
-              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mx-auto mb-2" />
-              <h3 className="text-white font-semibold mb-1 text-sm sm:text-base">
-                2nd Place
+            <div className="p-3 sm:p-4 bg-green-500/10 rounded-xl border border-green-500/20">
+              <h3 className="text-white font-semibold mb-2 text-sm sm:text-base">
+                Referral Bonus Points
               </h3>
-              <p className="text-gray-400 font-bold text-lg sm:text-xl font-fredoka">
-                ₦300,000
-              </p>
-              <p className="text-gray-400/80 text-xs">Bonus</p>
-            </div>
-            <div className="text-center p-3 sm:p-4 bg-amber-600/10 rounded-xl border border-amber-600/20">
-              <Medal className="h-6 w-6 sm:h-8 sm:w-8 text-amber-600 mx-auto mb-2" />
-              <h3 className="text-white font-semibold mb-1 text-sm sm:text-base">
-                3rd Place
-              </h3>
-              <p className="text-amber-600 font-bold text-lg sm:text-xl font-fredoka">
-                ₦200,000
-              </p>
-              <p className="text-amber-600/80 text-xs">Bonus</p>
+              <ul className="space-y-1 text-white/70 text-sm">
+                <li>Friend signs up with your link: <span className="text-green-400 font-semibold">+1 pt</span> (friend)</li>
+                <li>Friend completes first puzzle: <span className="text-green-400 font-semibold">+3 pts</span> (you)</li>
+              </ul>
             </div>
           </div>
-          <p className="text-center text-white/60 text-xs sm:text-sm mt-4 px-4">
-            Top 10 players also receive exclusive badges and early access to new
-            puzzle campaigns
+          <p className="text-center text-white/50 text-xs sm:text-sm mt-4 px-4">
+            Total points = Puzzle points + Referral bonus &bull; Resets at the end of each month
           </p>
         </CardContent>
       </Card>
