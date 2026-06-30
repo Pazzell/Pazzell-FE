@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/ui/logo-icon";
-import { User, Menu, LogOut, X, Trophy } from "lucide-react";
+import { User, Menu, LogOut, X, Trophy, Settings } from "lucide-react";
 import { routes } from "@/app/_utils/routes";
 import { useAtomValue, useSetAtom } from "jotai/react";
 import { userAtom } from "@/atom/user";
@@ -147,12 +147,12 @@ export function Header() {
                         <DropdownMenuItem asChild>
                           <Link href={routes.USER.PROFILE}>Profile</Link>
                         </DropdownMenuItem>
-                        {/* <DropdownMenuItem asChild>
-                          <Link href={routes.USER.BADGES}>
-                            <Trophy className="h-4 w-4 mr-2" />
-                            Badges
+                        <DropdownMenuItem asChild>
+                          <Link href={routes.USER.SETTINGS}>
+                            <Settings className="h-4 w-4 mr-2" />
+                            Settings
                           </Link>
-                        </DropdownMenuItem> */}
+                        </DropdownMenuItem>
                       </>
                     )}
                     <DropdownMenuItem
@@ -245,6 +245,12 @@ export function Header() {
                     className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
                     onClick={closeMobileMenu}>
                     Profile
+                  </Link>
+                  <Link
+                    href={routes.USER.SETTINGS}
+                    className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
+                    onClick={closeMobileMenu}>
+                    Settings
                   </Link>
                   {userType && (
                     <div className="border-t border-white/10 pt-4 space-y-2">

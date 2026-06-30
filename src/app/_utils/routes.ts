@@ -29,6 +29,7 @@ export const routes = {
   USER: {
     DASHBOARD: "/user/dashboard",
     PROFILE: "/user/profile",
+    SETTINGS: "/user/settings",
     PUZZLES: "/user/puzzles",
     PUZZLE_PLAY: (id: string) => `/user/puzzles/${id}`,
     EARNINGS: "/user/earnings",

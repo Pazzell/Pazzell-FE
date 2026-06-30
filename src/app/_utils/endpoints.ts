@@ -70,6 +70,12 @@ export const ENDPOINTS = {
   BRAND_ANALYTICS: "/brands/analytics",
   APP_ANALYTICS: "/analytics/app",
 
+  // User settings
+  CHANGE_PASSWORD: "/profile/change-password",
+  UPDATE_NOTIFICATIONS: "/profile/notifications",
+  UPDATE_PRIVACY: "/profile/privacy",
+  DELETE_ACCOUNT: "/profile/account",
+
   // AI
   GENERATE_QUESTIONS: "/campaigns/generate-questions",
 

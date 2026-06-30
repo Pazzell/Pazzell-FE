@@ -2,7 +2,6 @@
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Trophy, Crown, Medal, Info } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -39,19 +38,6 @@ const getRankIcon = (rank: number) => {
           #{rank}
         </span>
       );
-  }
-};
-
-const getRankBadgeColor = (rank: number) => {
-  switch (rank) {
-    case 1:
-      return "bg-yellow-500/20 text-yellow-500 border-yellow-500/30";
-    case 2:
-      return "bg-gray-400/20 text-gray-400 border-gray-400/30";
-    case 3:
-      return "bg-amber-600/20 text-amber-600 border-amber-600/30";
-    default:
-      return "bg-secondary/20 text-secondary border-secondary/30";
   }
 };
 
@@ -310,40 +296,25 @@ export default function LeaderboardPage() {
                   </div>
 
                   {/* Points breakdown */}
-                  <div className="flex items-center gap-3 sm:gap-6 justify-between sm:justify-end">
-                    {/* Mobile: compact total */}
+                  <div className="flex items-center gap-3 sm:gap-6 justify-end">
+                    {/* Mobile: compact */}
                     <div className="sm:hidden flex items-center gap-2">
                       <span className="text-white/60 text-xs">{puzzlePts}+{referralPts}</span>
                       <span className="text-secondary font-bold font-fredoka">{totalPts} pts</span>
                     </div>
 
-                    {/* Desktop: three columns */}
+                    {/* Desktop: three columns — numbers only */}
                     <div className="hidden sm:flex items-center gap-6">
                       <div className="w-20 text-right">
                         <p className="text-purple-300 font-semibold font-fredoka">{puzzlePts}</p>
-                        <p className="text-white/40 text-xs">puzzle</p>
                       </div>
                       <div className="w-20 text-right">
                         <p className="text-green-400 font-semibold font-fredoka">+{referralPts}</p>
-                        <p className="text-white/40 text-xs">referral</p>
                       </div>
                       <div className="w-20 text-right">
                         <p className="text-secondary font-bold text-lg font-fredoka">{totalPts}</p>
-                        <p className="text-white/40 text-xs">total</p>
                       </div>
                     </div>
-
-                    {player.position <= 3 && (
-                      <Badge
-                        className={`${getRankBadgeColor(
-                          player.position
-                        )} border flex-shrink-0`}>
-                        <span className="sm:hidden">#{player.position}</span>
-                        <span className="hidden sm:inline">
-                          Top {player.position}
-                        </span>
-                      </Badge>
-                    )}
                   </div>
                 </div>
               );
@@ -367,7 +338,7 @@ export default function LeaderboardPage() {
                 Puzzle Points
               </h3>
               <ul className="space-y-1 text-white/70 text-sm">
-                <li>Any game type: <span className="text-purple-300 font-semibold">+1 pt</span></li>
+                <li>Other game types: <span className="text-purple-300 font-semibold">+1 pt</span></li>
                 <li>Sliding Puzzle: <span className="text-purple-300 font-semibold">+2 pts</span></li>
                 <li className="text-white/40 text-xs">(first solve per day counts)</li>
               </ul>
