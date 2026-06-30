@@ -25,6 +25,12 @@ export interface GamerProfileData {
   role: "gamer";
   isVerified: boolean;
   leaderboardPosition: number | null;
+  points?: {
+    monthKey: string;
+    puzzlePoints: number;
+    referralPoints: number;
+    totalPoints: number;
+  };
   analytics: {
     lifetime: {
       puzzlesSolved: number;

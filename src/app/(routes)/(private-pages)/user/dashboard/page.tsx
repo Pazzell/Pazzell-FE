@@ -24,6 +24,7 @@ import {
   Medal,
   Award,
   ArrowRight,
+  DollarSign,
 } from "lucide-react";
 import Link from "next/link";
 import { routes } from "@/app/_utils/routes";
@@ -143,6 +144,11 @@ export default function UserDashboardPage() {
   const userStats = profiletData?.analytics?.lifetime;
   const weeklyUserStats = profiletData?.analytics?.weekly;
 
+  // Monthly points come directly from profile.points (computed live server-side,
+  // same source as the leaderboard — guaranteed to match).
+  const monthlyPoints = profiletData?.points?.totalPoints ?? 0;
+  const monthlyEarnings = monthlyPoints / 20;
+
   const currentUser = {
     name: "You",
     points: weeklyUserStats?.totalPoints || 0,
@@ -253,7 +259,7 @@ export default function UserDashboardPage() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-white font-fredoka">
-                        {userStats?.totalPoints || 0}
+                        {monthlyPoints}
                       </p>
                       <p className="text-xs text-white/60 uppercase tracking-wider">
                         Points
@@ -277,6 +283,24 @@ export default function UserDashboardPage() {
                       </p>
                       <p className="text-xs text-white/60 uppercase tracking-wider">
                         Time
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card/50 backdrop-blur-sm border-white/10">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-500/20 rounded-lg">
+                      <DollarSign className="h-5 w-5 text-yellow-400" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-white font-fredoka">
+                        ${monthlyEarnings.toFixed(2)}
+                      </p>
+                      <p className="text-xs text-white/60 uppercase tracking-wider">
+                        Earned
                       </p>
                     </div>
                   </div>
