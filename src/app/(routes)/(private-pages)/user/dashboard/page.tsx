@@ -31,10 +31,10 @@ import { routes } from "@/app/_utils/routes";
 import { useQuery } from "@tanstack/react-query";
 import {
   GamerProfileData,
-  CampaignsResponse,
-  CampaignData,
-  LeaderboardResponse,
-  LeaderboardData,
+  AnyCampaignsResponse,
+  AnyCampaign,
+  isV2Campaign,
+  WeeklyLeaderboardResponse,
 } from "@/types";
 import axios from "axios";
 import { endpointUrl, formatPuzzleType } from "@/app/_utils/helper";
@@ -42,6 +42,7 @@ import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/atom/user";
 import Image from "next/image";
+import { EligibilityProgress } from "@/components/raffle/EligibilityProgress";
 
 // // Mock user stats data
 // const userStats = {
@@ -64,6 +65,11 @@ const getGameRoute = (gameType: string, campaignId: string): string => {
   };
   return routeMap[gameType] || `/puzzle/${gameType}?campaign=${campaignId}`;
 };
+
+const getCampaignPlayHref = (campaign: AnyCampaign): string =>
+  isV2Campaign(campaign)
+    ? routes.USER.CAMPAIGN_PLAY(campaign._id)
+    : getGameRoute(campaign.gameType, campaign._id);
 
 // Helper function to get initials from full name
 const getInitials = (fullName: string): string => {
@@ -105,11 +111,11 @@ export default function UserDashboardPage() {
     data: campaigns,
     error: campaignError,
     isLoading: loadingCampaigns,
-  } = useQuery<CampaignData[]>({
+  } = useQuery<AnyCampaign[]>({
     queryKey: ["campaigns"],
     queryFn: () =>
       axios
-        .get<CampaignsResponse>(endpointUrl(`${ENDPOINTS.CAMPAIGNS}`), {
+        .get<AnyCampaignsResponse>(endpointUrl(`${ENDPOINTS.CAMPAIGNS}`), {
           headers: {
             Authorization: `Bearer ${user?.accessToken}`,
           },
@@ -123,11 +129,11 @@ export default function UserDashboardPage() {
     data: leaderboard,
     error: leaderboardError,
     isLoading: loadingLeaderboard,
-  } = useQuery<LeaderboardData>({
+  } = useQuery<WeeklyLeaderboardResponse["leaderboard"]>({
     queryKey: ["leaderboard"],
     queryFn: () =>
       axios
-        .get<LeaderboardResponse>(
+        .get<WeeklyLeaderboardResponse>(
           endpointUrl(`${ENDPOINTS.WEEKLY_LEADERBOARD}`),
           {
             headers: {
@@ -144,10 +150,10 @@ export default function UserDashboardPage() {
   const userStats = profiletData?.analytics?.lifetime;
   const weeklyUserStats = profiletData?.analytics?.weekly;
 
-  // Monthly points come directly from profile.points (computed live server-side,
+  // Weekly points come directly from profile.points (computed live server-side,
   // same source as the leaderboard — guaranteed to match).
-  const monthlyPoints = profiletData?.points?.totalPoints ?? 0;
-  const monthlyEarnings = monthlyPoints / 20;
+  const weeklyPoints = profiletData?.points?.totalPoints ?? 0;
+  const weeklyEarnings = weeklyPoints / 20;
 
   const currentUser = {
     name: "You",
@@ -169,7 +175,7 @@ export default function UserDashboardPage() {
   };
 
   // Helper function to check if campaign is not expired
-  const isNotExpired = (campaign: CampaignData) => {
+  const isNotExpired = (campaign: AnyCampaign) => {
     const now = new Date();
     const endDate = new Date(campaign.endDate);
     return endDate > now;
@@ -259,7 +265,7 @@ export default function UserDashboardPage() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-white font-fredoka">
-                        {monthlyPoints}
+                        {weeklyPoints}
                       </p>
                       <p className="text-xs text-white/60 uppercase tracking-wider">
                         Points
@@ -297,7 +303,7 @@ export default function UserDashboardPage() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-white font-fredoka">
-                        ${monthlyEarnings.toFixed(2)}
+                        ${weeklyEarnings.toFixed(2)}
                       </p>
                       <p className="text-xs text-white/60 uppercase tracking-wider">
                         Earned
@@ -310,6 +316,9 @@ export default function UserDashboardPage() {
             </>
           )}
         </div>
+
+        {/* Raffle Eligibility */}
+        <EligibilityProgress />
 
         {/* Featured Campaigns */}
         <Card className="bg-card/50 backdrop-blur-sm border-white/10">
@@ -380,7 +389,7 @@ export default function UserDashboardPage() {
                       featuredCampaigns.map((campaign) => (
                         <Link
                           key={campaign._id}
-                          href={getGameRoute(campaign.gameType, campaign._id)}
+                          href={getCampaignPlayHref(campaign)}
                           className="group cursor-pointer flex-none w-80 snap-start">
                           <div className="relative overflow-hidden rounded-lg mb-3">
                             <Image
@@ -416,9 +425,11 @@ export default function UserDashboardPage() {
                               <span className="text-white/60 text-sm">
                                 {campaign.brandName}
                               </span>
-                              <Badge className="bg-secondary/20 text-secondary border-secondary/30 text-xs">
-                                {formatPuzzleType(campaign.gameType)}
-                              </Badge>
+                              {!isV2Campaign(campaign) && (
+                                <Badge className="bg-secondary/20 text-secondary border-secondary/30 text-xs">
+                                  {formatPuzzleType(campaign.gameType)}
+                                </Badge>
+                              )}
                             </div>
                           </div>
                         </Link>
@@ -461,7 +472,7 @@ export default function UserDashboardPage() {
                     featuredCampaigns.map((campaign) => (
                       <Link
                         key={campaign._id}
-                        href={getGameRoute(campaign.gameType, campaign._id)}
+                        href={getCampaignPlayHref(campaign)}
                         className="group cursor-pointer flex-none w-64 snap-start">
                         <div className="relative overflow-hidden rounded-lg mb-3">
                           <Image
@@ -497,9 +508,11 @@ export default function UserDashboardPage() {
                             <span className="text-white/60 text-sm">
                               {campaign.brandName}
                             </span>
-                            <Badge className="bg-secondary/20 text-secondary border-secondary/30 text-xs">
-                              {formatPuzzleType(campaign.gameType)}
-                            </Badge>
+                            {!isV2Campaign(campaign) && (
+                              <Badge className="bg-secondary/20 text-secondary border-secondary/30 text-xs">
+                                {formatPuzzleType(campaign.gameType)}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </Link>
@@ -732,7 +745,8 @@ export default function UserDashboardPage() {
                 <div className="p-4 bg-secondary/10 border border-secondary/20 rounded-lg">
                   <h4 className="text-white font-semibold mb-2">Earn Bonus Points</h4>
                   <p className="text-white/70 text-sm mb-3">
-                    Get bonus points when your friend completes their first puzzle!
+                    Earn +5 points once your friend reaches 21 lifetime points (about 3
+                    campaigns completed).
                   </p>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 p-2 bg-white/5 rounded border border-white/10 overflow-hidden">

@@ -40,9 +40,13 @@ interface WordHuntGameProps {
   campaignDetails: CampaignData
   campaignId: string
   previewMode?: boolean
+  // v2 session flow: when set, the game reports completion to the session
+  // orchestrator instead of showing its own embedded quiz/submit UI.
+  sessionMode?: boolean
+  onGameComplete?: (movesTaken: number, timeTakenMs: number) => void
 }
 
-export function WordHuntGame({ campaignDetails, campaignId, previewMode = false }: WordHuntGameProps) {
+export function WordHuntGame({ campaignDetails, campaignId, previewMode = false, sessionMode = false, onGameComplete }: WordHuntGameProps) {
   const user = useAtomValue(userAtom)
 
   const [gameStarted, setGameStarted] = useState(false)
@@ -186,8 +190,13 @@ export function WordHuntGame({ campaignDetails, campaignId, previewMode = false 
     if (gameData && foundWords.length === gameData.placedWords.length && gameData.placedWords.length > 0) {
       setIsSolved(true)
       setIsPlaying(false)
-      setShowQuestions(true)
+      if (sessionMode) {
+        onGameComplete?.(foundWords.length, timeElapsed * 1000)
+      } else {
+        setShowQuestions(true)
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [foundWords, gameData])
 
   const formatTime = (seconds: number) => {

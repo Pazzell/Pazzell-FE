@@ -12,13 +12,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Users,
   Share2,
   Copy,
   CheckCircle2,
-  Crown,
-  Trophy,
-  Medal,
   Gift,
   UserPlus,
   Zap,
@@ -31,14 +27,11 @@ import { endpointUrl } from "@/app/_utils/helper";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import {
   ReferralEventsResponse,
-  ReferralSummaryResponse,
   ReferralMyStatsResponse,
 } from "@/types";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/atom/user";
 import { PageLoader } from "@/components/ui/page-loader";
-
-const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
 const getInitials = (name: string): string =>
   name
@@ -47,19 +40,6 @@ const getInitials = (name: string): string =>
     .map((p) => p.charAt(0).toUpperCase())
     .slice(0, 2)
     .join("");
-
-const getRankIcon = (rank: number) => {
-  switch (rank) {
-    case 1:
-      return <Crown className="h-5 w-5 text-yellow-500" />;
-    case 2:
-      return <Trophy className="h-5 w-5 text-gray-400" />;
-    case 3:
-      return <Medal className="h-5 w-5 text-amber-600" />;
-    default:
-      return <span className="text-sm font-bold text-white/60">#{rank}</span>;
-  }
-};
 
 export default function ReferralsPage() {
   const user = useAtomValue(userAtom);
@@ -70,51 +50,36 @@ export default function ReferralsPage() {
       ? `${window.location.origin}/register?ref=${user.username}`
       : "";
 
-  // Own referral stats for the current month (authenticated endpoint)
+  // Own referral stats (authenticated endpoint). No period filter is sent —
+  // the backend moved to a weekly system and a hardcoded ?month= filter no
+  // longer fits; the endpoint's default ("current period") is used instead.
   const { data: myStatsData, isLoading: loadingMyStats } =
     useQuery<ReferralMyStatsResponse>({
-      queryKey: ["referrals-my-stats", currentMonth],
+      queryKey: ["referrals-my-stats"],
       queryFn: () =>
         axios
           .get<ReferralMyStatsResponse>(
-            endpointUrl(ENDPOINTS.REFERRALS_MY_STATS(currentMonth)),
+            endpointUrl(ENDPOINTS.REFERRALS_MY_STATS()),
             { headers: { Authorization: `Bearer ${user?.accessToken}` } }
           )
           .then((res) => res.data),
       enabled: !!user?.accessToken,
     });
 
-  // Global referral leaderboard — public
-  const { data: summaryData, isLoading: loadingSummary } = useQuery({
-    queryKey: ["referrals-summary", currentMonth],
-    queryFn: () =>
-      axios
-        .get<ReferralSummaryResponse>(
-          endpointUrl(`${ENDPOINTS.REFERRALS_SUMMARY}?month=${currentMonth}`)
-        )
-        .then((res) => res.data),
-  });
-
   // Referral event log — public
   const { data: eventsData } = useQuery({
-    queryKey: ["referrals-events", currentMonth],
+    queryKey: ["referrals-events"],
     queryFn: () =>
       axios
-        .get<ReferralEventsResponse>(
-          endpointUrl(`${ENDPOINTS.REFERRALS_EVENTS}?month=${currentMonth}`)
-        )
+        .get<ReferralEventsResponse>(endpointUrl(ENDPOINTS.REFERRALS_EVENTS))
         .then((res) => res.data),
   });
 
   const stats = myStatsData?.stats;
-  const referralCount = stats?.successfulReferralsThisMonth ?? 0;
-  const referralPoints = stats?.referralPointsThisMonth ?? 0;
+  const creditedCount = stats?.successfulReferralsThisMonth ?? 0;
+  const creditedPoints = stats?.referralPointsThisMonth ?? 0;
   const pendingCount = stats?.pendingReferrals ?? 0;
   const referredUsers = stats?.referredUsersThisMonth ?? [];
-
-  const leaderboard = [...(summaryData?.summary || [])].sort(
-    (a, b) => (b.successfulCount ?? 0) - (a.successfulCount ?? 0)
-  );
 
   const events = eventsData?.events || [];
 
@@ -142,7 +107,7 @@ export default function ReferralsPage() {
     }
   };
 
-  if (loadingMyStats && loadingSummary) {
+  if (loadingMyStats) {
     return <PageLoader message="Loading your referrals..." />;
   }
 
@@ -156,7 +121,8 @@ export default function ReferralsPage() {
             Refer &amp; Earn
           </h1>
           <p className="text-white/70">
-            Invite friends to Pazzell and earn bonus points when they play their first puzzle.
+            Invite friends to Pazzell and earn bonus points once they&apos;re active
+            players.
           </p>
         </div>
 
@@ -165,13 +131,15 @@ export default function ReferralsPage() {
           <Info className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
           <div className="text-sm text-white/80 space-y-1">
             <p>
-              <span className="text-secondary font-semibold">Your friend gets +1 point</span> just for signing up with your link.
-            </p>
-            <p>
-              <span className="text-secondary font-semibold">You earn +3 bonus points</span> when your referred friend completes their first puzzle.
+              <span className="text-secondary font-semibold">You earn +5 bonus points</span>{" "}
+              once your referred friend reaches 21 lifetime points — about 3 campaigns
+              completed.
             </p>
             <p className="text-white/50 text-xs">
-              Referral bonus points are added to your monthly leaderboard total and reset at month end.
+              Referral bonus points are added to your weekly leaderboard total. A
+              referral shows as <span className="text-white/70">pending</span> until
+              your friend hits that threshold, then flips to{" "}
+              <span className="text-green-400">credited</span>.
             </p>
           </div>
         </div>
@@ -184,7 +152,8 @@ export default function ReferralsPage() {
               Your Referral Link
             </CardTitle>
             <CardDescription className="text-white/70">
-              Share this link. You&apos;ll earn 3 bonus points once they complete their first puzzle.
+              Share this link. You&apos;ll earn 5 bonus points once they reach 21
+              lifetime points (about 3 campaigns completed).
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -233,10 +202,10 @@ export default function ReferralsPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-white font-fredoka">
-                    {referralCount}
+                    {creditedCount}
                   </p>
                   <p className="text-xs text-white/60 uppercase tracking-wider">
-                    Referrals This Month
+                    Credited Referrals
                   </p>
                 </div>
               </div>
@@ -251,10 +220,10 @@ export default function ReferralsPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-white font-fredoka">
-                    +{referralPoints}
+                    +{creditedPoints}
                   </p>
                   <p className="text-xs text-white/60 uppercase tracking-wider">
-                    Points This Month
+                    Referral Points Earned
                   </p>
                 </div>
               </div>
@@ -272,7 +241,7 @@ export default function ReferralsPage() {
                     {pendingCount}
                   </p>
                   <p className="text-xs text-white/60 uppercase tracking-wider">
-                    Pending (signed up, not played)
+                    Pending (not yet at 21 pts)
                   </p>
                 </div>
               </div>
@@ -286,7 +255,7 @@ export default function ReferralsPage() {
             <CardHeader>
               <CardTitle className="text-white font-fredoka flex items-center gap-2">
                 <UserPlus className="h-5 w-5 text-secondary" />
-                Successful Referrals This Month
+                Credited Referrals
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -329,88 +298,6 @@ export default function ReferralsPage() {
           </Card>
         )}
 
-        {/* Top Referrers Leaderboard */}
-        <Card className="bg-card/50 backdrop-blur-sm border-white/10">
-          <CardHeader>
-            <CardTitle className="text-white font-fredoka flex items-center gap-2">
-              <Users className="h-5 w-5 text-secondary" />
-              Top Referrers
-            </CardTitle>
-            <CardDescription className="text-white/70">
-              Players ranked by successful referrals this month
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            {loadingSummary ? (
-              <div className="p-6 text-center text-white/60">
-                Loading leaderboard...
-              </div>
-            ) : leaderboard.length === 0 ? (
-              <div className="p-8 text-center">
-                <Users className="w-12 h-12 text-white/40 mx-auto mb-3" />
-                <p className="text-white/60">
-                  No referrals yet. Be the first to invite a friend!
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {leaderboard.map((row, index) => {
-                  const rank = index + 1;
-                  const isMe = row.user?._id === user?.id;
-                  const fullName =
-                    row.user?.firstName && row.user?.lastName
-                      ? `${row.user.firstName} ${row.user.lastName}`
-                      : row.user?.username || "Player";
-
-                  return (
-                    <div
-                      key={row.user?._id || rank}
-                      className={`flex items-center gap-3 sm:gap-4 p-4 border-b border-white/5 last:border-b-0 transition-colors ${
-                        isMe
-                          ? "bg-secondary/10 border-secondary/20"
-                          : "hover:bg-white/5"
-                      }`}>
-                      <div className="flex items-center justify-center w-8 flex-shrink-0">
-                        {getRankIcon(rank)}
-                      </div>
-                      <div className="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {row.user?.avatar ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={row.user.avatar}
-                            alt={fullName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-white font-semibold text-sm">
-                            {getInitials(fullName)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-white font-semibold truncate">
-                          {row.user?.username
-                            ? `@${row.user.username}`
-                            : fullName}
-                          {isMe && (
-                            <span className="text-secondary text-xs ml-2">
-                              (You)
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                      <Badge className="bg-secondary/20 text-secondary border-secondary/30 border flex-shrink-0">
-                        {row.successfulCount}{" "}
-                        {row.successfulCount === 1 ? "referral" : "referrals"}
-                      </Badge>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Recent Activity */}
         {events.length > 0 && (
           <Card className="bg-card/50 backdrop-blur-sm border-white/10">
@@ -431,9 +318,9 @@ export default function ReferralsPage() {
                         }`.trim()
                       : "A friend");
                   const label =
-                    event.type === "first_puzzle"
-                      ? `${name} completed their first puzzle — you earned +3 pts`
-                      : `${name} signed up using your link`;
+                    event.type === "signup"
+                      ? `${name} signed up using your link — pending until they reach 21 points`
+                      : `${name} reached 21 points — you earned +5 pts`;
 
                   return (
                     <div

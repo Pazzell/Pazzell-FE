@@ -342,56 +342,11 @@ export interface PrizeTableResponse {
   prizeTable: PrizeTableData;
 }
 
-// --- Monthly leaderboard & referral types (backend refactor)
-export interface LeaderboardEntry {
-  position: number;
-  userId: string;
-  fullName: string;
-  username?: string;
-  avatar?: string;
-  points: number;
-  puzzlePoints?: number;
-  referralPoints?: number;
-  referralCount?: number;
-  totalPoints?: number;
-  puzzlesSolved: number;
-  avgTime?: number | null;
-  prizeAmount?: number | null;
-}
-
-export interface MonthlyLeaderboardResponse {
-  success: true;
-  leaderboard: {
-    type: string;
-    monthKey: string;
-    totalPlayers: number;
-    entries: LeaderboardEntry[];
-    jackpot?: { amount: number; note: string };
-  };
-}
-
-export interface ReferralAnalytics {
-  monthKey: string;
-  totalReferrals: number;
-  successfulReferrals: number;
-  pendingReferrals: number;
-  totalPointsEarned: number;
-  leaderboardPosition: number | null;
-}
-
-export interface GamerProfileResponse {
-  success: true;
-  profile: {
-    _id: string;
-    firstName: string;
-    lastName: string;
-    username: string;
-    avatar?: string;
-    analytics: {
-      referral: ReferralAnalytics;
-    };
-  };
-}
+// Note: the old monthly leaderboard types (LeaderboardEntry,
+// MonthlyLeaderboardResponse, ReferralAnalytics, GamerProfileResponse) were
+// removed here — the backend dropped /leaderboards/monthly entirely and
+// GET /user/gamer/profile's shape changed. See WeeklyLeaderboardEntry /
+// WeeklyLeaderboardResponse / GamerProfileV2Response further below.
 
 export interface ReferralSummaryRow {
   rank: number;
@@ -487,4 +442,350 @@ export interface PuzzleSubmitResponse {
   success: true;
   attempt: any;
   gameType: GameType;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Weekly-system migration v2 types (see API_CONTRACT_WEEKLY_MIGRATION.md)
+// Legacy schemaVersion:1 types above (CampaignData, CampaignQuestion, etc.)
+// are untouched — old campaigns keep serving from those shapes.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface CampaignCompletionResponse {
+  hasCompletedByCurrentUser: boolean;
+}
+
+export type CampaignQuestionInput = Omit<CampaignQuestion, "_id">;
+
+// v2 campaigns span all four game types plus a video + quiz stage.
+export interface CampaignV2Data {
+  _id: string;
+  schemaVersion: 2;
+  brandId: string;
+  brandName: string;
+  gameTypes: GameType[];
+  title: string;
+  description: string;
+  puzzleImageUrl?: string;
+  videoUrl?: string;
+  videoDurationSeconds: number;
+  videoSizeBytes: number;
+  videoMimeType: string;
+  words: string[];
+  questions: CampaignQuestion[]; // exactly 3, brand-authored, no AI generation
+  prizeDescription: string;
+  prizeUnitsAvailable: number;
+  createdAt: string;
+  endDate: string;
+  durationWeeks: number;
+  weeklyPrice: number;
+  brandUrl?: string;
+  campaignUrl?: string;
+  packageId: string;
+  packageName: string;
+  status: "draft" | "active" | "paused" | "completed" | string;
+  paymentStatus: "paid" | "unpaid";
+}
+
+export type AnyCampaign = CampaignData | CampaignV2Data;
+
+export function isV2Campaign(
+  campaign: AnyCampaign
+): campaign is CampaignV2Data {
+  return (campaign as CampaignV2Data).schemaVersion === 2;
+}
+
+export interface CampaignV2Response {
+  success: boolean;
+  campaign: CampaignV2Data;
+}
+
+// List endpoints (GET /campaigns, GET /campaigns/my-campaigns, etc.) now
+// return a mix of legacy and v2 campaigns in the same array.
+export interface AnyCampaignsResponse {
+  success: boolean;
+  campaigns: AnyCampaign[];
+}
+
+export interface WeeklyPriceResponse {
+  pricing: {
+    packageType: "basic" | "premium";
+    weeklyPrice: number;
+    durationWeeks: number;
+    totalAmount: number;
+    timeLimitHours: number;
+  };
+}
+
+// Gameplay sessions (v2 campaigns only)
+export interface GameSession {
+  _id: string;
+  campaignId: string;
+  gameTypes: GameType[];
+  status?: string;
+}
+
+export interface SessionStartResponse {
+  success: boolean;
+  session: GameSession;
+}
+
+export interface SessionActionResponse {
+  success: boolean;
+}
+
+export interface SessionQuizAttemptResponse {
+  success: boolean;
+  score: number;
+  allCorrect: boolean;
+  attemptsSoFar: number;
+  firstAttemptScore: number;
+}
+
+export interface SessionCompleteResponse {
+  success: true;
+  isFirstCompletion: boolean;
+  pointsAwarded: number;
+  totalCompletionTimeMs: number;
+  voided: boolean;
+  flagged: boolean;
+}
+
+// Weekly leaderboard (replaces monthly, which the backend removed)
+export interface WeeklyLeaderboardEntry {
+  position: number;
+  userId: string;
+  fullName: string;
+  username?: string;
+  avatar?: string;
+  puzzlesSolved: number;
+  points: number;
+  avgCompletionTimeMs: number;
+  avgCompletionTimeSec: number;
+}
+
+export interface WeeklyLeaderboardResponse {
+  success: true;
+  leaderboard: {
+    type: string;
+    weekKey: string;
+    totalPlayers: number;
+    entries: WeeklyLeaderboardEntry[];
+  };
+}
+
+// GET /user/gamer/profile — response shape changed: points/referral analytics
+// are now weekly-only (monthKey/puzzlePoints/referralPoints fields removed).
+export interface GamerProfileV2Response {
+  success: true;
+  profile: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    username: string;
+    avatar?: string;
+    points: {
+      weekKey: string;
+      totalPoints: number;
+    };
+    analytics: {
+      referral: {
+        weekKey: string;
+        totalReferrals: number;
+        successfulReferrals: number;
+        pendingReferrals: number;
+        pointsThisWeek: number;
+        referralCountThisWeek: number;
+      };
+    };
+  };
+}
+
+// Wallet & withdrawals
+export interface WalletBalanceResponse {
+  balance: number;
+  currency: string;
+}
+
+export interface WalletTransaction {
+  _id: string;
+  type: string;
+  amount: number;
+  status?: string;
+  description?: string;
+  createdAt: string;
+}
+
+export interface WalletTransactionsResponse {
+  success: boolean;
+  transactions: WalletTransaction[];
+}
+
+export interface BankAccount {
+  _id: string;
+  accountNumber: string;
+  bankCode: string;
+  bankName: string;
+  accountName: string;
+  createdAt: string;
+}
+
+export interface BankAccountsResponse {
+  success: boolean;
+  bankAccounts: BankAccount[];
+}
+
+export interface CreateBankAccountRequest {
+  accountNumber: string;
+  bankCode: string;
+  bankName: string;
+}
+
+export type WithdrawalStatus = "pending" | "processing" | "paid" | "failed";
+
+export interface Withdrawal {
+  _id: string;
+  bankAccountId: string;
+  amount: number;
+  status: WithdrawalStatus;
+  idempotencyKey: string;
+  createdAt: string;
+  updatedAt?: string;
+  failureReason?: string;
+}
+
+export interface WithdrawalsResponse {
+  success: boolean;
+  withdrawals: Withdrawal[];
+}
+
+export interface CreateWithdrawalRequest {
+  bankAccountId: string;
+  amount: number;
+  idempotencyKey: string;
+}
+
+// Raffles
+export interface RaffleCampaignCurrentResponse {
+  campaignId: string;
+  weekKey: string;
+  ticketCount: number;
+  eligibilityFloor: number;
+  drawStatus: "pending" | "drawn" | string;
+  // Not explicitly documented in the API contract's "current" shape, but a
+  // drawn winner implies a backing draw record — needed to call
+  // GET /raffles/:drawId/verify. Treated as best-effort/optional until
+  // confirmed; UI code must not assume it's always present.
+  drawId?: string;
+  winner?: {
+    userId: string;
+    fullName?: string;
+    username?: string;
+  } | null;
+}
+
+export type RaffleFulfillmentStatus =
+  | "pending"
+  | "shipped"
+  | "delivered"
+  | "failed";
+
+export interface UpdateRaffleFulfillmentRequest {
+  fulfillmentStatus: RaffleFulfillmentStatus;
+  fulfillmentNotes?: string;
+}
+
+export interface RaffleTicket {
+  campaignId: string;
+  campaignTitle?: string;
+  weekKey: string;
+  ticketCount: number;
+}
+
+export interface MyRaffleTicketsResponse {
+  success: boolean;
+  tickets: RaffleTicket[];
+  eligibleThisWeek: boolean;
+}
+
+export interface RaffleVerifyResponse {
+  drawId: string;
+  campaignId: string;
+  weekKey: string;
+  winner: {
+    userId: string;
+    fullName?: string;
+    username?: string;
+  };
+  verification: {
+    valid: boolean;
+    seed?: string;
+  };
+}
+
+// Admin config — the subset the frontend reads rather than hardcoding
+// (see API_CONTRACT_WEEKLY_MIGRATION.md §10). GET /admin/config is
+// admin-only; most of these are read via feature-specific fallbacks
+// (e.g. weekly pricing via the public calculate-weekly-price endpoint)
+// until a public config subset endpoint exists.
+export interface AdminConfigResponse {
+  success: boolean;
+  config: Record<string, { value: unknown; description?: string }>;
+}
+
+// Forum
+export interface ForumThread {
+  _id: string;
+  title: string;
+  category?: string;
+  authorId?: string;
+  authorName?: string;
+  createdAt: string;
+  postCount?: number;
+}
+
+export interface ForumThreadsResponse {
+  success: boolean;
+  threads: ForumThread[];
+}
+
+export interface ForumPost {
+  _id: string;
+  threadId: string;
+  body: string;
+  imageUrls?: string[];
+  authorId?: string;
+  authorName?: string;
+  authorAvatar?: string;
+  likeCount: number;
+  likedByMe?: boolean;
+  moderationStatus?: "visible" | "removed";
+  createdAt: string;
+}
+
+export interface ForumPostsResponse {
+  success: boolean;
+  posts: ForumPost[];
+}
+
+export type WinnerSubmissionStatus = "submitted" | "verified" | "rejected";
+
+export interface WinnerSubmission {
+  _id: string;
+  campaignId: string;
+  postUrl: string;
+  claimedLikeCount?: number;
+  status: WinnerSubmissionStatus;
+  adminNotes?: string;
+  createdAt: string;
+}
+
+export interface WinnerSubmissionsResponse {
+  success: boolean;
+  submissions: WinnerSubmission[];
+}
+
+export interface CreateWinnerSubmissionRequest {
+  campaignId: string;
+  postUrl: string;
+  claimedLikeCount?: number;
 }

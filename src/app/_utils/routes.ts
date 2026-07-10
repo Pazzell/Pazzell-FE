@@ -36,6 +36,12 @@ export const routes = {
     LEADERBOARD: "/user/leaderboard",
     BADGES: "/user/badges",
     REFERRALS: "/user/referrals",
+    // v2 (multi-game) campaign session play flow
+    CAMPAIGN_PLAY: (id: string) => `/user/campaigns/${id}/play`,
+    WALLET: "/user/wallet",
+    FORUM: "/user/forum",
+    FORUM_THREAD: (id: string) => `/user/forum/${id}`,
+    RAFFLES: "/user/raffles",
   },
 
   // Brand Routes
@@ -43,6 +49,10 @@ export const routes = {
     DASHBOARD: "/brand/dashboard",
     CAMPAIGNS: "/brand/campaigns",
     CAMPAIGNS_NEW: "/brand/campaigns/new",
+    // v2 (multi-game) campaign creation wizard — new campaigns only go
+    // through this flow now (POST /brands/campaigns changed shape).
+    // CAMPAIGNS_NEW / its ?edit= mode stays for legacy schemaVersion:1 campaigns.
+    CAMPAIGNS_CREATE: "/brand/campaigns/create",
     CAMPAIGN_DETAILS: (id: string) => `/brand/campaigns/${id}`,
     CAMPAIGN_EDIT: (id: string) => `/brand/campaigns/${id}/edit`,
     PUZZLES: "/brand/puzzles",

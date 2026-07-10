@@ -95,6 +95,10 @@ interface Props {
   previewMode?: boolean;
   availableCampaigns?: unknown[];
   hasCompleted?: boolean;
+  // v2 session flow: when set, the game reports completion to the session
+  // orchestrator instead of showing its own embedded quiz/submit UI.
+  sessionMode?: boolean;
+  onGameComplete?: (movesTaken: number, timeTakenMs: number) => void;
 }
 
 export function SpotTheDifferenceGame({
@@ -102,6 +106,8 @@ export function SpotTheDifferenceGame({
   campaignId,
   previewMode = false,
   hasCompleted = false,
+  sessionMode = false,
+  onGameComplete,
 }: Props) {
   const user = useAtomValue(userAtom);
   const router = useRouter();
@@ -556,7 +562,13 @@ export function SpotTheDifferenceGame({
         </div>
 
         <Button
-          onClick={() => setPhase("quiz")}
+          onClick={() => {
+            if (sessionMode) {
+              onGameComplete?.(foundIds.size, elapsedMs);
+            } else {
+              setPhase("quiz");
+            }
+          }}
           disabled={!allFound}
           className="bg-secondary hover:bg-secondary/80 text-secondary-foreground px-6 py-2 text-sm font-fredoka disabled:opacity-40 disabled:cursor-not-allowed">
           {allFound ? "Proceed →" : `Find ${NUM_DIFFS - foundIds.size} more`}

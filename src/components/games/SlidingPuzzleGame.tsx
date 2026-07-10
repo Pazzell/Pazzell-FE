@@ -29,9 +29,13 @@ interface SlidingPuzzleGameProps {
   campaignId: string
   previewMode?: boolean
   availableCampaigns?: CampaignData[]
+  // v2 session flow: when set, the game reports completion to the session
+  // orchestrator instead of showing its own embedded quiz/submit UI.
+  sessionMode?: boolean
+  onGameComplete?: (movesTaken: number, timeTakenMs: number) => void
 }
 
-export function SlidingPuzzleGame({ campaignDetails, campaignId, previewMode = false, availableCampaigns }: SlidingPuzzleGameProps) {
+export function SlidingPuzzleGame({ campaignDetails, campaignId, previewMode = false, availableCampaigns, sessionMode = false, onGameComplete }: SlidingPuzzleGameProps) {
   const user = useAtomValue(userAtom)
 
   const [gridSize] = useState(3)
@@ -197,7 +201,11 @@ export function SlidingPuzzleGame({ campaignDetails, campaignId, previewMode = f
       setIsSolved(true)
       setIsPlaying(false)
       setTimeout(() => {
-        setShowQuestions(true)
+        if (sessionMode) {
+          onGameComplete?.(moves, timeElapsed * 1000)
+        } else {
+          setShowQuestions(true)
+        }
       }, 2000)
     }
   }

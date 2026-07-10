@@ -54,6 +54,10 @@ interface CardMatchingGameProps {
   campaignId: string;
   previewMode?: boolean;
   availableCampaigns?: CampaignData[];
+  // v2 session flow: when set, the game reports completion to the session
+  // orchestrator instead of showing its own embedded quiz/submit UI.
+  sessionMode?: boolean;
+  onGameComplete?: (movesTaken: number, timeTakenMs: number) => void;
 }
 
 export function CardMatchingGame({
@@ -61,6 +65,8 @@ export function CardMatchingGame({
   campaignId,
   previewMode = false,
   availableCampaigns,
+  sessionMode = false,
+  onGameComplete,
 }: CardMatchingGameProps) {
   const user = useAtomValue(userAtom);
 
@@ -225,9 +231,14 @@ export function CardMatchingGame({
       setIsGameComplete(true);
       setIsPlaying(false);
       setTimeout(() => {
-        setShowQuestions(true);
+        if (sessionMode) {
+          onGameComplete?.(moves, timeElapsed * 1000);
+        } else {
+          setShowQuestions(true);
+        }
       }, 2000);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards]);
 
   const startGame = () => {

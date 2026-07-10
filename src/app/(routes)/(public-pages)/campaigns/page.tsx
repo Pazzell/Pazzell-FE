@@ -18,6 +18,7 @@ import {
   Trophy,
   ExternalLink,
   Crown,
+  Ticket,
 } from "lucide-react";
 import Link from "next/link";
 import { formatPuzzleType } from "@/app/_utils/helper";
@@ -25,12 +26,13 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { endpointUrl } from "@/app/_utils/helper";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
-import { CampaignsResponse, CampaignData } from "@/types";
+import { AnyCampaignsResponse, AnyCampaign, isV2Campaign } from "@/types";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/atom/user";
 import { routes } from "@/app/_utils/routes";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
+import { EligibilityProgress } from "@/components/raffle/EligibilityProgress";
 
 const getGameRoute = (gameType: string, campaignId: string): string => {
   const routeMap: { [key: string]: string } = {
@@ -75,11 +77,16 @@ const getTimeLeft = (endDate: string | undefined) => {
 const FALLBACK_IMG =
   "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=1000";
 
-const CampaignCard = ({ campaign }: { campaign: CampaignData }) => {
+const CampaignCard = ({ campaign }: { campaign: AnyCampaign }) => {
+  const isV2 = isV2Campaign(campaign);
   const isPremium = campaign.packageName === "premium";
   const timeLeft = getTimeLeft(campaign.endDate);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [imgSrc, setImgSrc] = useState(campaign.puzzleImageUrl || FALLBACK_IMG);
+
+  const playHref = isV2
+    ? routes.USER.CAMPAIGN_PLAY(campaign._id)
+    : getGameRoute(campaign.gameType, campaign._id);
 
   return (
     <div
@@ -118,11 +125,14 @@ const CampaignCard = ({ campaign }: { campaign: CampaignData }) => {
         {/* Overlay Gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-80" />
 
-        {/* Game Type Badge (On Image) */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-2 text-white bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30 text-xs font-medium z-20">
-          {getGameIcon(campaign.gameType)}
-          <span>{formatPuzzleType(campaign.gameType)}</span>
-        </div>
+        {/* Game Type Badge (On Image) — legacy only; v2 cards deliberately
+            hide game types per the weekly-system spec. */}
+        {!isV2 && (
+          <div className="absolute bottom-3 left-3 flex items-center gap-2 text-white bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30 text-xs font-medium z-20">
+            {getGameIcon(campaign.gameType)}
+            <span>{formatPuzzleType(campaign.gameType)}</span>
+          </div>
+        )}
       </div>
 
       {/* Content Body */}
@@ -145,24 +155,44 @@ const CampaignCard = ({ campaign }: { campaign: CampaignData }) => {
             {campaign.title}
           </h3>
 
-          <p
-            className="text-sm text-white/70 mb-4 overflow-hidden text-ellipsis"
-            style={{
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              lineHeight: "1.4em",
-              maxHeight: "2.8em",
-            }}>
-            {campaign.description}
-          </p>
+          {isV2 ? (
+            <div className="mb-4">
+              <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">
+                What you stand to win
+              </p>
+              <p
+                className="text-sm text-white/80 overflow-hidden text-ellipsis"
+                style={{
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  lineHeight: "1.4em",
+                  maxHeight: "2.8em",
+                }}>
+                {campaign.prizeDescription}
+              </p>
+              <p className="text-white/40 text-[11px] mt-1 flex items-center gap-1">
+                <Ticket className="w-3 h-3" />1 winner drawn weekly
+              </p>
+            </div>
+          ) : (
+            <p
+              className="text-sm text-white/70 mb-4 overflow-hidden text-ellipsis"
+              style={{
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                lineHeight: "1.4em",
+                maxHeight: "2.8em",
+              }}>
+              {campaign.description}
+            </p>
+          )}
         </div>
 
         {/* Action Area */}
         <div className="mt-auto pt-4 border-t border-white/10 flex items-center justify-between">
-          <Link
-            href={getGameRoute(campaign.gameType, campaign._id)}
-            className="flex-1">
+          <Link href={playHref} className="flex-1">
             <Button className="w-full bg-[#ffffff] hover:bg-secondary/80 group-hover:bg-secondary text-secondary-foreground py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors font-fredoka">
               <Play className="w-4 h-4 fill-current" />
               Play Now
@@ -194,33 +224,27 @@ export default function CampaignsPage() {
     data: campaigns,
     error: campaignError,
     isLoading: loadingCampaigns,
-  } = useQuery<CampaignData[]>({
+  } = useQuery<AnyCampaign[]>({
     queryKey: ["campaigns"],
     queryFn: () =>
       axios
-        .get<CampaignsResponse>(endpointUrl(`${ENDPOINTS.CAMPAIGNS}`), {
+        .get<AnyCampaignsResponse>(endpointUrl(`${ENDPOINTS.CAMPAIGNS}`), {
           headers: {
             Authorization: `Bearer ${user?.accessToken}`,
           },
         })
-        .then((res) => {
-          console.log("[Campaigns API] raw response:", res.data);
-          console.log(
-            "[Campaigns API] first campaign sample:",
-            res.data.campaigns?.[0]
-          );
-          return res.data.campaigns.filter((c) => c.status === "active");
-        }),
+        .then((res) => res.data.campaigns.filter((c) => c.status === "active")),
   });
 
   // Helper function to check if campaign is not expired
-  const isNotExpired = (campaign: CampaignData) => {
+  const isNotExpired = (campaign: AnyCampaign) => {
     const now = new Date();
     const endDate = new Date(campaign.endDate);
     return endDate > now;
   };
 
-  // Filter Logic
+  // Filter Logic — game-type filters only apply to legacy campaigns; v2
+  // campaigns (no single gameType) always match unless a search term excludes them.
   const filteredCampaigns = useMemo(() => {
     const allCampaigns = campaigns || [];
     return allCampaigns.filter((campaign) => {
@@ -228,7 +252,8 @@ export default function CampaignsPage() {
         campaign.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         campaign.brandName.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesFilter =
-        selectedFilter === "all" || campaign.gameType === selectedFilter;
+        selectedFilter === "all" ||
+        (!isV2Campaign(campaign) && campaign.gameType === selectedFilter);
       const isActive = isNotExpired(campaign);
       const isPaid = campaign.paymentStatus === "paid";
 
@@ -236,17 +261,20 @@ export default function CampaignsPage() {
     });
   }, [campaigns, searchTerm, selectedFilter]);
 
-  // Extract unique game types for the filter menu (only from non-expired campaigns)
+  // Extract unique game types for the filter menu (legacy campaigns only,
+  // non-expired) — v2 campaigns never show a game-type filter chip.
   const gameTypes = useMemo(() => {
-    const activeCampaigns = campaigns
+    const activeLegacyCampaigns = campaigns
       ? campaigns.filter(
-          (campaign) =>
-            isNotExpired(campaign) && campaign.paymentStatus === "paid"
+          (campaign): campaign is Exclude<AnyCampaign, { schemaVersion: 2 }> =>
+            !isV2Campaign(campaign) &&
+            isNotExpired(campaign) &&
+            campaign.paymentStatus === "paid"
         )
       : [];
     const types =
-      activeCampaigns.length > 0
-        ? ["all", ...new Set(activeCampaigns.map((c) => c.gameType))]
+      activeLegacyCampaigns.length > 0
+        ? ["all", ...new Set(activeLegacyCampaigns.map((c) => c.gameType))]
         : ["all"];
     return types;
   }, [campaigns]);
@@ -278,6 +306,8 @@ export default function CampaignsPage() {
               brands.
             </p>
           </div>
+
+          {user && <EligibilityProgress />}
 
           {/* Search Bar and Filters Row */}
           <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">

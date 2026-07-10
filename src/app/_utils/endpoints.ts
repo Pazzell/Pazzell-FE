@@ -23,11 +23,9 @@ export const ENDPOINTS = {
   SUBMIT_CAMPAIGN: (id: string) => `/campaigns/${id}/submit`,
   CAMPAIGN_COMPLETION: (id: string) => `/campaigns/${id}/completion`,
 
-  // Leaderboard endpoints
+  // Leaderboard endpoints — monthly removed by the backend (weekly-system
+  // migration); see WEEKLY_LEADERBOARD_BY_WEEK / ALL_TIME_LEADERBOARD below.
   WEEKLY_LEADERBOARD: "/leaderboards/weekly",
-  MONTHLY_LEADERBOARD: "/leaderboards/monthly",
-  MONTHLY_LEADERBOARD_BY_MONTH: (month: string) =>
-    `/leaderboards/monthly/${month}`,
 
   // Rewards / Payouts
   REWARDS_PAYOUTS: "/rewards/payouts",
@@ -86,4 +84,61 @@ export const ENDPOINTS = {
   DAILY_PRIZE_TABLE: "/prize-table/today",
   INITIALIZE_PAYMENT: "/payments/initialize",
   VERIFY_PAYMENT: "/payments/verify",
+  CALCULATE_WEEKLY_PRICE: (packageType: string, weeks: number) =>
+    `/payments/calculate-weekly-price?packageType=${packageType}&weeks=${weeks}`,
+
+  // Gameplay sessions (v2 / multi-game campaigns only)
+  SESSION_START: "/sessions/start",
+  SESSION_GAME_START: (sessionId: string, gameType: string) =>
+    `/sessions/${sessionId}/games/${gameType}/start`,
+  SESSION_GAME_COMPLETE: (sessionId: string, gameType: string) =>
+    `/sessions/${sessionId}/games/${gameType}/complete`,
+  SESSION_VIDEO_START: (sessionId: string) =>
+    `/sessions/${sessionId}/video/start`,
+  SESSION_VIDEO_COMPLETE: (sessionId: string) =>
+    `/sessions/${sessionId}/video/complete`,
+  SESSION_QUIZ_ATTEMPT: (sessionId: string) =>
+    `/sessions/${sessionId}/quiz/attempt`,
+  SESSION_COMPLETE: (sessionId: string) => `/sessions/${sessionId}/complete`,
+
+  // Leaderboard — weekly-only additions (WEEKLY_LEADERBOARD already above)
+  WEEKLY_LEADERBOARD_BY_WEEK: (weekKey: string) =>
+    `/leaderboards/weekly/${weekKey}`,
+  ALL_TIME_LEADERBOARD: "/leaderboards/all-time",
+
+  // Wallet & withdrawals
+  WALLET_BALANCE: "/wallet/balance",
+  WALLET_TRANSACTIONS: (limit: number = 50) =>
+    `/wallet/transactions?limit=${limit}`,
+  WALLET_BANK_ACCOUNTS: "/wallet/bank-accounts",
+  WALLET_BANK_ACCOUNT_DELETE: (id: string) => `/wallet/bank-accounts/${id}`,
+  WALLET_WITHDRAWALS: "/wallet/withdrawals",
+  WALLET_WITHDRAWAL_DETAILS: (id: string) => `/wallet/withdrawals/${id}`,
+
+  // Raffles
+  RAFFLE_CAMPAIGN_CURRENT: (campaignId: string) =>
+    `/raffles/campaign/${campaignId}/current`,
+  RAFFLE_MY_TICKETS: "/raffles/my-tickets",
+  RAFFLE_DRAW: (campaignId: string) => `/raffles/${campaignId}/draw`,
+  RAFFLE_FULFILLMENT: (drawId: string) => `/raffles/${drawId}/fulfillment`,
+  RAFFLE_VERIFY: (drawId: string) => `/raffles/${drawId}/verify`,
+
+  // Admin config
+  ADMIN_CONFIG: "/admin/config",
+  ADMIN_CONFIG_KEY: (key: string) => `/admin/config/${key}`,
+
+  // Forum
+  FORUM_THREADS: "/forum/threads",
+  FORUM_THREAD_POSTS: (threadId: string) => `/forum/threads/${threadId}/posts`,
+  FORUM_POST_LIKE: (postId: string) => `/forum/posts/${postId}/like`,
+  FORUM_POST_FLAG: (postId: string) => `/forum/posts/${postId}/flag`,
+  FORUM_MODERATION_FLAGS: "/forum/moderation/flags",
+  FORUM_MODERATION_FLAG_DETAILS: (flagId: string) =>
+    `/forum/moderation/flags/${flagId}`,
+  FORUM_WINNER_SUBMISSIONS: "/forum/winner-submissions",
+  FORUM_WINNER_SUBMISSIONS_MINE: "/forum/winner-submissions/mine",
+  FORUM_WINNER_SUBMISSION_VERIFY: (id: string) =>
+    `/forum/winner-submissions/${id}/verify`,
+  FORUM_WINNER_SUBMISSION_REJECT: (id: string) =>
+    `/forum/winner-submissions/${id}/reject`,
 };

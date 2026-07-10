@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/ui/logo-icon";
-import { User, Menu, LogOut, X, Trophy, Settings } from "lucide-react";
+import { User, Menu, LogOut, X, Trophy, Settings, Wallet, MessageSquare } from "lucide-react";
 import { routes } from "@/app/_utils/routes";
 import { useAtomValue, useSetAtom } from "jotai/react";
 import { userAtom } from "@/atom/user";
@@ -81,6 +81,16 @@ export function Header() {
                   className="text-white hover:text-secondary font-medium transition-colors">
                   Referrals
                 </Link>
+                <Link
+                  href={routes.USER.WALLET}
+                  className="text-white hover:text-secondary font-medium transition-colors">
+                  Wallet
+                </Link>
+                <Link
+                  href={routes.USER.FORUM}
+                  className="text-white hover:text-secondary font-medium transition-colors">
+                  Forum
+                </Link>
                 {/* <Link href={routes.USER.BADGES} className="text-white hover:text-secondary font-medium transition-colors">
                   Badges
                 </Link> */}
@@ -146,6 +156,12 @@ export function Header() {
                       <>
                         <DropdownMenuItem asChild>
                           <Link href={routes.USER.PROFILE}>Profile</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={routes.USER.WALLET}>
+                            <Wallet className="h-4 w-4 mr-2" />
+                            Wallet
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href={routes.USER.SETTINGS}>
@@ -232,6 +248,18 @@ export function Header() {
                     className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
                     onClick={closeMobileMenu}>
                     Referrals
+                  </Link>
+                  <Link
+                    href={routes.USER.WALLET}
+                    className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
+                    onClick={closeMobileMenu}>
+                    Wallet
+                  </Link>
+                  <Link
+                    href={routes.USER.FORUM}
+                    className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
+                    onClick={closeMobileMenu}>
+                    Forum
                   </Link>
                   {/* <Link
                     href={routes.USER.BADGES}

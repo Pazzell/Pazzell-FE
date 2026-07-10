@@ -54,7 +54,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { endpointUrl, formatPuzzleType } from "@/app/_utils/helper";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
-import { CampaignsResponse, CampaignData } from "@/types";
+import { AnyCampaignsResponse, AnyCampaign, isV2Campaign } from "@/types";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/atom/user";
 import { PageLoader } from "@/components/ui/page-loader";
@@ -103,11 +103,11 @@ export default function CampaignsPage() {
     data: campaigns,
     error: campaignsError,
     isLoading: loadingCampaigns,
-  } = useQuery<CampaignData[]>({
+  } = useQuery<AnyCampaign[]>({
     queryKey: ["brand-campaigns", user?.id],
     queryFn: () =>
       axios
-        .get<CampaignsResponse>(
+        .get<AnyCampaignsResponse>(
           endpointUrl(ENDPOINTS.BRAND_CAMPAIGNS_BY_ID(user?.id || "")),
           {
             headers: {
@@ -281,7 +281,7 @@ export default function CampaignsPage() {
     updateCampaignStatusMutation.mutate({ campaignId, status: newStatus });
   };
 
-  const handleProceedToPayment = (campaign: CampaignData) => {
+  const handleProceedToPayment = (campaign: AnyCampaign) => {
     initializePayment.mutate({
       campaignId: campaign._id,
       packageType: campaign.packageName,
@@ -314,7 +314,7 @@ export default function CampaignsPage() {
             Create and manage your brand&apos;s puzzle campaigns
           </p>
         </div>
-        <Link href={routes.BRAND.CAMPAIGNS_NEW}>
+        <Link href={routes.BRAND.CAMPAIGNS_CREATE}>
           <Button className="bg-secondary hover:bg-secondary/80 text-secondary-foreground">
             <Plus className="h-4 w-4 mr-2" />
             New Campaign
@@ -450,10 +450,23 @@ export default function CampaignsPage() {
                 {/* Overlay Gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-80" />
 
-                {/* Game Type Badge (On Image) */}
-                <div className="absolute bottom-3 left-3 flex items-center gap-2 text-white bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30 text-xs font-medium z-20">
-                  {getGameIcon(campaign.gameType)}
-                  <span>{formatPuzzleType(campaign.gameType)}</span>
+                {/* Game Type Badge(s) (On Image) */}
+                <div className="absolute bottom-3 left-3 flex flex-wrap items-center gap-1.5 z-20">
+                  {isV2Campaign(campaign) ? (
+                    campaign.gameTypes.map((gt) => (
+                      <div
+                        key={gt}
+                        className="flex items-center gap-1.5 text-white bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/30 text-xs font-medium">
+                        {getGameIcon(gt)}
+                        <span>{formatPuzzleType(gt)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex items-center gap-2 text-white bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30 text-xs font-medium">
+                      {getGameIcon(campaign.gameType)}
+                      <span>{formatPuzzleType(campaign.gameType)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -556,13 +569,15 @@ export default function CampaignsPage() {
                           View Details
                         </DropdownMenuItem>
                       </Link>
-                      <Link
-                        href={`${routes.BRAND.CAMPAIGNS_NEW}?edit=${campaign._id}`}>
-                        <DropdownMenuItem className="text-white/70 hover:text-white hover:bg-white/10 w-full">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit Campaign
-                        </DropdownMenuItem>
-                      </Link>
+                      {!isV2Campaign(campaign) && (
+                        <Link
+                          href={`${routes.BRAND.CAMPAIGNS_NEW}?edit=${campaign._id}`}>
+                          <DropdownMenuItem className="text-white/70 hover:text-white hover:bg-white/10 w-full">
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Campaign
+                          </DropdownMenuItem>
+                        </Link>
+                      )}
                       {/* <DropdownMenuItem className="text-white/70 hover:text-white hover:bg-white/10">
                         <BarChart3 className="h-4 w-4 mr-2" />
                         View Analytics
@@ -639,7 +654,7 @@ export default function CampaignsPage() {
               ? "Try adjusting your search or filters"
               : "Create your first campaign to start engaging with users"}
           </p>
-          <Link href={routes.BRAND.CAMPAIGNS_NEW}>
+          <Link href={routes.BRAND.CAMPAIGNS_CREATE}>
             <Button className="bg-secondary hover:bg-secondary/80 text-secondary-foreground">
               <Plus className="h-4 w-4 mr-2" />
               Create First Campaign
