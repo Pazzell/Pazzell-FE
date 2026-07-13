@@ -310,7 +310,7 @@ export default function BrandDashboard() {
               )) : (
                 <div className="text-center py-8">
                   <p className="text-white/60">No campaigns found</p>
-                  <Link href={routes.BRAND.CAMPAIGNS_NEW}>
+                  <Link href={routes.BRAND.CAMPAIGNS_CREATE}>
                     <Button className="mt-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground">
                       Create Your First Campaign
                     </Button>
