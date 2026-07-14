@@ -200,13 +200,9 @@ export function SlidingPuzzleGame({ campaignDetails, campaignId, previewMode = f
     if (isCorrect) {
       setIsSolved(true)
       setIsPlaying(false)
-      setTimeout(() => {
-        if (sessionMode) {
-          onGameComplete?.(moves, timeElapsed * 1000)
-        } else {
-          setShowQuestions(true)
-        }
-      }, 2000)
+      if (!sessionMode) {
+        setTimeout(() => setShowQuestions(true), 2000)
+      }
     }
   }
 
@@ -582,7 +578,15 @@ export function SlidingPuzzleGame({ campaignDetails, campaignId, previewMode = f
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
           <Trophy className="h-16 w-16 text-yellow-400 mb-4 animate-bounce" />
           <h2 className="text-3xl font-bold text-white mb-2 font-fredoka">Solved!</h2>
-          <p className="text-white/80 mb-6">In {formatTime(timeElapsed)} and {moves} moves</p>
+          {sessionMode ? (
+            <Button
+              onClick={() => onGameComplete?.(moves, timeElapsed * 1000)}
+              className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka px-8 py-3 mt-2">
+              Next Game
+            </Button>
+          ) : (
+            <p className="text-white/80 mb-6">In {formatTime(timeElapsed)} and {moves} moves</p>
+          )}
         </div>
       )}
     </>

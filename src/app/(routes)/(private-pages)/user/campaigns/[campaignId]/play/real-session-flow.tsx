@@ -32,6 +32,7 @@ import {
   Trophy,
   Ticket,
   Video as VideoIcon,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { routes } from "@/app/_utils/routes";
@@ -69,6 +70,7 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [gameIndex, setGameIndex] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [totalMoves, setTotalMoves] = useState(0);
   const [quizResult, setQuizResult] = useState<{
     allCorrect: boolean;
     wrongIndices: number[];
@@ -138,11 +140,11 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
   });
 
   const completeSessionMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (movesTaken: number) =>
       axios
         .post<SessionCompleteResponse>(
           endpointUrl(ENDPOINTS.SESSION_COMPLETE(sessionId!)),
-          {},
+          { totalMoves: movesTaken },
           authHeaders
         )
         .then((res) => res.data),
@@ -196,6 +198,7 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
         movesTaken,
         timeTakenMs,
       });
+      setTotalMoves((prev) => prev + movesTaken);
       const nextIndex = gameIndex + 1;
       if (nextIndex < gameTypes.length) {
         await startGameMutation.mutateAsync(gameTypes[nextIndex]);
@@ -226,7 +229,7 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
       const wrongIndices = computeWrongIndices(campaign.questions, answers);
       setQuizResult({ allCorrect: result.allCorrect, wrongIndices });
       if (result.allCorrect) {
-        const done = await completeSessionMutation.mutateAsync();
+        const done = await completeSessionMutation.mutateAsync(totalMoves);
         setCompletion(done);
         setStep("done");
       }
@@ -390,13 +393,20 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
                 </p>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="bg-white/5 rounded-xl p-4 flex flex-col items-center gap-2">
                       <Trophy className="w-6 h-6 text-yellow-400" />
                       <span className="text-2xl font-bold text-white font-mono">
                         {completion.pointsAwarded}
                       </span>
                       <span className="text-xs text-white/60">Points</span>
+                    </div>
+                    <div className="bg-white/5 rounded-xl p-4 flex flex-col items-center gap-2">
+                      <RotateCcw className="w-6 h-6 text-blue-400" />
+                      <span className="text-2xl font-bold text-white font-mono">
+                        {totalMoves}
+                      </span>
+                      <span className="text-xs text-white/60">Moves</span>
                     </div>
                     <div className="bg-white/5 rounded-xl p-4 flex flex-col items-center gap-2">
                       <span className="text-2xl font-bold text-white font-mono">

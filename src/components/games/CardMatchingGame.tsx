@@ -230,13 +230,9 @@ export function CardMatchingGame({
     if (cards.length > 0 && cards.every((card) => card.isMatched)) {
       setIsGameComplete(true);
       setIsPlaying(false);
-      setTimeout(() => {
-        if (sessionMode) {
-          onGameComplete?.(moves, timeElapsed * 1000);
-        } else {
-          setShowQuestions(true);
-        }
-      }, 2000);
+      if (!sessionMode) {
+        setTimeout(() => setShowQuestions(true), 2000);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards]);
@@ -526,9 +522,17 @@ export function CardMatchingGame({
           <h2 className="text-3xl font-bold text-white mb-2 font-fredoka">
             All Pairs Matched!
           </h2>
-          <p className="text-white/80 mb-6">
-            In {formatTime(timeElapsed)} and {moves} moves
-          </p>
+          {sessionMode ? (
+            <Button
+              onClick={() => onGameComplete?.(moves, timeElapsed * 1000)}
+              className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka px-8 py-3 mt-2">
+              Next Game
+            </Button>
+          ) : (
+            <p className="text-white/80 mb-6">
+              In {formatTime(timeElapsed)} and {moves} moves
+            </p>
+          )}
         </div>
       )}
 

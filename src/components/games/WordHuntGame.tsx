@@ -190,9 +190,7 @@ export function WordHuntGame({ campaignDetails, campaignId, previewMode = false,
     if (gameData && foundWords.length === gameData.placedWords.length && gameData.placedWords.length > 0) {
       setIsSolved(true)
       setIsPlaying(false)
-      if (sessionMode) {
-        onGameComplete?.(foundWords.length, timeElapsed * 1000)
-      } else {
+      if (!sessionMode) {
         setShowQuestions(true)
       }
     }
@@ -557,6 +555,19 @@ export function WordHuntGame({ campaignDetails, campaignId, previewMode = false,
           </Card>
         </div>
       </div>
+
+      {/* Win Overlay */}
+      {isSolved && sessionMode && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+          <Trophy className="h-16 w-16 text-yellow-400 mb-4 animate-bounce" />
+          <h2 className="text-3xl font-bold text-white mb-2 font-fredoka">All Words Found!</h2>
+          <Button
+            onClick={() => onGameComplete?.(foundWords.length, timeElapsed * 1000)}
+            className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka px-8 py-3 mt-2">
+            Next Game
+          </Button>
+        </div>
+      )}
 
       {/* Brand Questions Modal */}
       {showQuestions && campaignDetails?.questions && (
