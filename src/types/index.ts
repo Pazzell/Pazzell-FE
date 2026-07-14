@@ -491,7 +491,7 @@ export type AnyCampaign = CampaignData | CampaignV2Data;
 export function isV2Campaign(
   campaign: AnyCampaign
 ): campaign is CampaignV2Data {
-  return (campaign as CampaignV2Data).schemaVersion === 2;
+  return Array.isArray((campaign as CampaignV2Data).gameTypes);
 }
 
 export interface CampaignV2Response {
