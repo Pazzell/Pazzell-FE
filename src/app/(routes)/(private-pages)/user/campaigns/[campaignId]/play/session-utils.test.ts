@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { computeWrongIndices, isAllAnswered, toLegacyShapedCampaign } from "./session-utils";
+import { AxiosError } from "axios";
+import {
+  computeWrongIndices,
+  extractSessionErrorMessage,
+  isAbandonedSessionError,
+  isAllAnswered,
+  toLegacyShapedCampaign,
+} from "./session-utils";
 import { CampaignV2Data } from "@/types";
 
 describe("computeWrongIndices", () => {
@@ -76,5 +83,53 @@ describe("toLegacyShapedCampaign", () => {
   it("does not leak the v2 quiz questions into the legacy shape (session orchestrator owns the quiz)", () => {
     const legacy = toLegacyShapedCampaign(campaign, "sliding_puzzle");
     expect(legacy.questions).toEqual([]);
+  });
+});
+
+function makeAxiosError(message: string): AxiosError {
+  return new AxiosError(
+    "Request failed",
+    "400",
+    undefined,
+    undefined,
+    // @ts-expect-error — only the fields extractSessionErrorMessage reads are needed
+    { data: { message } }
+  );
+}
+
+describe("extractSessionErrorMessage", () => {
+  it("surfaces the backend's specific message from an axios error response", () => {
+    expect(
+      extractSessionErrorMessage(
+        makeAxiosError("All four games must be completed first"),
+        "fallback"
+      )
+    ).toBe("All four games must be completed first");
+  });
+
+  it("falls back when the error has no response message", () => {
+    expect(extractSessionErrorMessage(new Error("network down"), "fallback")).toBe(
+      "fallback"
+    );
+  });
+
+  it("falls back for a non-axios error", () => {
+    expect(extractSessionErrorMessage("oops", "fallback")).toBe("fallback");
+  });
+});
+
+describe("isAbandonedSessionError", () => {
+  it("recognizes the abandoned-session message", () => {
+    expect(
+      isAbandonedSessionError("Session is abandoned, cannot be completed")
+    ).toBe(true);
+  });
+
+  it("is case-insensitive", () => {
+    expect(isAbandonedSessionError("SESSION IS ABANDONED")).toBe(true);
+  });
+
+  it("is false for unrelated messages", () => {
+    expect(isAbandonedSessionError("The video must be watched first")).toBe(false);
   });
 });

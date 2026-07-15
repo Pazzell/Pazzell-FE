@@ -52,9 +52,21 @@ vi.mock("@/components/games/WordHuntGame", () => ({
 
 const calls: { method: string; url: string; body?: unknown }[] = [];
 
+// Lets a single test force the next matching call to reject with a
+// backend-shaped 400, exercising the error-message + abandoned-session
+// handling in real-session-flow.tsx without a real network layer.
+let failNextUrlContaining: string | null = null;
+let failNextMessage = "";
+
 vi.mock("axios", () => {
   const handle = (method: string, url: string, body?: unknown) => {
     calls.push({ method, url, body });
+    if (failNextUrlContaining && url.includes(failNextUrlContaining)) {
+      const message = failNextMessage;
+      failNextUrlContaining = null;
+      failNextMessage = "";
+      return Promise.reject({ isAxiosError: true, response: { data: { message } } });
+    }
     if (url.includes("/sessions/start")) {
       return Promise.resolve({ data: { session: { _id: "sess1" } } });
     }
@@ -92,6 +104,8 @@ vi.mock("axios", () => {
     default: {
       get: vi.fn((url: string) => handle("GET", url)),
       post: vi.fn((url: string, body?: unknown) => handle("POST", url, body)),
+      isAxiosError: (error: unknown): boolean =>
+        !!error && typeof error === "object" && (error as { isAxiosError?: boolean }).isAxiosError === true,
     },
   };
 });
@@ -155,6 +169,46 @@ function answerQuiz(container: HTMLElement, answers: number[]) {
 describe("RealSessionFlow", () => {
   beforeEach(() => {
     calls.length = 0;
+    failNextUrlContaining = null;
+    failNextMessage = "";
+  });
+
+  it("surfaces the backend's specific error message instead of a generic one", async () => {
+    const user = userEvent.setup();
+    renderFlow();
+
+    failNextUrlContaining = "/games/sliding_puzzle/complete";
+    failNextMessage = "All four games must be completed first";
+
+    await user.click(screen.getByRole("button", { name: /start playing/i }));
+    await user.click(await screen.findByText("Complete sliding_puzzle"));
+
+    expect(
+      await screen.findByText("All four games must be completed first")
+    ).toBeInTheDocument();
+  });
+
+  it("resets to the intro screen and drops the dead sessionId when the session has been auto-abandoned", async () => {
+    const user = userEvent.setup();
+    renderFlow();
+
+    failNextUrlContaining = "/games/sliding_puzzle/complete";
+    failNextMessage = "Session is abandoned, cannot be completed";
+
+    await user.click(screen.getByRole("button", { name: /start playing/i }));
+    await user.click(await screen.findByText("Complete sliding_puzzle"));
+
+    expect(
+      await screen.findByRole("button", { name: /start playing/i })
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Complete sliding_puzzle")).not.toBeInTheDocument();
+
+    // Retrying starts an entirely new session rather than reusing sess1.
+    calls.length = 0;
+    await user.click(screen.getByRole("button", { name: /start playing/i }));
+    await waitFor(() =>
+      expect(calls.some((c) => c.url.includes("/sessions/start"))).toBe(true)
+    );
   });
 
   it("enforces sequential game order and calls session endpoints in the right sequence", async () => {

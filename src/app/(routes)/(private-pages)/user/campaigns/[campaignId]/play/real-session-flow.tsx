@@ -22,7 +22,12 @@ import { CardMatchingGame } from "@/components/games/CardMatchingGame";
 import { SpotTheDifferenceGame } from "@/components/games/SpotTheDifferenceGame";
 import { WordHuntGame } from "@/components/games/WordHuntGame";
 import { QuizStage } from "./quiz-stage";
-import { computeWrongIndices, toLegacyShapedCampaign } from "./session-utils";
+import {
+  computeWrongIndices,
+  extractSessionErrorMessage,
+  isAbandonedSessionError,
+  toLegacyShapedCampaign,
+} from "./session-utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -177,6 +182,27 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
     retry: false,
   });
 
+  // A dead (abandoned) session can't be resumed — drop back to the intro
+  // screen so "Start Playing" begins a fresh session instead of retrying
+  // the expired sessionId.
+  const resetForNewSession = () => {
+    setSessionId(null);
+    setGameIndex(0);
+    setStartedAt(null);
+    setTotalMoves(0);
+    setQuizResult(null);
+    setCompletion(null);
+    setStep("intro");
+  };
+
+  const handleSessionError = (error: unknown, fallback: string) => {
+    const message = extractSessionErrorMessage(error, fallback);
+    if (isAbandonedSessionError(message)) {
+      resetForNewSession();
+    }
+    setErrorMessage(message);
+  };
+
   const handleStart = async () => {
     setErrorMessage("");
     setStartedAt(Date.now());
@@ -185,8 +211,8 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
       setSessionId(session._id);
       await startGameMutation.mutateAsync(gameTypes[0]);
       setStep("playing");
-    } catch {
-      setErrorMessage("Couldn't start the session. Please try again.");
+    } catch (error) {
+      handleSessionError(error, "Couldn't start the session. Please try again.");
     }
   };
 
@@ -207,8 +233,8 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
         await startVideoMutation.mutateAsync();
         setStep("video");
       }
-    } catch {
-      setErrorMessage("Couldn't save your progress. Please try again.");
+    } catch (error) {
+      handleSessionError(error, "Couldn't save your progress. Please try again.");
     }
   };
 
@@ -217,8 +243,8 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
     try {
       await completeVideoMutation.mutateAsync();
       setStep("quiz");
-    } catch {
-      setErrorMessage("Couldn't continue past the video. Please try again.");
+    } catch (error) {
+      handleSessionError(error, "Couldn't continue past the video. Please try again.");
     }
   };
 
@@ -233,8 +259,8 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
         setCompletion(done);
         setStep("done");
       }
-    } catch {
-      setErrorMessage("Couldn't check your answers. Please try again.");
+    } catch (error) {
+      handleSessionError(error, "Couldn't check your answers. Please try again.");
     }
   };
 
