@@ -28,26 +28,29 @@ import Image from "next/image";
 interface GameCard {
   id: string;
   imageUrl: string;
-  cropPosition: string; // CSS object-position — different per pair, same per match
+  backgroundSize: string; // CSS background-size — same for every card sharing an image
+  backgroundPosition: string; // CSS background-position — different per pair, same per match
   isFlipped: boolean;
   isMatched: boolean;
   isBrandCard: boolean;
   pairId: string;
 }
 
-// 8 distinct crop positions for 8 pairs.
-// Each value is a CSS object-position that reveals a different region of the
-// campaign image when rendered with object-fit:cover in a square container.
-const CROP_POSITIONS = [
-  "center",    // pair 0 — full view (brand card)
-  "15% 15%",   // pair 1 — top-left corner
-  "50% 10%",   // pair 2 — top-centre
-  "85% 15%",   // pair 3 — top-right corner
-  "15% 85%",   // pair 4 — bottom-left corner
-  "50% 90%",   // pair 5 — bottom-centre
-  "85% 85%",   // pair 6 — bottom-right corner
-  "50% 50%",   // pair 7 — centre (slightly different scale from pair 0 due to container)
-];
+// The campaign image is sliced into an 8-cell grid (4 columns x 2 rows) so
+// each of the 8 pairs shows a genuinely distinct, non-overlapping region of
+// the image — same background-image/background-size/background-position
+// tiling technique SlidingPuzzleGame uses, rather than object-position (which
+// only shifts the focal point of an object-fit:cover image and tends to look
+// like near-identical crops).
+const GRID_COLS = 4;
+const GRID_ROWS = 2;
+const GRID_BACKGROUND_SIZE = `${GRID_COLS * 100}% ${GRID_ROWS * 100}%`;
+
+function gridBackgroundPosition(pairIdx: number): string {
+  const col = pairIdx % GRID_COLS;
+  const row = Math.floor(pairIdx / GRID_COLS);
+  return `-${col * 100}% -${row * 100}%`;
+}
 
 interface CardMatchingGameProps {
   campaignDetails: CampaignData;
@@ -154,7 +157,8 @@ export function CardMatchingGame({
             fallback.push({
               id: `fb-${i}-${copy}`,
               imageUrl: url,
-              cropPosition: "center",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
               isFlipped: false,
               isMatched: false,
               isBrandCard: isBrand,
@@ -165,22 +169,25 @@ export function CardMatchingGame({
         return fallback.sort(() => Math.random() - 0.5);
       }
 
-      // Primary path: 8 pairs, each showing a different CSS crop of the
-      // campaign image. Pair 0 is the "brand" card (full-view, gets the ★).
+      // Primary path: slice the campaign image into an 8-cell grid so each
+      // pair shows a genuinely distinct region. Pair 0 is the "brand" card
+      // (top-left cell, gets the ★).
       const cards: GameCard[] = [];
-      CROP_POSITIONS.forEach((cropPos, pairIdx) => {
+      for (let pairIdx = 0; pairIdx < 8; pairIdx++) {
+        const backgroundPosition = gridBackgroundPosition(pairIdx);
         for (let copy = 0; copy < 2; copy++) {
           cards.push({
             id: `card-${pairIdx}-${copy}`,
             imageUrl,
-            cropPosition: cropPos,
+            backgroundSize: GRID_BACKGROUND_SIZE,
+            backgroundPosition,
             isFlipped: false,
             isMatched: false,
             isBrandCard: pairIdx === 0,
             pairId: `pair-${pairIdx}`,
           });
         }
-      });
+      }
       return cards.sort(() => Math.random() - 0.5);
     },
     [randomImages]
@@ -489,13 +496,18 @@ export function CardMatchingGame({
                               : "border-white/20"
                           }`}
                           style={{ transform: "rotateY(180deg)" }}>
-                          <img
-                            src={card.imageUrl}
-                            alt={
+                          <div
+                            role="img"
+                            aria-label={
                               card.isBrandCard ? "Brand image" : "Memory card"
                             }
-                            className="w-full h-full object-cover"
-                            style={{ objectPosition: card.cropPosition }}
+                            className="w-full h-full"
+                            style={{
+                              backgroundImage: `url(${card.imageUrl})`,
+                              backgroundSize: card.backgroundSize,
+                              backgroundPosition: card.backgroundPosition,
+                              backgroundRepeat: "no-repeat",
+                            }}
                           />
                           {card.isBrandCard && (
                             <div className="absolute top-1 right-1">
