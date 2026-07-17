@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useAtomValue } from "jotai";
@@ -98,9 +98,15 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
   });
 
   const startGameMutation = useMutation({
-    mutationFn: (gameType: GameType) =>
+    mutationFn: ({
+      sessionId: sid,
+      gameType,
+    }: {
+      sessionId: string;
+      gameType: GameType;
+    }) =>
       axios.post(
-        endpointUrl(ENDPOINTS.SESSION_GAME_START(sessionId!, gameType)),
+        endpointUrl(ENDPOINTS.SESSION_GAME_START(sid, gameType)),
         {},
         authHeaders
       ),
@@ -203,42 +209,69 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
     setErrorMessage(message);
   };
 
-  const handleStart = async () => {
+  // Guards against a fast double-click on "Next Game"/etc. firing the same
+  // stage-completion request twice — the game components don't disable
+  // their buttons while the parent's mutation is in flight, so a second
+  // click would otherwise send a duplicate /complete call that 400s
+  // ("game already completed") on the backend.
+  const isTransitioningRef = useRef(false);
+
+  const withTransitionGuard =
+    <Args extends unknown[]>(fn: (...args: Args) => Promise<void>) =>
+    async (...args: Args) => {
+      if (isTransitioningRef.current) return;
+      isTransitioningRef.current = true;
+      try {
+        await fn(...args);
+      } finally {
+        isTransitioningRef.current = false;
+      }
+    };
+
+  const handleStart = withTransitionGuard(async () => {
     setErrorMessage("");
-    setStartedAt(Date.now());
     try {
       const session = await startSessionMutation.mutateAsync();
       setSessionId(session._id);
-      await startGameMutation.mutateAsync(gameTypes[0]);
+      await startGameMutation.mutateAsync({
+        sessionId: session._id,
+        gameType: gameTypes[0],
+      });
+      setStartedAt(Date.now());
       setStep("playing");
     } catch (error) {
       handleSessionError(error, "Couldn't start the session. Please try again.");
     }
-  };
+  });
 
-  const handleGameComplete = async (movesTaken: number, timeTakenMs: number) => {
-    setErrorMessage("");
-    try {
-      await completeGameMutation.mutateAsync({
-        gameType: currentGameType,
-        movesTaken,
-        timeTakenMs,
-      });
-      setTotalMoves((prev) => prev + movesTaken);
-      const nextIndex = gameIndex + 1;
-      if (nextIndex < gameTypes.length) {
-        await startGameMutation.mutateAsync(gameTypes[nextIndex]);
-        setGameIndex(nextIndex);
-      } else {
-        await startVideoMutation.mutateAsync();
-        setStep("video");
+  const handleGameComplete = withTransitionGuard(
+    async (movesTaken: number, timeTakenMs: number) => {
+      setErrorMessage("");
+      try {
+        await completeGameMutation.mutateAsync({
+          gameType: currentGameType,
+          movesTaken,
+          timeTakenMs,
+        });
+        setTotalMoves((prev) => prev + movesTaken);
+        const nextIndex = gameIndex + 1;
+        if (nextIndex < gameTypes.length) {
+          await startGameMutation.mutateAsync({
+            sessionId: sessionId!,
+            gameType: gameTypes[nextIndex],
+          });
+          setGameIndex(nextIndex);
+        } else {
+          await startVideoMutation.mutateAsync();
+          setStep("video");
+        }
+      } catch (error) {
+        handleSessionError(error, "Couldn't save your progress. Please try again.");
       }
-    } catch (error) {
-      handleSessionError(error, "Couldn't save your progress. Please try again.");
     }
-  };
+  );
 
-  const handleVideoContinue = async () => {
+  const handleVideoContinue = withTransitionGuard(async () => {
     setErrorMessage("");
     try {
       await completeVideoMutation.mutateAsync();
@@ -246,9 +279,9 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
     } catch (error) {
       handleSessionError(error, "Couldn't continue past the video. Please try again.");
     }
-  };
+  });
 
-  const handleQuizSubmit = async (answers: number[]) => {
+  const handleQuizSubmit = withTransitionGuard(async (answers: number[]) => {
     setErrorMessage("");
     try {
       const result = await quizAttemptMutation.mutateAsync(answers);
@@ -262,7 +295,7 @@ export function RealSessionFlow({ campaign, campaignId }: RealSessionFlowProps) 
     } catch (error) {
       handleSessionError(error, "Couldn't check your answers. Please try again.");
     }
-  };
+  });
 
   if (step === "intro") {
     return (
