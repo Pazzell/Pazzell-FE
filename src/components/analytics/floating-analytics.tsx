@@ -14,30 +14,19 @@ import {
   Puzzle
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import axios from 'axios'
-import { endpointUrl } from '@/app/_utils/helper'
+import { api } from '@/lib/api'
 import { ENDPOINTS } from '@/app/_utils/endpoints'
-
-interface AppAnalytics {
-  success: boolean
-  analytics: {
-    totalGamesPlayed: number
-    gamesPlayedToday: number
-    currentlyPlaying: number
-    onlineUsers: number
-  }
-}
+import type { AppAnalyticsResponse } from '@/types'
 
 export function FloatingAnalytics() {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
 
   // Fetch analytics data with auto-refresh every 30 seconds
-  const { data: analyticsData, isLoading } = useQuery<AppAnalytics>({
+  const { data: analyticsData, isLoading } = useQuery<AppAnalyticsResponse>({
     queryKey: ['app-analytics'],
-    queryFn: () => 
-      axios.get<AppAnalytics>(endpointUrl(ENDPOINTS.APP_ANALYTICS))
-        .then((res) => res.data),
+    queryFn: () =>
+      api.get<AppAnalyticsResponse>(ENDPOINTS.APP_ANALYTICS).then((res) => res.data),
     refetchInterval: 30000, // Refresh every 30 seconds
     refetchIntervalInBackground: true,
   })

@@ -1,14 +1,14 @@
 "use client";
 
 import { ENDPOINTS } from "@/app/_utils/endpoints";
-import { endpointUrl } from "@/app/_utils/helper";
+import { api } from "@/lib/api";
 import { userAtom } from "@/atom/user";
-import { BrandProfileData, GamerProfileData } from "@/types";
+import { BrandProfileData, GamerProfileData, UserData } from "@/types";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useSetAtom } from "jotai";
 import { Loader2 } from "lucide-react";
+import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { routes } from "@/app/_utils/routes";
@@ -20,94 +20,79 @@ type GoogleLoginPayload = {
   avatar: string;
   givenName: string;
   familyName: string;
-  referrerUsername?: string;
 };
 
-const GoogleAuthBtn = ({ referrerUsername }: { referrerUsername?: string }) => {
+interface GoogleLoginResult {
+  user: Pick<UserData, "userType" | "email">;
+  accessToken: string;
+  refreshToken: string;
+}
+
+const GoogleAuthBtn = () => {
   const setUser = useSetAtom(userAtom);
   const router = useRouter();
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-  const getUserProfile = async (loginData: any) => {
-    if (loginData.user.role === "gamer") {
-      axios
-        .get(endpointUrl(`${ENDPOINTS.GAMER_PROFILE}`), {
-          headers: {
-            Authorization: `Bearer ${loginData.accessToken}`,
-          },
-        })
-        .then((response) => {
-          const gamerData: GamerProfileData = response.data.profile;
-          console.log(gamerData);
-          setUser({
-            id: gamerData._id,
-            firstName: gamerData.firstName,
-            lastName: gamerData.lastName,
-            fullName: `${gamerData.firstName} ${gamerData.lastName}`,
-            avatar: gamerData.avatar,
-            username: gamerData.username,
-            email: gamerData.email,
-            leaderboardPosition: gamerData.leaderboardPosition,
-            userType: gamerData.role,
-            isVerified: gamerData.isVerified,
-            createdAt: gamerData.createdAt,
-            accessToken: loginData.accessToken,
-            refreshToken: loginData.refreshToken,
-          });
+  const getUserProfile = async (loginData: GoogleLoginResult) => {
+    if (loginData.user.userType === "gamer") {
+      const response = await api.get(ENDPOINTS.GAMER_PROFILE, {
+        headers: { Authorization: `Bearer ${loginData.accessToken}` },
+      });
+      const gamerData: GamerProfileData = response.data.profile;
+      setUser({
+        id: gamerData._id,
+        firstName: gamerData.firstName,
+        lastName: gamerData.lastName,
+        fullName: `${gamerData.firstName} ${gamerData.lastName}`,
+        avatar: gamerData.avatar,
+        username: gamerData.username,
+        email: gamerData.email,
+        userType: gamerData.role,
+        isVerified: gamerData.isVerified,
+        createdAt: gamerData.createdAt,
+        accessToken: loginData.accessToken,
+        refreshToken: loginData.refreshToken,
+      });
 
-          toast.success("Success", {
-            description: "Login successful!",
-          });
-          router.push(routes.USER.DASHBOARD);
-        });
+      toast.success("Success", { description: "Login successful!" });
+      router.push(routes.USER.HOME);
     } else {
-      axios
-        .get(endpointUrl(`${ENDPOINTS.BRAND_PROFILE}`), {
-          headers: {
-            Authorization: `Bearer ${loginData.accessToken}`,
-          },
-        })
-        .then((response) => {
-          const brandData: BrandProfileData = response.data.profile;
-          setUser({
-            id: brandData._id,
-            fullName: brandData.name,
-            email: brandData.email,
-            userType: brandData.role,
-            isVerified: brandData.isVerified,
-            createdAt: brandData.createdAt,
-            companyName: brandData?.companyName,
-            accessToken: loginData.accessToken,
-            refreshToken: loginData.refreshToken,
-          });
+      const response = await api.get(ENDPOINTS.BRAND_PROFILE, {
+        headers: { Authorization: `Bearer ${loginData.accessToken}` },
+      });
+      const brandData: BrandProfileData = response.data.profile;
+      setUser({
+        id: brandData._id,
+        fullName: brandData.name,
+        email: brandData.email,
+        userType: brandData.role,
+        isVerified: brandData.isVerified,
+        createdAt: brandData.createdAt,
+        companyName: brandData?.companyName,
+        accessToken: loginData.accessToken,
+        refreshToken: loginData.refreshToken,
+      });
 
-          toast.success("Success", {
-            description: "Login successful!",
-          });
-          router.push(routes.BRAND.DASHBOARD);
-        });
+      toast.success("Success", { description: "Login successful!" });
+      router.push(routes.BRAND.DASHBOARD);
     }
   };
 
   const googleAuthMutation = useMutation({
     mutationFn: (payload: GoogleLoginPayload) => {
-      return axios.post(endpointUrl(`${ENDPOINTS.GOOGLE_AUTH}`), payload);
+      return api.post<GoogleLoginResult>(ENDPOINTS.GOOGLE_AUTH, payload);
     },
-    onError: (error: any) => {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Google authentication failed";
-      toast.error("Error", {
-        description: errorMessage,
-      });
-      console.log(error);
+    onError: (error) => {
+      const errorMessage = isAxiosError(error)
+        ? error.response?.data?.message || error.message
+        : "Google authentication failed";
+      toast.error("Error", { description: errorMessage });
     },
     onSuccess: async (data) => {
-      const loginData = data.data;
-      await getUserProfile(loginData);
+      await getUserProfile(data.data);
     },
   });
+
   // If no Google client ID is configured, don't attempt to use Google hooks during SSR/prerender
   if (!googleClientId) {
     return null;
@@ -118,14 +103,12 @@ const GoogleAuthBtn = ({ referrerUsername }: { referrerUsername?: string }) => {
     const handleGoogleAuth = useGoogleLogin({
       onSuccess: async (tokenResponse) => {
         try {
-          const userInfoResponse = await axios.get(
+          const userInfoResponse = await fetch(
             "https://www.googleapis.com/oauth2/v3/userinfo",
             {
-              headers: {
-                Authorization: `Bearer ${tokenResponse.access_token}`,
-              },
+              headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
             }
-          );
+          ).then((res) => res.json());
 
           const {
             sub: googleId,
@@ -134,7 +117,7 @@ const GoogleAuthBtn = ({ referrerUsername }: { referrerUsername?: string }) => {
             picture,
             given_name,
             family_name,
-          } = userInfoResponse.data;
+          } = userInfoResponse;
 
           googleAuthMutation.mutate({
             googleId,
@@ -143,10 +126,9 @@ const GoogleAuthBtn = ({ referrerUsername }: { referrerUsername?: string }) => {
             avatar: picture,
             givenName: given_name,
             familyName: family_name,
-            ...(referrerUsername ? { referrerUsername } : {}),
           });
           toast.info("Please wait, while we log you in.");
-        } catch (error: any) {
+        } catch (error) {
           toast.error("Google login failed. Please try again.");
           console.error("Google login error:", error);
         }

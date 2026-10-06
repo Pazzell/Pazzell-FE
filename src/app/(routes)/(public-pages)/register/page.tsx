@@ -30,7 +30,6 @@ type RegisterUserPayload  = {
   lastName: string
   email: string
   password: string
-  referrerUsername?: string
 }
 
 type RegisterBrandPayload = {
@@ -74,20 +73,16 @@ function RegisterForm() {
   const [userType, setUserType] = useState<'user' | 'brand'>(
     (searchParams.get('type') as 'user' | 'brand') || 'user'
   )
-  const referrerUsername =
-    searchParams.get('ref') ||
-    searchParams.get('referralCode') ||
-    searchParams.get('referrerUsername') ||
-    searchParams.get('referrerId') ||
-    undefined
 
   // Redirect authenticated users to their dashboard
   useEffect(() => {
     if (user) {
       if (user.userType === 'gamer') {
-        router.push(routes.USER.DASHBOARD);
+        router.push(routes.USER.HOME);
       } else if (user.userType === 'brand') {
         router.push(routes.BRAND.DASHBOARD);
+      } else if (user.userType === 'admin') {
+        router.push(routes.ADMIN.DASHBOARD);
       }
     }
   }, [user, router]);
@@ -153,41 +148,12 @@ function RegisterForm() {
     },
   })
   
-  const googleAuthMutation = useMutation({
-    mutationFn: () => {
-      return axios.post(endpointUrl(`${ENDPOINTS.GOOGLE_AUTH}`), {});
-    },
-    onError: (error: any) => {
-      const errorMessage = error.response?.data?.message || error.message || 'Google authentication failed'
-      toast.error('Error', {
-        description: errorMessage,
-      })
-      console.log(error);
-    },
-    onSuccess: async (data) => {
-      const authData = data.data
-      toast.success('Success', {
-        description: 'Google registration successful!',
-      })
-      // Redirect to appropriate dashboard based on user role
-      if (authData.user.role === 'gamer') {
-        router.push(routes.USER.DASHBOARD);
-      } else {
-        router.push(routes.BRAND.DASHBOARD);
-      }
-    },
-  });
-
   const onSubmitUser = (data: UserRegistrationValues) => {
-    registerUser.mutate(referrerUsername ? { ...data, referrerUsername } : data)
+    registerUser.mutate(data)
   }
-  
+
   const onSubmitBrand = (data: BrandRegistrationValues) => {
     registerBrand.mutate(data)
-  }
-
-  function handleGoogleAuth() {
-    googleAuthMutation.mutate()
   }
 
   return (
@@ -467,7 +433,7 @@ function RegisterForm() {
             </div>
             
             {/* Google Button */}
-            <GoogleAuthBtn referrerUsername={userType === 'user' ? referrerUsername : undefined} />
+            <GoogleAuthBtn />
             
             <p className="text-center text-white/50 text-sm mt-6">
               Already have an account?{' '}

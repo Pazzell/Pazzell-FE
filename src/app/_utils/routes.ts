@@ -1,5 +1,5 @@
 export const routes = {
-  // Public Routes
+  // Public
   HOME: "/",
   REGISTER: "/register",
   LOGIN: "/login",
@@ -7,59 +7,47 @@ export const routes = {
   FORGOT_PASSWORD: "/forgot-password",
   RESET_PASSWORD: "/reset-password",
   VERIFY_OTP: "/verify-otp",
-  PRICING: "/pricing",
   PRIVACY: "/privacy",
   TERMS: "/terms",
   CONTACT: "/contact",
-  HOW_IT_WORKS: "/how-it-works",
-  LEADERBOARD: "/leaderboard",
-  CAMPAIGNS: "/campaigns",
-  PUZZLE_DEMO: "/puzzle-demo",
   PAYMENT_VERIFY: "/payment/verify",
+  QUIZ_SHARE: (slug: string) => `/q/${slug}`,
 
-  // Puzzle Routes
-  PUZZLE: {
-    SLIDING_PUZZLE: "/user/puzzle/sliding-puzzle",
-    WORD_HUNT: "/user/puzzle/word-hunt",
-    CARD_MATCHING: "/user/puzzle/card-matching",
-    SPOT_THE_DIFFERENCE: "/user/puzzle/spot-the-difference",
-  },
-
-  // User Routes
+  // User (gamer)
   USER: {
-    DASHBOARD: "/user/dashboard",
+    HOME: "/user/dashboard",
     PROFILE: "/user/profile",
     SETTINGS: "/user/settings",
-    PUZZLES: "/user/puzzles",
-    PUZZLE_PLAY: (id: string) => `/user/puzzles/${id}`,
-    EARNINGS: "/user/earnings",
-    LEADERBOARD: "/user/leaderboard",
-    BADGES: "/user/badges",
-    REFERRALS: "/user/referrals",
-    // v2 (multi-game) campaign session play flow
-    CAMPAIGN_PLAY: (id: string) => `/user/campaigns/${id}/play`,
     WALLET: "/user/wallet",
-    FORUM: "/user/forum",
-    FORUM_THREAD: (id: string) => `/user/forum/${id}`,
-    RAFFLES: "/user/raffles",
+    PRO: "/pro",
+    MATCH: "/match",
+    MATCH_LEVEL: (level: number) => `/match/${level}`,
+    TRIVIA: "/trivia",
+    TRIVIA_TOPIC: (id: string) => `/trivia/${id}`,
+    SESSION_PLAY: (sessionId: string) => `/play/${sessionId}`,
+    MY_QUIZZES: "/my-quizzes",
+    MY_QUIZ_NEW: "/my-quizzes/new",
+    MY_QUIZ_EDIT: (id: string) => `/my-quizzes/${id}/edit`,
+    MY_QUIZ_PREVIEW: (id: string) => `/my-quizzes/${id}/preview`,
   },
 
-  // Brand Routes
+  // Brand
   BRAND: {
     DASHBOARD: "/brand/dashboard",
+    PROFILE: "/brand/profile",
     CAMPAIGNS: "/brand/campaigns",
-    CAMPAIGNS_NEW: "/brand/campaigns/new",
-    // v2 (multi-game) campaign creation wizard — new campaigns only go
-    // through this flow now (POST /brands/campaigns changed shape).
-    // CAMPAIGNS_NEW / its ?edit= mode stays for legacy schemaVersion:1 campaigns.
-    CAMPAIGNS_CREATE: "/brand/campaigns/create",
-    CAMPAIGN_DETAILS: (id: string) => `/brand/campaigns/${id}`,
+    CAMPAIGN_NEW: "/brand/campaigns/new",
     CAMPAIGN_EDIT: (id: string) => `/brand/campaigns/${id}/edit`,
-    PUZZLES: "/brand/puzzles",
-    PUZZLES_NEW: "/brand/puzzles/new",
-    PUZZLE_EDIT: (id: string) => `/brand/puzzles/${id}/edit`,
-    ANALYTICS: "/brand/analytics",
-    BILLING: "/brand/billing",
+    CAMPAIGN_DASHBOARD: (id: string) => `/brand/campaigns/${id}/dashboard`,
     SETTINGS: "/brand/settings",
+  },
+
+  // Admin
+  ADMIN: {
+    DASHBOARD: "/admin",
+    TOPICS: "/admin/topics",
+    MATCH_LEVELS: "/admin/match-levels",
+    CAMPAIGNS: "/admin/campaigns",
+    SETTINGS: "/admin/settings",
   },
 };

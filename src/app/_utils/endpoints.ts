@@ -1,5 +1,5 @@
 export const ENDPOINTS = {
-  // Authentication
+  // Auth
   LOGIN: "/auth/login",
   REGISTER_GAMER: "/auth/gamer/register",
   REGISTER_BRAND: "/auth/brand/register",
@@ -7,106 +7,128 @@ export const ENDPOINTS = {
   FORGOT_PASSWORD: "/auth/forgot-password",
   RESET_PASSWORD: "/auth/reset-password",
   ACTIVATE_USER: "/auth/user/activate",
+  RESEND_ACTIVATION: "/auth/user/resend-activation",
+  LOGOUT: "/auth/logout",
+  REFRESH: "/refresh",
+
+  // Profile
+  ME: "/me",
   GAMER_PROFILE: "/profile/gamer",
   BRAND_PROFILE: "/profile/brand",
-  UPDATE_PROFILE: "/profile/gamer",
-  UPLOAD_PROFILE_IMAGE: "/profile/image",
-
-  // Campaign endpoints
-  CAMPAIGNS: "/campaigns",
-  CREATE_CAMPAIGN: "/brands/campaigns",
-  CAMPAIGN_DETAILS: (id: string) => `/campaigns/${id}`,
-  UPDATE_CAMPAIGN: (id: string) => `/campaigns/${id}`,
-  DELETE_CAMPAIGN: (id: string) => `/campaigns/${id}`,
-  BRAND_CAMPAIGNS: "/campaigns/my-campaigns",
-  BRAND_CAMPAIGNS_BY_ID: (brandId: string) => `/campaigns/brand/${brandId}`,
-  SUBMIT_CAMPAIGN: (id: string) => `/campaigns/${id}/submit`,
-  CAMPAIGN_COMPLETION: (id: string) => `/campaigns/${id}/completion`,
-
-  // Leaderboard endpoints — monthly removed by the backend (weekly-system
-  // migration); see WEEKLY_LEADERBOARD_BY_WEEK / ALL_TIME_LEADERBOARD below.
-  WEEKLY_LEADERBOARD: "/leaderboards/weekly",
-
-  // Rewards / Payouts
-  REWARDS_PAYOUTS: "/rewards/payouts",
-
-  // Referrals
-  REFERRALS_SUMMARY: "/referrals/summary",
-  REFERRALS_EVENTS: "/referrals/events",
-  REFERRALS_MY_STATS: (month?: string) =>
-    month ? `/referrals/my-stats?month=${month}` : `/referrals/my-stats`,
-
-  // Authenticated user profile (includes referral analytics)
-  USER_ME: "/user/me",
-
-  // Admin
-  ADMIN_REWARDS_FINALIZE: "/admin/rewards/finalize",
-  ADMIN_REWARDS_PAYOUT_APPROVE: (payoutId: string) =>
-    `/admin/rewards/payouts/${payoutId}/approve`,
-  ADMIN_RAFFLES: "/admin/raffles",
-
-  // Puzzle endpoints
-  PUZZLES: "/puzzles",
-  CREATE_PUZZLE: "/puzzles",
-  PUZZLE_DETAILS: (id: string) => `/puzzles/${id}`,
-  UPDATE_PUZZLE: (id: string) => `/puzzles/${id}`,
-  DELETE_PUZZLE: (id: string) => `/puzzles/${id}`,
-  CAMPAIGN_PUZZLES: (campaignId: string) => `/campaigns/${campaignId}/puzzles`,
-  AVAILABLE_PUZZLES: "/puzzles/available",
-  PLAY_PUZZLE: (id: string) => `/puzzles/${id}/play`,
-  SUBMIT_PUZZLE_ANSWER: (id: string) => `/puzzles/${id}/submit`,
-
-  // User Progress and Earnings
-  USER_PROGRESS: "/progress",
-  USER_EARNINGS: "/earnings",
-  USER_STATS: "/users/stats",
-  LEADERBOARD: "/leaderboard",
-
-  // Analytics
-  CAMPAIGN_ANALYTICS: (campaignId: string) =>
-    `/analytics/campaigns/${campaignId}`,
-  BRAND_ANALYTICS: "/brands/analytics",
-  APP_ANALYTICS: "/analytics/app",
-
-  // User settings
+  UPDATE_GAMER_PROFILE: "/profile/gamer",
+  UPDATE_BRAND_PROFILE: "/profile/brand",
   CHANGE_PASSWORD: "/profile/change-password",
   UPDATE_NOTIFICATIONS: "/profile/notifications",
-  UPDATE_PRIVACY: "/profile/privacy",
   DELETE_ACCOUNT: "/profile/account",
 
-  // AI
-  GENERATE_QUESTIONS: "/campaigns/generate-questions",
+  // Global settings
+  GAME_SETTINGS: "/settings/game",
 
-  // Packages
-  PACKAGES: "/packages",
+  // Plans / Pro / payments
+  PLAN_ME: "/plan/me",
+  PLAN_PRO_CHECKOUT: "/plan/pro/checkout",
+  PAYMENTS_VERIFY: (reference: string) => `/payments/verify/${reference}`,
+  PAYMENTS_MINE: "/payments/mine",
 
-  // Payment
-  DAILY_PRIZE_TABLE: "/prize-table/today",
-  INITIALIZE_PAYMENT: "/payments/initialize",
-  VERIFY_PAYMENT: "/payments/verify",
-  CALCULATE_WEEKLY_PRICE: (packageType: string, weeks: number) =>
-    `/payments/calculate-weekly-price?packageType=${packageType}&weeks=${weeks}`,
+  // Match
+  MATCH_ARTIFACTS: "/match/artifacts",
+  MATCH_ARTIFACT_SVG: (id: string) =>
+    `/match/artifacts/svg?id=${encodeURIComponent(id)}`,
+  MATCH_LEVELS: "/match/levels",
+  MATCH_PROGRESS: "/match/progress",
+  MATCH_LEVEL_ATTEMPTS: (level: number) => `/match/levels/${level}/attempts`,
+  MATCH_ATTEMPT: (id: string) => `/match/attempts/${id}`,
+  MATCH_ATTEMPT_QUESTION: (id: string) => `/match/attempts/${id}/question`,
+  MATCH_ATTEMPT_ANSWER: (id: string) => `/match/attempts/${id}/answer`,
+  MATCH_ATTEMPT_FINISH: (id: string) => `/match/attempts/${id}/finish`,
 
-  // Gameplay sessions (v2 / multi-game campaigns only)
-  SESSION_START: "/sessions/start",
-  SESSION_GAME_START: (sessionId: string, gameType: string) =>
-    `/sessions/${sessionId}/games/${gameType}/start`,
-  SESSION_GAME_COMPLETE: (sessionId: string, gameType: string) =>
-    `/sessions/${sessionId}/games/${gameType}/complete`,
-  SESSION_VIDEO_START: (sessionId: string) =>
-    `/sessions/${sessionId}/video/start`,
-  SESSION_VIDEO_COMPLETE: (sessionId: string) =>
-    `/sessions/${sessionId}/video/complete`,
-  SESSION_QUIZ_ATTEMPT: (sessionId: string) =>
-    `/sessions/${sessionId}/quiz/attempt`,
-  SESSION_COMPLETE: (sessionId: string) => `/sessions/${sessionId}/complete`,
+  // Trivia topics
+  TRIVIA_TOPICS: "/trivia/topics",
+  TRIVIA_TOPIC: (id: string) => `/trivia/topics/${id}`,
 
-  // Leaderboard — weekly-only additions (WEEKLY_LEADERBOARD already above)
-  WEEKLY_LEADERBOARD_BY_WEEK: (weekKey: string) =>
-    `/leaderboards/weekly/${weekKey}`,
-  ALL_TIME_LEADERBOARD: "/leaderboards/all-time",
+  // Trivia sessions (topics, custom quizzes and campaigns)
+  TRIVIA_SESSIONS: "/trivia/sessions",
+  TRIVIA_SESSION: (id: string) => `/trivia/sessions/${id}`,
+  TRIVIA_SESSION_STUDY: (id: string) => `/trivia/sessions/${id}/study`,
+  TRIVIA_SESSION_QUIZ_BEGIN: (id: string) =>
+    `/trivia/sessions/${id}/quiz/begin`,
+  TRIVIA_SESSION_QUESTION: (id: string) => `/trivia/sessions/${id}/question`,
+  TRIVIA_SESSION_ANSWER: (id: string) => `/trivia/sessions/${id}/answer`,
+  TRIVIA_SESSION_RESULT: (id: string) => `/trivia/sessions/${id}/result`,
+  TRIVIA_SESSION_ABANDON: (id: string) => `/trivia/sessions/${id}/abandon`,
 
-  // Wallet & withdrawals
+  // Custom trivia (owner)
+  CUSTOM_QUIZZES: "/custom-quizzes",
+  CUSTOM_QUIZ: (id: string) => `/custom-quizzes/${id}`,
+  CUSTOM_QUIZ_PREVIEW: (id: string) => `/custom-quizzes/${id}/preview`,
+  CUSTOM_QUIZ_CARDS: (id: string) => `/custom-quizzes/${id}/cards`,
+  CUSTOM_QUIZ_CARDS_BULK: (id: string) => `/custom-quizzes/${id}/cards/bulk`,
+  CUSTOM_QUIZ_CARD: (id: string, cardId: string) =>
+    `/custom-quizzes/${id}/cards/${cardId}`,
+  CUSTOM_QUIZ_PUBLISH: (id: string) => `/custom-quizzes/${id}/publish`,
+  CUSTOM_QUIZ_UNPUBLISH: (id: string) => `/custom-quizzes/${id}/unpublish`,
+  CUSTOM_QUIZ_LINK_REGENERATE: (id: string) =>
+    `/custom-quizzes/${id}/share-link/regenerate`,
+  CUSTOM_QUIZ_LINK_REVOKE: (id: string) => `/custom-quizzes/${id}/share-link`,
+  CUSTOM_QUIZ_STATS: (id: string) => `/custom-quizzes/${id}/stats`,
+
+  // Custom trivia (public share link)
+  CUSTOM_QUIZ_LINK: (slug: string) => `/custom-quizzes/link/${slug}`,
+  CUSTOM_QUIZ_LINK_PLAY_INFO: (slug: string) =>
+    `/custom-quizzes/link/${slug}/play-info`,
+
+  // Brand campaigns (brand role)
+  BRAND_CAMPAIGNS_PRICING: "/brand/campaigns/pricing",
+  BRAND_CAMPAIGNS: "/brand/campaigns",
+  BRAND_CAMPAIGN: (id: string) => `/brand/campaigns/${id}`,
+  BRAND_CAMPAIGN_PREVIEW: (id: string) => `/brand/campaigns/${id}/preview`,
+  BRAND_CAMPAIGN_CARDS: (id: string) => `/brand/campaigns/${id}/cards`,
+  BRAND_CAMPAIGN_CARDS_BULK: (id: string) =>
+    `/brand/campaigns/${id}/cards/bulk`,
+  BRAND_CAMPAIGN_CARD: (id: string, cardId: string) =>
+    `/brand/campaigns/${id}/cards/${cardId}`,
+  BRAND_CAMPAIGN_CHECKOUT: (id: string) => `/brand/campaigns/${id}/checkout`,
+  BRAND_CAMPAIGN_CANCEL_CHECKOUT: (id: string) =>
+    `/brand/campaigns/${id}/cancel-checkout`,
+  BRAND_CAMPAIGN_DASHBOARD: (id: string) =>
+    `/brand/campaigns/${id}/dashboard`,
+
+  // Campaign delivery to players
+  CAMPAIGNS_NEXT: "/campaigns/next",
+  CAMPAIGN_BY_ID: (id: string) => `/campaigns/${id}`,
+  CAMPAIGN_CLICK: (id: string) => `/campaigns/${id}/click`,
+
+  // Admin
+  ADMIN_CONFIG: "/admin/config",
+  ADMIN_CONFIG_KEY: (key: string) => `/admin/config/${key}`,
+  ADMIN_MATCH_LEVELS: "/admin/match/levels",
+  ADMIN_MATCH_LEVEL: (level: number) => `/admin/match/levels/${level}`,
+  ADMIN_TRIVIA_TOPICS: "/admin/trivia/topics",
+  ADMIN_TRIVIA_TOPIC: (id: string) => `/admin/trivia/topics/${id}`,
+  ADMIN_TRIVIA_TOPIC_CARDS: (id: string) => `/admin/trivia/topics/${id}/cards`,
+  ADMIN_TRIVIA_TOPIC_CARDS_BULK: (id: string) =>
+    `/admin/trivia/topics/${id}/cards/bulk`,
+  ADMIN_TRIVIA_TOPIC_CARD: (id: string, cardId: string) =>
+    `/admin/trivia/topics/${id}/cards/${cardId}`,
+  ADMIN_CAMPAIGNS: "/admin/campaigns",
+  ADMIN_CAMPAIGN: (id: string) => `/admin/campaigns/${id}`,
+  ADMIN_CAMPAIGN_PAUSE: (id: string) => `/admin/campaigns/${id}/pause`,
+  ADMIN_CAMPAIGN_RESUME: (id: string) => `/admin/campaigns/${id}/resume`,
+  ADMIN_CAMPAIGN_TAKEDOWN: (id: string) => `/admin/campaigns/${id}/takedown`,
+  ADMIN_REVENUE: "/admin/revenue",
+  ADMIN_PAYMENTS: "/admin/payments",
+
+  // Uploads
+  UPLOAD_IMAGE: "/uploads/images",
+
+  // App-wide live activity widget (kept)
+  APP_ANALYTICS: "/analytics/app",
+  ANALYTICS_USER_ONLINE: "/analytics/user/online",
+  ANALYTICS_USER_OFFLINE: "/analytics/user/offline",
+  ANALYTICS_GAME_START: "/analytics/game/start",
+  ANALYTICS_GAME_STOP: "/analytics/game/stop",
+
+  // Wallet & withdrawals (unchanged)
   WALLET_BALANCE: "/wallet/balance",
   WALLET_TRANSACTIONS: (limit: number = 50) =>
     `/wallet/transactions?limit=${limit}`,
@@ -114,31 +136,4 @@ export const ENDPOINTS = {
   WALLET_BANK_ACCOUNT_DELETE: (id: string) => `/wallet/bank-accounts/${id}`,
   WALLET_WITHDRAWALS: "/wallet/withdrawals",
   WALLET_WITHDRAWAL_DETAILS: (id: string) => `/wallet/withdrawals/${id}`,
-
-  // Raffles
-  RAFFLE_CAMPAIGN_CURRENT: (campaignId: string) =>
-    `/raffles/campaign/${campaignId}/current`,
-  RAFFLE_MY_TICKETS: "/raffles/my-tickets",
-  RAFFLE_DRAW: (campaignId: string) => `/raffles/${campaignId}/draw`,
-  RAFFLE_FULFILLMENT: (drawId: string) => `/raffles/${drawId}/fulfillment`,
-  RAFFLE_VERIFY: (drawId: string) => `/raffles/${drawId}/verify`,
-
-  // Admin config
-  ADMIN_CONFIG: "/admin/config",
-  ADMIN_CONFIG_KEY: (key: string) => `/admin/config/${key}`,
-
-  // Forum
-  FORUM_THREADS: "/forum/threads",
-  FORUM_THREAD_POSTS: (threadId: string) => `/forum/threads/${threadId}/posts`,
-  FORUM_POST_LIKE: (postId: string) => `/forum/posts/${postId}/like`,
-  FORUM_POST_FLAG: (postId: string) => `/forum/posts/${postId}/flag`,
-  FORUM_MODERATION_FLAGS: "/forum/moderation/flags",
-  FORUM_MODERATION_FLAG_DETAILS: (flagId: string) =>
-    `/forum/moderation/flags/${flagId}`,
-  FORUM_WINNER_SUBMISSIONS: "/forum/winner-submissions",
-  FORUM_WINNER_SUBMISSIONS_MINE: "/forum/winner-submissions/mine",
-  FORUM_WINNER_SUBMISSION_VERIFY: (id: string) =>
-    `/forum/winner-submissions/${id}/verify`,
-  FORUM_WINNER_SUBMISSION_REJECT: (id: string) =>
-    `/forum/winner-submissions/${id}/reject`,
 };

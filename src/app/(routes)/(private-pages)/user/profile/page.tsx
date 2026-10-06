@@ -20,8 +20,7 @@ import Link from 'next/link'
 import { routes } from '@/app/_utils/routes'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { GamerProfileData } from '@/types'
-import axios from 'axios'
-import { endpointUrl } from '@/app/_utils/helper'
+import { api } from '@/lib/api'
 import { ENDPOINTS } from '@/app/_utils/endpoints'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { userAtom } from '@/atom/user'
@@ -47,11 +46,7 @@ export default function ProfilePage() {
   // Fetch user profile data
   const { data: profileData, error: profileError, isLoading: loadingProfile } = useQuery<GamerProfileData>({
     queryKey: ["profile"],
-    queryFn: () => axios.get(endpointUrl(`${ENDPOINTS.GAMER_PROFILE}`), {
-      headers: {
-        Authorization: `Bearer ${user?.accessToken}`,
-      },
-    }).then((res) => {
+    queryFn: () => api.get(ENDPOINTS.GAMER_PROFILE).then((res) => {
       const profile = res.data.profile
       // Initialize form data when profile loads
       setFirstName(profile.firstName || '')
@@ -71,11 +66,7 @@ export default function ProfilePage() {
       username: string;
       avatar?: string;
     }) => {
-      return axios.put(endpointUrl(ENDPOINTS.UPDATE_PROFILE), profileData, {
-        headers: {
-          Authorization: `Bearer ${user?.accessToken}`,
-        },
-      });
+      return api.put(ENDPOINTS.UPDATE_GAMER_PROFILE, profileData);
     },
     onSuccess: (response: any) => {
       const profileData: GamerProfileData = response.data.profile
@@ -107,12 +98,9 @@ export default function ProfilePage() {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('avatar', file);
-      
-      return axios.put(endpointUrl(ENDPOINTS.UPDATE_PROFILE), formData, {
-        headers: {
-          Authorization: `Bearer ${user?.accessToken}`,
-          'Content-Type': 'multipart/form-data',
-        },
+
+      return api.put(ENDPOINTS.UPDATE_GAMER_PROFILE, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
     },
     onSuccess: (response: any) => {
@@ -221,7 +209,7 @@ export default function ProfilePage() {
       <div className="space-y-8">
         {/* Page Header */}
         <div className="flex items-center gap-4">
-          <Link href={routes.USER.DASHBOARD}>
+          <Link href={routes.USER.HOME}>
             <Button variant="outline" size="icon" className="border-white/20 text-white/70 hover:bg-white/90">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -438,7 +426,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Account Stats */}
+        {/* Account Status */}
         <Card className="bg-card/50 backdrop-blur-sm border-white/10">
           <CardHeader>
             <CardTitle className="text-white font-fredoka text-lg flex items-center gap-2">
@@ -446,28 +434,24 @@ export default function ProfilePage() {
               Account Information
             </CardTitle>
             <CardDescription className="text-white/70">
-              Your account statistics and status
+              Your plan and account status
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="text-center p-4 rounded-lg bg-white/5">
-                <p className="text-2xl font-bold text-white font-fredoka">
-                  {profileData?.analytics?.lifetime?.puzzlesSolved || 0}
+                <p className="text-2xl font-bold text-white font-fredoka capitalize">
+                  {profileData?.plan?.tier || 'freemium'}
                 </p>
-                <p className="text-white/60 text-sm">Puzzles Solved</p>
+                <p className="text-white/60 text-sm">Plan</p>
               </div>
               <div className="text-center p-4 rounded-lg bg-white/5">
                 <p className="text-2xl font-bold text-white font-fredoka">
-                  {profileData?.analytics?.lifetime?.totalPoints || 0}
+                  {profileData?.plan?.proUntil
+                    ? new Date(profileData.plan.proUntil).toLocaleDateString()
+                    : '—'}
                 </p>
-                <p className="text-white/60 text-sm">Total Points</p>
-              </div>
-              <div className="text-center p-4 rounded-lg bg-white/5">
-                <p className="text-2xl font-bold text-white font-fredoka">
-                  ₦{profileData?.analytics?.lifetime?.totalEarnings || 0}
-                </p>
-                <p className="text-white/60 text-sm">Total Earnings</p>
+                <p className="text-white/60 text-sm">Pro Expires</p>
               </div>
             </div>
             <div className={`mt-6 p-4 rounded-lg border ${

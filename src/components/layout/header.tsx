@@ -4,11 +4,11 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/ui/logo-icon";
-import { User, Menu, LogOut, X, Trophy, Settings, Wallet, MessageSquare } from "lucide-react";
+import { User, Menu, LogOut, X, Settings, Wallet, Sparkles, FolderKanban } from "lucide-react";
 import { routes } from "@/app/_utils/routes";
 import { useAtomValue, useSetAtom } from "jotai/react";
 import { userAtom } from "@/atom/user";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +22,6 @@ export function Header() {
   const user = useAtomValue(userAtom);
   const setUser = useSetAtom(userAtom);
   const router = useRouter();
-  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const userType = user?.userType;
@@ -30,10 +29,6 @@ export function Header() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  // Enable real-time notifications via WebSocket
-  // NOTE: Disabled until notification system is fully configured
-  // useNotificationSocket(user?._id)
 
   const handleLogout = () => {
     setUser(null);
@@ -62,38 +57,25 @@ export function Header() {
             {isMounted && userType === "gamer" ? (
               <>
                 <Link
-                  href={routes.USER.DASHBOARD}
+                  href={routes.USER.MATCH}
                   className="text-white hover:text-secondary font-medium transition-colors">
-                  Dashboard
+                  Match
                 </Link>
                 <Link
-                  href={routes.CAMPAIGNS}
+                  href={routes.USER.TRIVIA}
                   className="text-white hover:text-secondary font-medium transition-colors">
-                  Campaigns
+                  Trivia
                 </Link>
                 <Link
-                  href={routes.LEADERBOARD}
+                  href={routes.USER.MY_QUIZZES}
                   className="text-white hover:text-secondary font-medium transition-colors">
-                  Leaderboard
-                </Link>
-                <Link
-                  href={routes.USER.REFERRALS}
-                  className="text-white hover:text-secondary font-medium transition-colors">
-                  Referrals
+                  My Quizzes
                 </Link>
                 <Link
                   href={routes.USER.WALLET}
                   className="text-white hover:text-secondary font-medium transition-colors">
                   Wallet
                 </Link>
-                <Link
-                  href={routes.USER.FORUM}
-                  className="text-white hover:text-secondary font-medium transition-colors">
-                  Forum
-                </Link>
-                {/* <Link href={routes.USER.BADGES} className="text-white hover:text-secondary font-medium transition-colors">
-                  Badges
-                </Link> */}
               </>
             ) : (
               <>
@@ -103,14 +85,9 @@ export function Header() {
                   Home
                 </Link>
                 <Link
-                  href={routes.CAMPAIGNS}
+                  href={routes.ABOUT}
                   className="text-white hover:text-secondary font-medium transition-colors">
-                  Campaigns
-                </Link>
-                <Link
-                  href={routes.LEADERBOARD}
-                  className="text-white hover:text-secondary font-medium transition-colors">
-                  Leaderboard
+                  About
                 </Link>
               </>
             )}
@@ -119,6 +96,16 @@ export function Header() {
           <div className="flex items-center space-x-2 sm:space-x-4">
             {isMounted && userType ? (
               <div className="flex items-center space-x-1 sm:space-x-2">
+                {userType === "gamer" && (
+                  <Link href={routes.USER.PRO} className="hidden sm:block">
+                    <Button
+                      size="sm"
+                      className="bg-gradient-to-r from-[#6C5CE7] to-[#FF6B9D] text-white font-fredoka">
+                      <Sparkles className="h-4 w-4 mr-1" />
+                      Go Pro
+                    </Button>
+                  </Link>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -171,6 +158,14 @@ export function Header() {
                         </DropdownMenuItem>
                       </>
                     )}
+                    {userType === "admin" && (
+                      <DropdownMenuItem asChild>
+                        <Link href={routes.ADMIN.DASHBOARD}>
+                          <FolderKanban className="h-4 w-4 mr-2" />
+                          Admin
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       onClick={handleLogout}
                       className="text-red-600">
@@ -205,7 +200,6 @@ export function Header() {
             )}
 
             <div
-              // variant="ghost"
               className="lg:hidden text-white"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? (
@@ -226,28 +220,22 @@ export function Header() {
               {isMounted && userType === "gamer" ? (
                 <>
                   <Link
-                    href={routes.USER.DASHBOARD}
+                    href={routes.USER.MATCH}
                     className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
                     onClick={closeMobileMenu}>
-                    Dashboard
+                    Match
                   </Link>
                   <Link
-                    href={routes.CAMPAIGNS}
+                    href={routes.USER.TRIVIA}
                     className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
                     onClick={closeMobileMenu}>
-                    Campaigns
+                    Trivia
                   </Link>
                   <Link
-                    href={routes.LEADERBOARD}
+                    href={routes.USER.MY_QUIZZES}
                     className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
                     onClick={closeMobileMenu}>
-                    Leaderboard
-                  </Link>
-                  <Link
-                    href={routes.USER.REFERRALS}
-                    className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
-                    onClick={closeMobileMenu}>
-                    Referrals
+                    My Quizzes
                   </Link>
                   <Link
                     href={routes.USER.WALLET}
@@ -256,18 +244,11 @@ export function Header() {
                     Wallet
                   </Link>
                   <Link
-                    href={routes.USER.FORUM}
+                    href={routes.USER.PRO}
                     className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
                     onClick={closeMobileMenu}>
-                    Forum
+                    Go Pro
                   </Link>
-                  {/* <Link
-                    href={routes.USER.BADGES}
-                    className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
-                    onClick={closeMobileMenu}
-                  >
-                    Badges
-                  </Link> */}
                   <Link
                     href={routes.USER.PROFILE}
                     className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
@@ -280,16 +261,14 @@ export function Header() {
                     onClick={closeMobileMenu}>
                     Settings
                   </Link>
-                  {userType && (
-                    <div className="border-t border-white/10 pt-4 space-y-2">
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center text-red-400 hover:text-red-300 hover:bg-red-500/10 py-3 px-2 rounded-md transition-colors w-full">
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Logout
-                      </button>
-                    </div>
-                  )}
+                  <div className="border-t border-white/10 pt-4 space-y-2">
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center text-red-400 hover:text-red-300 hover:bg-red-500/10 py-3 px-2 rounded-md transition-colors w-full">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </button>
+                  </div>
                 </>
               ) : isMounted && userType === "brand" ? (
                 <>
@@ -305,48 +284,45 @@ export function Header() {
                     onClick={closeMobileMenu}>
                     Campaigns
                   </Link>
+                  <div className="border-t border-white/10 pt-4 space-y-2">
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center text-red-400 hover:text-red-300 hover:bg-red-500/10 py-3 px-2 rounded-md transition-colors w-full">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </button>
+                  </div>
+                </>
+              ) : isMounted && userType === "admin" ? (
+                <>
                   <Link
-                    href={routes.BRAND.ANALYTICS}
+                    href={routes.ADMIN.DASHBOARD}
                     className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
                     onClick={closeMobileMenu}>
-                    Analytics
+                    Admin
                   </Link>
-                  {userType && (
-                    <div className="border-t border-white/10 pt-4 space-y-2">
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center text-red-400 hover:text-red-300 hover:bg-red-500/10 py-3 px-2 rounded-md transition-colors w-full">
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Logout
-                      </button>
-                    </div>
-                  )}
+                  <div className="border-t border-white/10 pt-4 space-y-2">
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center text-red-400 hover:text-red-300 hover:bg-red-500/10 py-3 px-2 rounded-md transition-colors w-full">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </button>
+                  </div>
                 </>
               ) : (
                 <>
-                  <a
-                    href="#for-brands"
-                    className="block py-3 px-2 rounded-md transition-colors text-white hover:text-secondary hover:bg-white/5"
-                    onClick={closeMobileMenu}>
-                    For Brands
-                  </a>
-                  <a
-                    href="#for-players"
-                    className="block py-3 px-2 rounded-md transition-colors text-white hover:text-secondary hover:bg-white/5"
-                    onClick={closeMobileMenu}>
-                    For Players
-                  </a>
                   <Link
-                    href={routes.CAMPAIGNS}
+                    href={routes.HOME}
                     className="block py-3 px-2 rounded-md transition-colors text-white hover:text-secondary hover:bg-white/5"
                     onClick={closeMobileMenu}>
-                    Campaigns
+                    Home
                   </Link>
                   <Link
-                    href={routes.LEADERBOARD}
+                    href={routes.ABOUT}
                     className="block py-3 px-2 rounded-md transition-colors text-white hover:text-secondary hover:bg-white/5"
                     onClick={closeMobileMenu}>
-                    Leaderboard
+                    About
                   </Link>
                   <div className="border-t border-white/10 pt-4 flex flex-col space-y-2">
                     <Link href={routes.LOGIN} onClick={closeMobileMenu}>

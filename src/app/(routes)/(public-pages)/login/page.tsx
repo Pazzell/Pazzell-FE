@@ -56,9 +56,11 @@ export default function LoginPage() {
   useEffect(() => {
     if (user) {
       if (user.userType === "gamer") {
-        router.push(routes.USER.DASHBOARD);
+        router.push(routes.USER.HOME);
       } else if (user.userType === "brand") {
         router.push(routes.BRAND.DASHBOARD);
+      } else if (user.userType === "admin") {
+        router.push(routes.ADMIN.DASHBOARD);
       }
     }
   }, [user, router]);
@@ -91,7 +93,6 @@ export default function LoginPage() {
             avatar: gamerData.avatar,
             username: gamerData.username,
             email: gamerData.email,
-            leaderboardPosition: gamerData.leaderboardPosition,
             userType: gamerData.role,
             isVerified: gamerData.isVerified,
             createdAt: gamerData.createdAt,
@@ -102,7 +103,7 @@ export default function LoginPage() {
           toast.success("Success", {
             description: "Login successful!",
           });
-          router.push(routes.USER.DASHBOARD);
+          router.push(routes.USER.HOME);
         });
     } else {
       axios

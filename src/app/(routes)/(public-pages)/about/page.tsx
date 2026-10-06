@@ -79,7 +79,7 @@ export default function AboutPage() {
                   Start Playing <ArrowRight className="ml-2 h-4 w-4" />
                 </GradientButton>
               </Link>
-              <Link href={routes.HOW_IT_WORKS}>
+              <Link href={routes.HOME}>
                 <GradientButton variant="outline" size="lg" className="w-full sm:w-auto">
                   How It Works
                 </GradientButton>

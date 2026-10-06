@@ -81,7 +81,6 @@ function VerifyOTPForm() {
             username: gamerData.username,
             email: gamerData.email,
             userType: gamerData.role,
-            leaderboardPosition: gamerData.leaderboardPosition,
             isVerified: gamerData.isVerified,
             createdAt: gamerData.createdAt,
             accessToken: loginData.accessToken,
@@ -90,7 +89,7 @@ function VerifyOTPForm() {
           toast.success('Success', {
             description: 'Account verified successfully!',
           })
-          router.push(routes.USER.DASHBOARD);
+          router.push(routes.USER.HOME);
         });
       }else{
         axios.get(endpointUrl(`${ENDPOINTS.BRAND_PROFILE}`), 

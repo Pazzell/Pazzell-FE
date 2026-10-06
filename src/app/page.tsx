@@ -184,14 +184,6 @@ export default function Home() {
                 <div
                   key={index}
                   className="bg-white/5 border border-white/10 rounded-3xl p-8 text-center transition-all duration-300 hover:-translate-y-3 hover:border-[#6C5CE7] hover:shadow-lg hover:shadow-[#6C5CE7]/20"
-                  style={{
-                    ...(step.color === '#00E676' && {
-                      ':hover': {
-                        borderColor: '#00E676',
-                        boxShadow: '0 20px 40px rgba(0, 230, 118, 0.2)'
-                      }
-                    })
-                  }}
                 >
                   <div
                     className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-5 font-bold text-lg"

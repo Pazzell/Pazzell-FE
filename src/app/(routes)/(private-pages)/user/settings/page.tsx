@@ -29,9 +29,7 @@ import {
   Loader2,
   AlertTriangle,
   Trophy,
-  Zap,
   Mail,
-  BarChart3,
   Megaphone,
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -108,8 +106,6 @@ function NotifRow({
 
 interface NotifPrefs {
   emailNotifications: boolean;
-  referralAlerts: boolean;
-  leaderboardUpdates: boolean;
   newCampaignAlerts: boolean;
   weeklyDigest: boolean;
 }
@@ -130,22 +126,16 @@ export default function SettingsPage() {
   // ── Notifications ───────────────────────────────────────────────────────────
   const [notifs, setNotifs] = useState<NotifPrefs>({
     emailNotifications: true,
-    referralAlerts: true,
-    leaderboardUpdates: true,
     newCampaignAlerts: true,
     weeklyDigest: false,
   });
   const [notifsDirty, setNotifsDirty] = useState(false);
 
-  // ── Privacy ─────────────────────────────────────────────────────────────────
-  const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);
-  const [privacyDirty, setPrivacyDirty] = useState(false);
-
   // ── Delete account ──────────────────────────────────────────────────────────
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
 
-  // Load profile — merges notification/privacy prefs when backend supports them
+  // Load profile — merges notification prefs when backend supports them
   useQuery<GamerProfileData>({
     queryKey: ["profile"],
     queryFn: () =>
@@ -157,9 +147,6 @@ export default function SettingsPage() {
           const profile = res.data.profile;
           if (profile.notifications) {
             setNotifs((p) => ({ ...p, ...profile.notifications }));
-          }
-          if (profile.privacy) {
-            setShowOnLeaderboard(profile.privacy.showOnLeaderboard ?? true);
           }
           return profile;
         }),
@@ -194,20 +181,6 @@ export default function SettingsPage() {
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.message || "Failed to save preferences.");
-    },
-  });
-
-  const savePrivacyMutation = useMutation({
-    mutationFn: (payload: { showOnLeaderboard: boolean }) =>
-      axios.patch(endpointUrl(ENDPOINTS.UPDATE_PRIVACY), payload, {
-        headers: { Authorization: `Bearer ${user?.accessToken}` },
-      }),
-    onSuccess: () => {
-      toast.success("Privacy settings saved.");
-      setPrivacyDirty(false);
-    },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message || "Failed to save privacy settings.");
     },
   });
 
@@ -269,7 +242,7 @@ export default function SettingsPage() {
             Settings
           </h1>
           <p className="text-white/70">
-            Manage your security, notifications, and privacy.
+            Manage your security and notifications.
           </p>
         </div>
 
@@ -404,22 +377,6 @@ export default function SettingsPage() {
               onChange={(v) => updateNotif("emailNotifications", v)}
             />
             <NotifRow
-              icon={Zap}
-              label="Referral Bonus Alerts"
-              description="Get notified when a referred friend completes their first puzzle and you earn +3 pts."
-              checked={notifs.referralAlerts}
-              onChange={(v) => updateNotif("referralAlerts", v)}
-              disabled={!notifs.emailNotifications}
-            />
-            <NotifRow
-              icon={BarChart3}
-              label="Leaderboard Updates"
-              description="Know when your position on the monthly leaderboard changes significantly."
-              checked={notifs.leaderboardUpdates}
-              onChange={(v) => updateNotif("leaderboardUpdates", v)}
-              disabled={!notifs.emailNotifications}
-            />
-            <NotifRow
               icon={Megaphone}
               label="New Campaign Alerts"
               description="Be the first to know when new brand campaigns go live."
@@ -430,7 +387,7 @@ export default function SettingsPage() {
             <NotifRow
               icon={Trophy}
               label="Weekly Progress Summary"
-              description="Receive a weekly email recap of your puzzle activity and ranking."
+              description="Receive a weekly email recap of your Match and Trivia activity."
               checked={notifs.weeklyDigest}
               onChange={(v) => updateNotif("weeklyDigest", v)}
               disabled={!notifs.emailNotifications}
@@ -449,63 +406,6 @@ export default function SettingsPage() {
                     </>
                   ) : (
                     "Save Preferences"
-                  )}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* ── Privacy ────────────────────────────────────────────────────────── */}
-        <Card className="bg-card/50 backdrop-blur-sm border-white/10">
-          <CardHeader>
-            <CardTitle className="text-white font-fredoka flex items-center gap-2">
-              <Eye className="h-5 w-5 text-secondary" />
-              Privacy
-            </CardTitle>
-            <CardDescription className="text-white/70">
-              Control how others see you on the platform.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-start gap-3 min-w-0">
-                <div className="p-1.5 bg-yellow-400/10 rounded-lg mt-0.5 flex-shrink-0">
-                  <Trophy className="h-4 w-4 text-yellow-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-white text-sm font-medium">
-                    Show on Public Leaderboard
-                  </p>
-                  <p className="text-white/40 text-xs mt-0.5 leading-relaxed">
-                    When off, your name and score are hidden from both monthly and weekly leaderboards.
-                  </p>
-                </div>
-              </div>
-              <Toggle
-                checked={showOnLeaderboard}
-                onChange={(v) => {
-                  setShowOnLeaderboard(v);
-                  setPrivacyDirty(true);
-                }}
-              />
-            </div>
-
-            {privacyDirty && (
-              <div className="pt-4 border-t border-white/5 mt-3">
-                <Button
-                  onClick={() =>
-                    savePrivacyMutation.mutate({ showOnLeaderboard })
-                  }
-                  disabled={savePrivacyMutation.isPending}
-                  className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka">
-                  {savePrivacyMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Privacy Settings"
                   )}
                 </Button>
               </div>
