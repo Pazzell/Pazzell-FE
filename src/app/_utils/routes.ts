@@ -46,8 +46,10 @@ export const routes = {
   ADMIN: {
     DASHBOARD: "/admin",
     TOPICS: "/admin/topics",
+    TOPIC: (id: string) => `/admin/topics/${id}`,
     MATCH_LEVELS: "/admin/match-levels",
     CAMPAIGNS: "/admin/campaigns",
+    CAMPAIGN: (id: string) => `/admin/campaigns/${id}`,
     SETTINGS: "/admin/settings",
   },
 };
