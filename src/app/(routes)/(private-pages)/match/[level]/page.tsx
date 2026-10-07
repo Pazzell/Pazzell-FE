@@ -261,7 +261,7 @@ export default function MatchLevelPage() {
           <Lock className="h-12 w-12 text-white/40" />
           <h1 className="text-2xl font-bold text-white font-fredoka">Level Locked</h1>
           <p className="text-white/60 max-w-sm">
-            Pass level {levelInfo.level - 1} with a perfect score to unlock this one.
+            Answer every question in the previous level correctly to unlock this one.
           </p>
           <Button onClick={() => router.push(routes.USER.MATCH)} className="bg-secondary hover:bg-secondary/80 text-secondary-foreground">
             Back to Levels

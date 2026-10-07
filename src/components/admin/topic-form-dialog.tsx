@@ -119,6 +119,7 @@ export function TopicFormDialog({ open, onOpenChange, topic, onSaved }: TopicFor
             <Input
               id="topic-name"
               value={name}
+              maxLength={60}
               onChange={(event) => setName(event.target.value)}
               placeholder="Football"
               className={inputClass}
@@ -132,6 +133,7 @@ export function TopicFormDialog({ open, onOpenChange, topic, onSaved }: TopicFor
             <Textarea
               id="topic-description"
               value={description}
+              maxLength={300}
               onChange={(event) => setDescription(event.target.value)}
               className={inputClass}
             />

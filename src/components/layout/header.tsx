@@ -10,6 +10,7 @@ import { useAtomValue, useSetAtom } from "jotai/react";
 import { userAtom } from "@/atom/user";
 import { useRouter } from "next/navigation";
 import { usePlan } from "@/hooks/use-plan";
+import { logoutFromServer } from "@/lib/api";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,7 @@ export function Header() {
   }, []);
 
   const handleLogout = () => {
+    logoutFromServer();
     setUser(null);
     router.push(routes.HOME);
     setMobileMenuOpen(false);

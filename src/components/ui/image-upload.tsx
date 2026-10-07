@@ -13,6 +13,8 @@ interface ImageUploadProps {
   onChange: (url: string | null) => void;
   kind?: UploadKind;
   label?: string;
+  /** Hide the remove button when clearing isn't possible (e.g. an image already saved). */
+  allowRemove?: boolean;
   className?: string;
 }
 
@@ -22,6 +24,7 @@ export function ImageUpload({
   onChange,
   kind = "cards",
   label = "Add image",
+  allowRemove = true,
   className,
 }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -62,16 +65,18 @@ export function ImageUpload({
             alt="Selected image"
             className="max-h-40 rounded-xl border border-white/10 object-contain"
           />
-          <Button
-            type="button"
-            size="icon"
-            variant="destructive"
-            onClick={() => onChange(null)}
-            aria-label="Remove image"
-            className="absolute -top-2 -right-2 h-7 w-7 rounded-full"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          {allowRemove && (
+            <Button
+              type="button"
+              size="icon"
+              variant="destructive"
+              onClick={() => onChange(null)}
+              aria-label="Remove image"
+              className="absolute -top-2 -right-2 h-7 w-7 rounded-full"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       ) : null}
       <Button

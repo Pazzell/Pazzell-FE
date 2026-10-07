@@ -24,7 +24,18 @@ type GoogleLoginPayload = {
 };
 
 interface GoogleLoginResult {
-  user: Pick<UserData, "userType" | "email">;
+  user: {
+    _id: string;
+    role: UserData["userType"];
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+    username?: string;
+    avatar?: string;
+    isVerified: boolean;
+    createdAt: string;
+  };
   accessToken: string;
   refreshToken: string;
 }
@@ -35,7 +46,32 @@ const GoogleAuthBtn = () => {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   const getUserProfile = async (loginData: GoogleLoginResult) => {
-    if (loginData.user.userType === "gamer") {
+    // Admins have no gamer/brand profile (those routes are role-gated), so the
+    // login response itself is the source of their user data.
+    if (loginData.user.role === "admin") {
+      const adminData = loginData.user;
+      const name = [adminData.firstName, adminData.lastName].filter(Boolean).join(" ");
+      setUser({
+        id: adminData._id,
+        firstName: adminData.firstName,
+        lastName: adminData.lastName,
+        fullName: name || adminData.name || adminData.username || adminData.email,
+        avatar: adminData.avatar,
+        username: adminData.username,
+        email: adminData.email,
+        userType: "admin",
+        isVerified: adminData.isVerified,
+        createdAt: adminData.createdAt,
+        accessToken: loginData.accessToken,
+        refreshToken: loginData.refreshToken,
+      });
+
+      toast.success("Success", { description: "Login successful!" });
+      router.push(routes.ADMIN.DASHBOARD);
+      return;
+    }
+
+    if (loginData.user.role === "gamer") {
       const response = await api.get(ENDPOINTS.GAMER_PROFILE, {
         headers: { Authorization: `Bearer ${loginData.accessToken}` },
       });

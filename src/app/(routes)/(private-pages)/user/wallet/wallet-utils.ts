@@ -3,7 +3,7 @@
 
 import { WithdrawalStatus } from "@/types";
 
-// Client-generated, reused on retry per API_CONTRACT_WEEKLY_MIGRATION.md §5
+// Client-generated and reused on retry, so a repeated request is not paid out twice
 // ("idempotencyKey required — client-generated, reused on retry to avoid
 // double-withdrawal"). Falls back to a non-crypto id if crypto.randomUUID
 // isn't available (older browsers / some test environments).

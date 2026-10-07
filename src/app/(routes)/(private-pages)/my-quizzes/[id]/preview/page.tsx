@@ -47,7 +47,7 @@ export default function PreviewQuizPage() {
   const { quiz } = data;
   const cards = data.cards ?? [];
   const max = Math.min(cards.length, settings.trivia.maxCards);
-  const bounds = { min: Math.min(settings.trivia.minCards, max), max };
+  const bounds = data.cardCountBounds ?? { min: Math.min(settings.trivia.minCards, max), max };
 
   return (
     <MainLayout maxWidth="3xl">

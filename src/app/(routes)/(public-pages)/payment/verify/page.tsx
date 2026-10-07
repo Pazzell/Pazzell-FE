@@ -22,6 +22,8 @@ import { useAtomValue } from 'jotai'
 import { userAtom } from '@/atom/user'
 import type { VerifyPaymentResponse } from '@/types'
 
+const POLL_DELAYS_MS = [3000, 5000, 8000, 13000, 20000, 30000]
+
 function PaymentVerify() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -29,6 +31,8 @@ function PaymentVerify() {
   const queryClient = useQueryClient()
   const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'failed' | 'pending'>('loading')
   const [result, setResult] = useState<VerifyPaymentResponse | null>(null)
+  // How many times a still-pending payment has been re-checked.
+  const [pollCount, setPollCount] = useState(0)
 
   const reference = searchParams.get('reference') || searchParams.get('trxref')
 
@@ -61,12 +65,17 @@ function PaymentVerify() {
     }
   }, [reference, user?.accessToken])
 
-  // Poll while the gateway hasn't confirmed yet
+  // Poll while the gateway hasn't confirmed yet. The delays stretch out because the API
+  // allows only a handful of verify calls per 10 minutes.
+  const waitedTooLong = pollCount >= POLL_DELAYS_MS.length
   useEffect(() => {
-    if (verificationStatus !== 'pending') return
-    const timeout = setTimeout(() => verifyPaymentMutation.mutate(), 3000)
+    if (verificationStatus !== 'pending' || waitedTooLong) return
+    const timeout = setTimeout(() => {
+      setPollCount((count) => count + 1)
+      verifyPaymentMutation.mutate()
+    }, POLL_DELAYS_MS[pollCount])
     return () => clearTimeout(timeout)
-  }, [verificationStatus])
+  }, [verificationStatus, pollCount, waitedTooLong])
 
   const handleContinue = () => {
     if (result?.payment.purpose === 'pro') {
@@ -112,7 +121,9 @@ function PaymentVerify() {
 
             <p className="text-white/70">
               {verificationStatus === 'loading' && 'Please wait while we confirm your payment'}
-              {verificationStatus === 'pending' && 'The payment gateway is still processing this transaction'}
+              {verificationStatus === 'pending' && (waitedTooLong
+                ? 'This is taking longer than usual. Your payment is not lost: check again in a few minutes.'
+                : 'The payment gateway is still processing this transaction')}
               {verificationStatus === 'success' && 'Your payment has been processed successfully'}
               {verificationStatus === 'failed' && 'There was an issue verifying your payment'}
             </p>

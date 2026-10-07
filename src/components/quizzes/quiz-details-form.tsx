@@ -63,7 +63,7 @@ export function QuizDetailsForm({ quiz, submitLabel, pending, onSubmit }: QuizDe
         <Input
           id="quiz-title"
           value={title}
-          maxLength={120}
+          maxLength={80}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="Capital cities"
           className="bg-white/5 border-white/10 text-white"
@@ -77,7 +77,7 @@ export function QuizDetailsForm({ quiz, submitLabel, pending, onSubmit }: QuizDe
         <Textarea
           id="quiz-description"
           value={description}
-          maxLength={500}
+          maxLength={300}
           onChange={(event) => setDescription(event.target.value)}
           className="bg-white/5 border-white/10 text-white"
         />
@@ -87,9 +87,10 @@ export function QuizDetailsForm({ quiz, submitLabel, pending, onSubmit }: QuizDe
         <Label className="text-white/80">Cover image (optional)</Label>
         <ImageUpload
           value={coverImageUrl}
-          onChange={setCoverImageUrl}
+          onChange={(url) => setCoverImageUrl(url ?? quiz?.coverImageUrl ?? null)}
           kind="covers"
           label="Add cover"
+          allowRemove={coverImageUrl !== (quiz?.coverImageUrl ?? null)}
         />
       </div>
 

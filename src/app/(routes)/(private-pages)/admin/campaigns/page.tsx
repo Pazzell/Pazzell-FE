@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Layers, Megaphone } from "lucide-react";
+import { ChevronLeft, ChevronRight, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageError } from "@/components/ui/page-error";
@@ -40,10 +40,13 @@ export default function AdminCampaignsPage() {
         .get<AdminCampaignsResponse>(ENDPOINTS.ADMIN_CAMPAIGNS, {
           params: { ...(status ? { status } : {}), page, limit: PAGE_SIZE },
         })
-        .then((res) => res.data.campaigns),
+        .then((res) => res.data),
     placeholderData: keepPreviousData,
     staleTime: 30 * 1000,
   });
+
+  const campaigns = data?.campaigns ?? [];
+  const pageCount = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE));
 
   const selectStatus = (next: CampaignStatus | "") => {
     setStatus(next);
@@ -93,7 +96,7 @@ export default function AdminCampaignsPage() {
         />
       )}
 
-      {data && data.length === 0 && (
+      {data && campaigns.length === 0 && (
         <div className="text-center py-16 rounded-2xl border border-dashed border-white/10 space-y-3">
           <Megaphone className="h-10 w-10 text-secondary mx-auto" />
           <p className="text-white/60">
@@ -102,9 +105,9 @@ export default function AdminCampaignsPage() {
         </div>
       )}
 
-      {data && data.length > 0 && (
+      {campaigns.length > 0 && (
         <ul className={cn("space-y-3", isPlaceholderData && "opacity-60")}>
-          {data.map((campaign) => (
+          {campaigns.map((campaign) => (
             <li key={campaign.id}>
               <Link
                 href={routes.ADMIN.CAMPAIGN(campaign.id)}
@@ -114,10 +117,6 @@ export default function AdminCampaignsPage() {
                   <p className="text-white font-semibold break-words">{campaign.title}</p>
                   <p className="text-white/50 text-sm flex items-center gap-3 flex-wrap">
                     <span>by {campaign.brandName}</span>
-                    <span className="inline-flex items-center gap-1">
-                      <Layers className="h-3.5 w-3.5" />
-                      {campaign.cardCount}
-                    </span>
                     {campaign.startsAt && campaign.endsAt && (
                       <span>
                         {formatDate(campaign.startsAt)} – {formatDate(campaign.endsAt)}
@@ -133,7 +132,7 @@ export default function AdminCampaignsPage() {
         </ul>
       )}
 
-      {data && (page > 1 || data.length === PAGE_SIZE) && (
+      {data && pageCount > 1 && (
         <div className="flex items-center justify-between">
           <Button
             variant="outline"
@@ -144,11 +143,13 @@ export default function AdminCampaignsPage() {
             <ChevronLeft className="h-4 w-4 mr-1" />
             Previous
           </Button>
-          <span className="text-white/60 text-sm">Page {page}</span>
+          <span className="text-white/60 text-sm">
+            Page {page} of {pageCount}
+          </span>
           <Button
             variant="outline"
             onClick={() => setPage(page + 1)}
-            disabled={data.length < PAGE_SIZE || isPlaceholderData}
+            disabled={page >= pageCount || isPlaceholderData}
             className="border-white/20 text-white/80 hover:bg-white/10"
           >
             Next

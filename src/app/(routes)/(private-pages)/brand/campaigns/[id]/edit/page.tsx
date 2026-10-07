@@ -91,11 +91,14 @@ function CampaignBuilder() {
   });
 
   const checkout = useMutation({
-    mutationFn: () =>
+    // Resuming an unpaid checkout sends no key: the API then hands back the checkout
+    // that is already open instead of starting a second one.
+    mutationFn: (mode: "new" | "resume") =>
       api
-        .post<CheckoutResponse>(ENDPOINTS.BRAND_CAMPAIGN_CHECKOUT(id), {
-          idempotencyKey: idempotencyKey.current,
-        })
+        .post<CheckoutResponse>(
+          ENDPOINTS.BRAND_CAMPAIGN_CHECKOUT(id),
+          mode === "new" ? { idempotencyKey: idempotencyKey.current } : {}
+        )
         .then((res) => res.data),
     onSuccess: (response) => {
       window.location.href = response.checkout.authorizationUrl;
@@ -149,7 +152,10 @@ function CampaignBuilder() {
   const { campaign } = data;
   const cards = data.cards ?? [];
   const pricing = data.pricing ?? pricingData?.pricing ?? settings.campaign;
-  const minCards = pricingData?.minCardsToPublish ?? settings.customQuiz.minCardsToPublish;
+  const minCards =
+    data.minCardsToPublish ??
+    pricingData?.minCardsToPublish ??
+    settings.customQuiz.minCardsToPublish;
   const price = formatPrice(pricing.amount, pricing.currency);
   const isDraft = campaign.status === "draft";
   const awaitingPayment = campaign.status === "awaiting_payment";
@@ -165,7 +171,7 @@ function CampaignBuilder() {
         See it the way players will. Test plays are never counted.
       </p>
       <SessionSetup
-        bounds={{ min: Math.min(settings.trivia.minCards, max), max }}
+        bounds={data.cardCountBounds ?? { min: Math.min(settings.trivia.minCards, max), max }}
         startLabel="Start Test Play"
         isStarting={isStarting}
         onStart={(picked) => start({ sourceType: "campaign", sourceId: campaign.id, ...picked })}
@@ -203,7 +209,7 @@ function CampaignBuilder() {
             </p>
             <div className="flex gap-2 flex-wrap">
               <Button
-                onClick={() => checkout.mutate()}
+                onClick={() => checkout.mutate("resume")}
                 disabled={paying || cancelCheckout.isPending}
                 className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka"
               >
@@ -358,7 +364,7 @@ function CampaignBuilder() {
               </p>
             )}
             <Button
-              onClick={() => checkout.mutate()}
+              onClick={() => checkout.mutate("new")}
               disabled={paying || !enoughCards}
               className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka text-lg py-6"
             >

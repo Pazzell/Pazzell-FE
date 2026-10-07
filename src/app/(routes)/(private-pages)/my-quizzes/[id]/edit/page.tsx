@@ -79,8 +79,8 @@ export default function EditQuizPage() {
     mutationFn: ({ coverImageUrl, ...values }: QuizDetailsValues) =>
       api.patch(ENDPOINTS.CUSTOM_QUIZ(id), {
         ...values,
-        // Only mention the cover when there is one to set, or one to clear.
-        ...(coverImageUrl || data?.quiz.coverImageUrl ? { coverImageUrl } : {}),
+        // Only a newly uploaded cover is sent; the stored one is kept otherwise.
+        ...(coverImageUrl && coverImageUrl !== data?.quiz.coverImageUrl ? { coverImageUrl } : {}),
       }),
     onSuccess: () => {
       toast.success("Quiz details saved.");
@@ -144,7 +144,7 @@ export default function EditQuizPage() {
 
   const { quiz } = data;
   const cards = data.cards ?? [];
-  const minCards = settings.customQuiz.minCardsToPublish;
+  const minCards = data.minCardsToPublish ?? settings.customQuiz.minCardsToPublish;
   const shareUrl = quiz.shareUrl;
 
   const copyLink = async () => {
@@ -298,7 +298,9 @@ export default function EditQuizPage() {
             <div className="rounded-2xl border border-white/10 bg-card/50 p-5">
               <p className="text-white/60 text-sm">Average score</p>
               <p className="text-2xl font-bold text-white font-fredoka">
-                {stats.plays > 0 ? `${Math.round(stats.averageScorePercent)}%` : "—"}
+                {stats.averageScorePercent !== null
+                  ? `${Math.round(stats.averageScorePercent)}%`
+                  : "—"}
               </p>
             </div>
           </section>

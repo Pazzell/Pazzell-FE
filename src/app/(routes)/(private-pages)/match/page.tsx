@@ -50,10 +50,7 @@ export default function MatchLevelMapPage() {
 
         {data && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {data.levels
-              .slice()
-              .sort((a, b) => (a.order ?? a.level) - (b.order ?? b.level))
-              .map((level) => {
+            {data.levels.map((level) => {
                 const content = (
                   <div
                     className={`relative rounded-2xl border p-5 h-32 flex flex-col items-center justify-center gap-2 transition-all ${

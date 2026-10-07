@@ -66,9 +66,12 @@ export default function CampaignDashboardPage() {
     },
     {
       label: "Average score",
-      value: dashboard.completions > 0 ? `${Math.round(dashboard.averageScorePercent)}%` : "—",
+      value:
+        dashboard.averageScorePercent !== null
+          ? `${Math.round(dashboard.averageScorePercent)}%`
+          : "—",
       hint:
-        dashboard.completions > 0
+        dashboard.averageScore !== null
           ? `${dashboard.averageScore.toFixed(1)} of ${campaign.cardCount} cards`
           : undefined,
       icon: Target,

@@ -92,6 +92,9 @@ export function CardFormDialog({ open, onOpenChange, card, endpoints, onSaved }:
       ...(type === "image" && imageUrl ? { imageUrl } : {}),
     };
     const problem = validateCard(input);
+    // The API takes an image URL only from the uploader's own fresh upload, and keeps the
+    // stored image when none is sent — so an unchanged image must not be sent back.
+    if (card && input.imageUrl === card.imageUrl) delete input.imageUrl;
     if (problem) {
       toast.error(problem);
       return;

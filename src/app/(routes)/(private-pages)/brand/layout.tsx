@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { routes } from '@/app/_utils/routes'
+import { logoutFromServer } from '@/lib/api'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +65,7 @@ export default function BrandLayout({
   }, [user, router])
 
   const handleLogout = () => {
+    logoutFromServer()
     setUser(null)
     router.push(routes.HOME)
   }

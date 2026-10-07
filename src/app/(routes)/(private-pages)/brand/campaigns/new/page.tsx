@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import {
@@ -12,11 +12,20 @@ import {
 import { api, getApiError } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { routes } from "@/app/_utils/routes";
-import type { BrandCampaignResponse } from "@/types";
+import type { BrandCampaignResponse, BrandProfileData } from "@/types";
 
 export default function NewCampaignPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  // A campaign starts from the brand profile's name, website and logo.
+  const { data: profile } = useQuery({
+    queryKey: ["brand-profile"],
+    queryFn: () =>
+      api
+        .get<{ profile: BrandProfileData }>(ENDPOINTS.BRAND_PROFILE)
+        .then((res) => res.data.profile),
+  });
 
   const create = useMutation({
     mutationFn: (payload: CampaignDetailsPayload) =>
@@ -48,6 +57,11 @@ export default function NewCampaignPage() {
       </div>
       <div className="bg-card/50 border border-white/10 rounded-2xl p-6">
         <CampaignDetailsForm
+          defaults={{
+            brandName: profile?.brandDetails?.companyName ?? profile?.companyName,
+            websiteUrl: profile?.brandDetails?.websiteUrl,
+            logoUrl: profile?.brandDetails?.logoUrl,
+          }}
           submitLabel="Save and Add Cards"
           pending={create.isPending || create.isSuccess}
           onSubmit={(payload) => create.mutate(payload)}

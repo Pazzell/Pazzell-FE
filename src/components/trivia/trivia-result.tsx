@@ -52,7 +52,7 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
   const isCampaign = result.source.type === "campaign";
   // A sponsored trivia is owed before any other one can start, so offer it right away.
   const owedCampaign =
-    gate ?? (!isCampaign && result.campaignGate.required ? result.campaignGate.campaign : null);
+    gate ?? (!isCampaign && result.campaignGate?.required ? result.campaignGate.campaign : null);
 
   const handleRetry = () => {
     // A shared custom quiz can only be started by its link; the owner starts it by id.

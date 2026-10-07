@@ -25,10 +25,10 @@ import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badg
 import { api, getApiError } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { routes } from "@/app/_utils/routes";
-import type { BrandCampaign, BrandCampaignDashboardResponse, TriviaCard } from "@/types";
+import type { AdminCampaign, BrandCampaignDashboardResponse, TriviaCard } from "@/types";
 
 interface AdminCampaignDetail {
-  campaign: BrandCampaign;
+  campaign: AdminCampaign;
   cards?: TriviaCard[];
   dashboard?: BrandCampaignDashboardResponse["dashboard"];
 }
@@ -129,7 +129,10 @@ export default function AdminCampaignPage() {
         { label: "Completions", value: dashboard.completions.toLocaleString() },
         {
           label: "Average score",
-          value: dashboard.completions > 0 ? `${Math.round(dashboard.averageScorePercent)}%` : "—",
+          value:
+            dashboard.averageScorePercent !== null
+              ? `${Math.round(dashboard.averageScorePercent)}%`
+              : "—",
         },
         { label: "Link clicks", value: dashboard.urlClicks.toLocaleString() },
       ]
@@ -273,6 +276,7 @@ export default function AdminCampaignPage() {
             <Textarea
               id="moderation-reason"
               value={reason}
+              maxLength={500}
               onChange={(event) => setReason(event.target.value)}
               className="bg-white/5 border-white/10 text-white"
             />

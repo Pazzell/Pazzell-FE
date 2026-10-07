@@ -415,7 +415,7 @@ export interface TriviaResult {
   isPreview: boolean;
   brand: CampaignBrand | null;
   completedAt: string;
-  campaignGate: {
+  campaignGate?: {
     required: boolean;
     counter: number;
     threshold: number;
@@ -475,7 +475,7 @@ export interface CustomQuiz {
 export interface CustomQuizzesResponse {
   success: boolean;
   quizzes: CustomQuiz[];
-  plan: Plan["tier"];
+  plan: Plan;
   limit: number | null;
 }
 
@@ -483,11 +483,14 @@ export interface CustomQuizResponse {
   success: boolean;
   quiz: CustomQuiz;
   cards?: TriviaCard[];
+  // Sent with the owner's full view of a quiz (GET /custom-quizzes/:id and /preview).
+  minCardsToPublish?: number;
+  cardCountBounds?: { available: number; min: number; max: number };
 }
 
 export interface CustomQuizStatsResponse {
   success: boolean;
-  stats: { plays: number; averageScore: number; averageScorePercent: number };
+  stats: { plays: number; averageScore: number | null; averageScorePercent: number | null };
 }
 
 export interface CustomQuizShareLanding {
@@ -556,6 +559,8 @@ export interface BrandCampaignResponse {
   campaign: BrandCampaign;
   cards?: TriviaCard[];
   pricing?: { amount: number; currency: string; durationDays: number };
+  minCardsToPublish?: number;
+  cardCountBounds?: { available: number; min: number; max: number };
 }
 
 export interface BrandCampaignPricingResponse {
@@ -574,8 +579,8 @@ export interface BrandCampaignDashboardResponse {
     daysRemaining: number;
     plays: number;
     completions: number;
-    averageScore: number;
-    averageScorePercent: number;
+    averageScore: number | null;
+    averageScorePercent: number | null;
     urlClicks: number;
     uniqueUrlClickers: number;
   };
@@ -613,9 +618,18 @@ export interface AdminTopicsResponse {
   topics: AdminTriviaTopic[];
 }
 
+/** The admin list view of a campaign: no card count, but who owns and moderated it. */
+export type AdminCampaign = Omit<BrandCampaign, "cardCount" | "updatedAt"> & {
+  brandId: string;
+  urlClicks: number;
+};
+
 export interface AdminCampaignsResponse {
   success: boolean;
-  campaigns: BrandCampaign[];
+  page: number;
+  limit: number;
+  total: number;
+  campaigns: AdminCampaign[];
 }
 
 export interface AdminRevenueResponse {
@@ -628,7 +642,11 @@ export interface AdminRevenueResponse {
 
 export interface AdminPaymentsResponse {
   success: boolean;
-  payments: Payment[];
+  page: number;
+  limit: number;
+  total: number;
+  // Raw payment records: keyed by `_id` rather than `id`.
+  payments: (Omit<Payment, "id"> & { _id: string; userId: string })[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────

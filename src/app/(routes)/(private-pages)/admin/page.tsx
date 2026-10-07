@@ -28,6 +28,13 @@ const STATUS_CLASS: Record<PaymentStatus, string> = {
   failed: "text-red-300",
 };
 
+/** The calendar day after a `YYYY-MM-DD` date. */
+const dayAfter = (date: string) => {
+  const next = new Date(`${date}T00:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  return next.toISOString().slice(0, 10);
+};
+
 const formatDateTime = (iso: string) =>
   new Date(iso).toLocaleString(undefined, {
     year: "numeric",
@@ -82,7 +89,8 @@ export default function AdminDashboardPage() {
     queryFn: () =>
       api
         .get<AdminRevenueResponse>(ENDPOINTS.ADMIN_REVENUE, {
-          params: { ...(from ? { from } : {}), ...(to ? { to } : {}) },
+          // The API's `to` is exclusive, so the chosen end day is sent as the day after.
+          params: { ...(from ? { from } : {}), ...(to ? { to: dayAfter(to) } : {}) },
         })
         .then((res) => res.data),
     placeholderData: keepPreviousData,
@@ -101,13 +109,14 @@ export default function AdminDashboardPage() {
             limit: PAGE_SIZE,
           },
         })
-        .then((res) => res.data.payments),
+        .then((res) => res.data),
     placeholderData: keepPreviousData,
     staleTime: 30 * 1000,
   });
 
   const totals = Object.entries(revenue.data?.totalsByCurrency ?? {});
-  const rows = payments.data ?? [];
+  const rows = payments.data?.payments ?? [];
+  const pageCount = Math.max(1, Math.ceil((payments.data?.total ?? 0) / PAGE_SIZE));
   const inputClass = "bg-white/5 border-white/10 text-white [color-scheme:dark]";
 
   return (
@@ -296,7 +305,7 @@ export default function AdminDashboardPage() {
                 {rows.map((payment) => {
                   const when = payment.paidAt ?? payment.createdAt;
                   return (
-                    <tr key={payment.id} className="text-white">
+                    <tr key={payment._id} className="text-white">
                       <td className="p-4 whitespace-nowrap">{when ? formatDateTime(when) : "—"}</td>
                       <td className="p-4">{PURPOSE_LABEL[payment.purpose] ?? payment.purpose}</td>
                       <td className={cn("p-4 capitalize font-medium", STATUS_CLASS[payment.status])}>
@@ -314,7 +323,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {payments.data && (page > 1 || rows.length === PAGE_SIZE) && (
+        {payments.data && pageCount > 1 && (
           <div className="flex items-center justify-between">
             <Button
               variant="outline"
@@ -325,11 +334,13 @@ export default function AdminDashboardPage() {
               <ChevronLeft className="h-4 w-4 mr-1" />
               Previous
             </Button>
-            <span className="text-white/60 text-sm">Page {page}</span>
+            <span className="text-white/60 text-sm">
+              Page {page} of {pageCount}
+            </span>
             <Button
               variant="outline"
               onClick={() => setPage(page + 1)}
-              disabled={rows.length < PAGE_SIZE || payments.isPlaceholderData}
+              disabled={page >= pageCount || payments.isPlaceholderData}
               className="border-white/20 text-white/80 hover:bg-white/10"
             >
               Next

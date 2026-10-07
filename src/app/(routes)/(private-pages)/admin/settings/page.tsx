@@ -19,6 +19,8 @@ interface SettingDef {
   type: "integer" | "number" | "currency";
   min?: number;
   max?: number;
+  /** Exclusive lower bound (prices must be above zero). */
+  moreThan?: number;
   readOnly?: boolean;
 }
 
@@ -43,14 +45,14 @@ const GROUPS: { title: string; settings: SettingDef[] }[] = [
   {
     title: "Custom trivia",
     settings: [
-      { key: "customQuiz.freeLimit", label: "Free quizzes per player", type: "integer", min: 0 },
+      { key: "customQuiz.freeLimit", label: "Free quizzes per player", type: "integer", min: 1 },
       { key: "customQuiz.minCardsToPublish", label: "Cards needed to publish", type: "integer", min: 1 },
     ],
   },
   {
     title: "Campaigns",
     settings: [
-      { key: "campaign.priceAmount", label: "Campaign price", type: "number", min: 0 },
+      { key: "campaign.priceAmount", label: "Campaign price", type: "number", moreThan: 0 },
       { key: "campaign.durationDays", label: "Campaign length (days)", type: "integer", min: 1 },
       { key: "campaign.minCardsToPublish", label: "Cards needed to go live", type: "integer", min: 1 },
       { key: "campaign.interruptionThreshold", label: "Trivias between sponsored ones", hint: "A freemium player sees a campaign after completing this many.", type: "integer", min: 1 },
@@ -59,7 +61,7 @@ const GROUPS: { title: string; settings: SettingDef[] }[] = [
   {
     title: "Pro and payments",
     settings: [
-      { key: "pro.priceAmount", label: "Pro price", type: "number", min: 0 },
+      { key: "pro.priceAmount", label: "Pro price", type: "number", moreThan: 0 },
       { key: "pro.durationDays", label: "Pro length (days)", type: "integer", min: 1 },
       { key: "payments.currency", label: "Currency", hint: "A 3-letter code such as USD.", type: "currency" },
     ],
@@ -87,6 +89,9 @@ function parseValue(def: SettingDef, raw: string): { value: number | string } | 
   if (text === "" || !Number.isFinite(value)) return { error: "Enter a number." };
   if (def.type === "integer" && !Number.isInteger(value)) return { error: "Enter a whole number." };
   if (def.min !== undefined && value < def.min) return { error: `Must be at least ${def.min}.` };
+  if (def.moreThan !== undefined && value <= def.moreThan) {
+    return { error: `Must be more than ${def.moreThan}.` };
+  }
   if (def.max !== undefined && value > def.max) return { error: `Must be at most ${def.max}.` };
   return { value };
 }
