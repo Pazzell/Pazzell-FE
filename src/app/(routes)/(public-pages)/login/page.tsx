@@ -75,6 +75,40 @@ export default function LoginPage() {
   });
 
   const getUserProfile = async (loginData: any) => {
+    // Admins have no gamer/brand profile (those routes are role-gated), so the
+    // login response itself is the source of their user data.
+    if (loginData.user.role === "admin") {
+      const adminData = loginData.user;
+      const name = [adminData.firstName, adminData.lastName].filter(Boolean).join(" ");
+      setUser({
+        id: adminData._id,
+        firstName: adminData.firstName,
+        lastName: adminData.lastName,
+        fullName: name || adminData.name || adminData.username || adminData.email,
+        avatar: adminData.avatar,
+        username: adminData.username,
+        email: adminData.email,
+        userType: "admin",
+        isVerified: adminData.isVerified,
+        createdAt: adminData.createdAt,
+        accessToken: loginData.accessToken,
+        refreshToken: loginData.refreshToken,
+      });
+
+      toast.success("Success", {
+        description: "Login successful!",
+      });
+      router.push(routes.ADMIN.DASHBOARD);
+      return;
+    }
+
+    const onProfileError = (error: any) => {
+      toast.error("Error", {
+        description:
+          error.response?.data?.message || "Couldn't load your profile. Please try again.",
+      });
+    };
+
     if (loginData.user.role === "gamer") {
       axios
         .get(endpointUrl(`${ENDPOINTS.GAMER_PROFILE}`), {
@@ -104,7 +138,8 @@ export default function LoginPage() {
             description: "Login successful!",
           });
           router.push(routes.USER.HOME);
-        });
+        })
+        .catch(onProfileError);
     } else {
       axios
         .get(endpointUrl(`${ENDPOINTS.BRAND_PROFILE}`), {
@@ -130,7 +165,8 @@ export default function LoginPage() {
             description: "Login successful!",
           });
           router.push(routes.BRAND.DASHBOARD);
-        });
+        })
+        .catch(onProfileError);
     }
   };
 
