@@ -1,5 +1,6 @@
 'use client'
 
+import { getReturnPath } from '@/lib/return-path'
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -89,7 +90,7 @@ function VerifyOTPForm() {
           toast.success('Success', {
             description: 'Account verified successfully!',
           })
-          router.push(routes.USER.HOME);
+          router.push(getReturnPath() ?? routes.USER.HOME);
         });
       }else{
         axios.get(endpointUrl(`${ENDPOINTS.BRAND_PROFILE}`), 
@@ -113,7 +114,7 @@ function VerifyOTPForm() {
           toast.success('Success', {
             description: 'Account verified successfully!',
           })
-            router.push(routes.BRAND.DASHBOARD);
+            router.push(getReturnPath() ?? routes.BRAND.DASHBOARD);
         });
       }
     },

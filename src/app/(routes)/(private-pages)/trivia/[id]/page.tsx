@@ -1,32 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/main-layout";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
 import { CampaignGate } from "@/components/trivia/campaign-gate";
+import { SessionSetup } from "@/components/trivia/session-setup";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { routes } from "@/app/_utils/routes";
-import { useGameSettings } from "@/hooks/use-game-settings";
-import {
-  TRIVIA_TIMER_STORAGE_KEY,
-  useStartTriviaSession,
-} from "@/hooks/use-start-trivia-session";
+import { useStartTriviaSession } from "@/hooks/use-start-trivia-session";
 import type { TriviaTopicsResponse } from "@/types";
-import { ArrowLeft, Clock3, Layers, Loader2 } from "lucide-react";
-
-const DEFAULT_CARD_COUNT = 10;
+import { ArrowLeft } from "lucide-react";
 
 export default function TriviaTopicSetupPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { settings } = useGameSettings();
   const { start, isStarting, gate } = useStartTriviaSession();
+  // Kept so the sponsored trivia, if one is owed, uses what the player just picked.
+  const [choice, setChoice] = useState<{ timerSeconds: number; cardCount: number } | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["trivia-topics"],
@@ -35,26 +29,11 @@ export default function TriviaTopicSetupPage() {
   });
   const topic = data?.topics.find((t) => t.id === id);
 
-  const [timerSeconds, setTimerSeconds] = useState(settings.timer.matchDefaultSeconds);
-  useEffect(() => {
-    const stored = Number(localStorage.getItem(TRIVIA_TIMER_STORAGE_KEY));
-    const clamp = (v: number) =>
-      Math.min(settings.timer.maxSeconds, Math.max(settings.timer.minSeconds, v));
-    setTimerSeconds(clamp(stored || settings.timer.matchDefaultSeconds));
-  }, [settings.timer.matchDefaultSeconds, settings.timer.minSeconds, settings.timer.maxSeconds]);
-
-  const bounds = topic?.cardCountBounds;
-  const [cardCount, setCardCount] = useState(DEFAULT_CARD_COUNT);
-  useEffect(() => {
-    if (!bounds) return;
-    setCardCount(Math.min(bounds.max, Math.max(bounds.min, DEFAULT_CARD_COUNT)));
-  }, [bounds?.min, bounds?.max]); // eslint-disable-line react-hooks/exhaustive-deps
-
   if (isLoading) {
     return <PageLoader message="Loading topic..." />;
   }
 
-  if (error || !topic || !bounds) {
+  if (error || !topic) {
     return (
       <PageError
         title="Topic not found"
@@ -63,11 +42,6 @@ export default function TriviaTopicSetupPage() {
       />
     );
   }
-
-  const handleStart = () => {
-    localStorage.setItem(TRIVIA_TIMER_STORAGE_KEY, String(timerSeconds));
-    start({ sourceType: "topic", sourceId: topic.id, timerSeconds, cardCount });
-  };
 
   return (
     <MainLayout maxWidth="2xl">
@@ -87,65 +61,20 @@ export default function TriviaTopicSetupPage() {
         </div>
 
         {gate ? (
-          <CampaignGate campaign={gate} timerSeconds={timerSeconds} cardCount={cardCount} />
+          <CampaignGate
+            campaign={gate}
+            timerSeconds={choice?.timerSeconds}
+            cardCount={choice?.cardCount}
+          />
         ) : (
-          <div className="w-full max-w-sm space-y-8 bg-card/50 border border-white/10 rounded-2xl p-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-white/80 text-sm font-medium">
-                <span className="flex items-center gap-2">
-                  <Clock3 className="h-4 w-4" />
-                  Time per question
-                </span>
-                <span className="text-white font-fredoka text-xl">{timerSeconds} sec</span>
-              </div>
-              <Slider
-                aria-label="Time per question"
-                min={settings.timer.minSeconds}
-                max={settings.timer.maxSeconds}
-                step={1}
-                value={[timerSeconds]}
-                onValueChange={([v]) => setTimerSeconds(v)}
-              />
-              <div className="flex justify-between text-xs text-white/40">
-                <span>{settings.timer.minSeconds}s</span>
-                <span>{settings.timer.maxSeconds}s</span>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-white/80 text-sm font-medium">
-                <span className="flex items-center gap-2">
-                  <Layers className="h-4 w-4" />
-                  Number of cards
-                </span>
-                <span className="text-white font-fredoka text-xl">{cardCount}</span>
-              </div>
-              {bounds.max > bounds.min && (
-                <>
-                  <Slider
-                    aria-label="Number of cards"
-                    min={bounds.min}
-                    max={bounds.max}
-                    step={1}
-                    value={[cardCount]}
-                    onValueChange={([v]) => setCardCount(v)}
-                  />
-                  <div className="flex justify-between text-xs text-white/40">
-                    <span>{bounds.min}</span>
-                    <span>{bounds.max}</span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <Button
-              onClick={handleStart}
-              disabled={isStarting}
-              className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka text-lg py-6"
-            >
-              {isStarting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Start Studying"}
-            </Button>
-          </div>
+          <SessionSetup
+            bounds={topic.cardCountBounds}
+            isStarting={isStarting}
+            onStart={(picked) => {
+              setChoice(picked);
+              start({ sourceType: "topic", sourceId: topic.id, ...picked });
+            }}
+          />
         )}
       </div>
     </MainLayout>

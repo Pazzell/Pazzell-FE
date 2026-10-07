@@ -1,5 +1,6 @@
 "use client";
 
+import { getReturnPath } from "@/lib/return-path";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { api } from "@/lib/api";
 import { userAtom } from "@/atom/user";
@@ -55,7 +56,7 @@ const GoogleAuthBtn = () => {
       });
 
       toast.success("Success", { description: "Login successful!" });
-      router.push(routes.USER.HOME);
+      router.push(getReturnPath() ?? routes.USER.HOME);
     } else {
       const response = await api.get(ENDPOINTS.BRAND_PROFILE, {
         headers: { Authorization: `Bearer ${loginData.accessToken}` },
@@ -74,7 +75,7 @@ const GoogleAuthBtn = () => {
       });
 
       toast.success("Success", { description: "Login successful!" });
-      router.push(routes.BRAND.DASHBOARD);
+      router.push(getReturnPath() ?? routes.BRAND.DASHBOARD);
     }
   };
 

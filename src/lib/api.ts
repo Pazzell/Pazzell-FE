@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { BASE_URL } from "@/app/_utils/constants";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
-import type { UserData } from "@/types";
+import type { ApiErrorBody, UserData } from "@/types";
 
 const USER_STORAGE_KEY = "user";
 
@@ -89,5 +89,10 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/** The API's `{ message, code, details }` error body, when the failure came from the server. */
+export function getApiError(error: unknown): ApiErrorBody | undefined {
+  return axios.isAxiosError<ApiErrorBody>(error) ? error.response?.data : undefined;
+}
 
 export default api;

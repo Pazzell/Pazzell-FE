@@ -12,6 +12,7 @@ import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { routes } from "@/app/_utils/routes";
 import { useStartTriviaSession } from "@/hooks/use-start-trivia-session";
+import { recallQuizSlug } from "@/lib/return-path";
 import type { TriviaResult, TriviaResultResponse, TriviaSession } from "@/types";
 
 interface TriviaResultViewProps {
@@ -53,9 +54,11 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
     gate ?? (!isCampaign && result.campaignGate.required ? result.campaignGate.campaign : null);
 
   const handleRetry = () => {
+    // A shared custom quiz can only be started by its link; the owner starts it by id.
+    const slug = result.source.type === "custom" ? recallQuizSlug(result.source.id) : null;
     start({
       sourceType: result.source.type,
-      sourceId: result.source.id,
+      ...(slug ? { slug } : { sourceId: result.source.id }),
       timerSeconds: session.timerSeconds,
       cardCount: session.cardCount,
     });

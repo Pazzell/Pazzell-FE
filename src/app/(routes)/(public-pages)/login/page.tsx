@@ -30,6 +30,7 @@ import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import GoogleAuthBtn from "@/components/auth/google-auth";
+import { getReturnPath } from "@/lib/return-path";
 
 type LoginPayload = {
   email: string;
@@ -55,7 +56,11 @@ export default function LoginPage() {
   // Redirect authenticated users to their dashboard
   useEffect(() => {
     if (user) {
-      if (user.userType === "gamer") {
+      // Sent here from a shared quiz link: go back to it rather than the dashboard.
+      const returnPath = getReturnPath();
+      if (returnPath) {
+        router.push(returnPath);
+      } else if (user.userType === "gamer") {
         router.push(routes.USER.HOME);
       } else if (user.userType === "brand") {
         router.push(routes.BRAND.DASHBOARD);
@@ -137,7 +142,7 @@ export default function LoginPage() {
           toast.success("Success", {
             description: "Login successful!",
           });
-          router.push(routes.USER.HOME);
+          router.push(getReturnPath() ?? routes.USER.HOME);
         })
         .catch(onProfileError);
     } else {
@@ -164,7 +169,7 @@ export default function LoginPage() {
           toast.success("Success", {
             description: "Login successful!",
           });
-          router.push(routes.BRAND.DASHBOARD);
+          router.push(getReturnPath() ?? routes.BRAND.DASHBOARD);
         })
         .catch(onProfileError);
     }
