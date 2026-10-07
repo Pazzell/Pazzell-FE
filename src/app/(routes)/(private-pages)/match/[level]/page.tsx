@@ -9,7 +9,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { ArtifactTile } from "@/components/match/artifact-tile";
-import { CountdownBar } from "@/components/match/countdown-bar";
+import { CountdownBar } from "@/components/ui/countdown-bar";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
 import { api } from "@/lib/api";
