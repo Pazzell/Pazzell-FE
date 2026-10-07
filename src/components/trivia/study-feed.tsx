@@ -11,7 +11,7 @@ import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
-import { routes } from "@/app/_utils/routes";
+import { sessionExit } from "@/lib/session-exit";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
 import { BrandCta } from "@/components/trivia/brand-cta";
@@ -93,7 +93,7 @@ export function StudyFeed({ session, onQuizBegun }: StudyFeedProps) {
 
   const abandon = useMutation({
     mutationFn: () => api.post(ENDPOINTS.TRIVIA_SESSION_ABANDON(session.id)),
-    onSuccess: () => router.push(routes.USER.TRIVIA),
+    onSuccess: () => router.push(sessionExit(session.source, session.isPreview).href),
     onError: () => toast.error("Couldn't leave the session. Please try again."),
   });
 

@@ -10,9 +10,9 @@ import { BrandCta } from "@/components/trivia/brand-cta";
 import { CampaignGate } from "@/components/trivia/campaign-gate";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
-import { routes } from "@/app/_utils/routes";
 import { useStartTriviaSession } from "@/hooks/use-start-trivia-session";
 import { recallQuizSlug } from "@/lib/return-path";
+import { sessionExit } from "@/lib/session-exit";
 import type { TriviaResult, TriviaResultResponse, TriviaSession } from "@/types";
 
 interface TriviaResultViewProps {
@@ -48,6 +48,7 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
   }
 
   const perfect = result.correct === result.total;
+  const exit = sessionExit(result.source, result.isPreview);
   const isCampaign = result.source.type === "campaign";
   // A sponsored trivia is owed before any other one can start, so offer it right away.
   const owedCampaign =
@@ -119,11 +120,11 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
           </Button>
         )}
         <Button
-          onClick={() => router.push(routes.USER.TRIVIA)}
+          onClick={() => router.push(exit.href)}
           className="bg-secondary hover:bg-secondary/80 text-secondary-foreground"
         >
           <Grid2x2 className="h-4 w-4 mr-2" />
-          Pick Another Topic
+          {exit.label}
         </Button>
       </div>
     </div>

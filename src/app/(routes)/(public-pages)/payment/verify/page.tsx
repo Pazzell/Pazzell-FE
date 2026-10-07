@@ -72,7 +72,7 @@ function PaymentVerify() {
     if (result?.payment.purpose === 'pro') {
       router.push(routes.USER.PRO)
     } else if (result?.campaign) {
-      router.push(routes.BRAND.CAMPAIGNS)
+      router.push(routes.BRAND.CAMPAIGN_DASHBOARD(result.campaign.id))
     } else {
       router.push(routes.USER.HOME)
     }

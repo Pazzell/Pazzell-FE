@@ -84,7 +84,7 @@ export default function BrandLayout({
             {/* Navigation */}
             <nav className="flex-1 space-y-2">
               {sidebarNavItems.map((item, index) => {
-                const isActive = pathname === item.href
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
                 return (
                   <Link
                     key={`desktop-${item.href}-${index}`}
@@ -148,7 +148,7 @@ export default function BrandLayout({
             {/* Navigation */}
             <nav className="flex-1 space-y-2">
               {sidebarNavItems.map((item, index) => {
-                const isActive = pathname === item.href
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
                 return (
                   <Link
                     key={`mobile-${item.href}-${index}`}
