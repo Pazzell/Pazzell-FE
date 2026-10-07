@@ -1,0 +1,171 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { apiError, questionClock, renderWithQuery } from "@/test-utils";
+import type { TriviaSession } from "@/types";
+
+const { api } = vi.hoisted(() => ({ api: { get: vi.fn(), post: vi.fn() } }));
+
+vi.mock("@/lib/api", () => ({ api, getApiError: (e: { response?: { data?: unknown } }) => e?.response?.data }));
+vi.mock("canvas-confetti", () => ({ default: vi.fn() }));
+
+import { QuizStage } from "./quiz-stage";
+
+const session: TriviaSession = {
+  id: "s1",
+  status: "quiz",
+  source: { type: "topic", id: "t1", title: "Football" },
+  isPreview: false,
+  timerSeconds: 5,
+  cardCount: 2,
+  currentIndex: 0,
+  brand: null,
+  startedAt: "2026-10-06T10:00:00.000Z",
+  quizStartedAt: "2026-10-06T10:00:30.000Z",
+  completedAt: null,
+};
+
+const result = {
+  sessionId: "s1",
+  source: session.source,
+  correct: 2,
+  total: 2,
+  isPreview: false,
+  brand: null,
+  completedAt: "2026-10-06T10:01:00.000Z",
+  campaignGate: { required: false, counter: 1, threshold: 10, campaign: null },
+};
+
+const question = (index: number, secondsLeft: number) => ({
+  completed: false,
+  question: {
+    index,
+    total: 2,
+    type: "definition",
+    imageUrl: null,
+    text: `Question text ${index + 1}`,
+    options: [
+      { index: 0, text: "Striker" },
+      { index: 1, text: "Goalkeeper" },
+    ],
+    ...questionClock(secondsLeft),
+  },
+});
+
+/** What `GET /question` returns on each successive call. */
+let questions: object[] = [];
+let answer: () => Promise<{ data: object }>;
+
+const answerCalls = () =>
+  api.post.mock.calls.filter((call) => String(call[0]).endsWith("/answer"));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  questions = [];
+  api.get.mockImplementation((url: string) => {
+    if (url === "/trivia/sessions/s1/question") {
+      const next = questions.length > 1 ? questions.shift() : questions[0];
+      return Promise.resolve({ data: next });
+    }
+    return Promise.reject(new Error(`Unhandled GET ${url}`));
+  });
+  api.post.mockImplementation((url: string) => {
+    if (url.endsWith("/answer")) return answer();
+    if (url.startsWith("/analytics/")) return Promise.resolve({ data: {} });
+    return Promise.reject(new Error(`Unhandled POST ${url}`));
+  });
+});
+
+const answered = (overrides: object) => () =>
+  Promise.resolve({
+    data: {
+      questionIndex: 0,
+      outcome: "correct",
+      correctOptionIndex: 1,
+      completed: false,
+      nextQuestionIndex: 1,
+      result: null,
+      ...overrides,
+    },
+  });
+
+describe("QuizStage", () => {
+  it("only submits once an option is selected and Submit is pressed", async () => {
+    questions = [question(0, 5), question(1, 5)];
+    answer = answered({});
+    renderWithQuery(<QuizStage session={session} onCompleted={vi.fn()} />);
+
+    await screen.findByText("Question text 1");
+    const submit = screen.getByRole("button", { name: "Submit" });
+    expect(submit).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("button", { name: "Goalkeeper" }));
+    expect(answerCalls()).toHaveLength(0);
+
+    await userEvent.click(submit);
+    expect(await screen.findByText("Correct!")).toBeInTheDocument();
+    expect(answerCalls()).toEqual([
+      ["/trivia/sessions/s1/answer", { questionIndex: 0, optionIndex: 1 }],
+    ]);
+    expect(await screen.findByText("Question text 2", {}, { timeout: 3000 })).toBeInTheDocument();
+  });
+
+  it("fails the question on timeout without submitting, then moves on", async () => {
+    questions = [question(0, 0), question(1, 5)];
+    answer = answered({});
+    renderWithQuery(<QuizStage session={session} onCompleted={vi.fn()} />);
+
+    expect(await screen.findByText("Time is up!")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
+    expect(await screen.findByText("Question text 2", {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(answerCalls()).toHaveLength(0);
+  });
+
+  it("hands the result over when the last answer completes the session", async () => {
+    questions = [question(1, 5)];
+    answer = answered({ questionIndex: 1, completed: true, nextQuestionIndex: null, result });
+    const onCompleted = vi.fn();
+    renderWithQuery(<QuizStage session={session} onCompleted={onCompleted} />);
+
+    await screen.findByText("Question text 2");
+    await userEvent.click(screen.getByRole("button", { name: "Goalkeeper" }));
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() => expect(onCompleted).toHaveBeenCalledWith(result), { timeout: 3000 });
+  });
+
+  it("goes straight to the result when the server says nothing is left (resume after the end)", async () => {
+    questions = [{ completed: true, result }];
+    const onCompleted = vi.fn();
+    renderWithQuery(<QuizStage session={session} onCompleted={onCompleted} />);
+
+    await waitFor(() => expect(onCompleted).toHaveBeenCalledWith(result));
+  });
+
+  it("re-syncs to the server's current question when an answer is rejected", async () => {
+    questions = [question(0, 5), question(1, 5)];
+    answer = () => Promise.reject(apiError(409, "NOT_CURRENT_QUESTION", { currentIndex: 1 }));
+    renderWithQuery(<QuizStage session={session} onCompleted={vi.fn()} />);
+
+    await screen.findByText("Question text 1");
+    await userEvent.click(screen.getByRole("button", { name: "Striker" }));
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(await screen.findByText("Question text 2")).toBeInTheDocument();
+  });
+
+  it("blocks the browser back button while the quiz is running", async () => {
+    questions = [question(0, 5)];
+    answer = answered({});
+    const pushState = vi.spyOn(window.history, "pushState");
+    renderWithQuery(<QuizStage session={session} onCompleted={vi.fn()} />);
+    await screen.findByText("Question text 1");
+
+    const before = pushState.mock.calls.length;
+    expect(before).toBeGreaterThan(0);
+    // Going back is undone by pushing the current entry straight back on.
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    expect(pushState.mock.calls.length).toBe(before + 1);
+    pushState.mockRestore();
+  });
+});

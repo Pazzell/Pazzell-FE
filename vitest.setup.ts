@@ -28,3 +28,23 @@ if (typeof (globalThis as any).ResizeObserver === "undefined") {
     disconnect() {}
   };
 }
+
+// jsdom has no matchMedia; the reduced-motion hook reads it on mount.
+if (typeof window !== "undefined" && !window.matchMedia) {
+  window.matchMedia = (query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as MediaQueryList;
+}
+
+// jsdom doesn't implement element scrolling; the study feed calls it.
+if (typeof Element !== "undefined" && !Element.prototype.scrollTo) {
+  Element.prototype.scrollTo = () => {};
+}

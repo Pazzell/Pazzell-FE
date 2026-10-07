@@ -9,6 +9,7 @@ import { routes } from "@/app/_utils/routes";
 import { useAtomValue, useSetAtom } from "jotai/react";
 import { userAtom } from "@/atom/user";
 import { useRouter } from "next/navigation";
+import { usePlan } from "@/hooks/use-plan";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +26,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const userType = user?.userType;
+  const { isPro } = usePlan({ enabled: isMounted && userType === "gamer" });
 
   useEffect(() => {
     setIsMounted(true);
@@ -102,7 +104,7 @@ export function Header() {
                       size="sm"
                       className="bg-gradient-to-r from-[#6C5CE7] to-[#FF6B9D] text-white font-fredoka">
                       <Sparkles className="h-4 w-4 mr-1" />
-                      Go Pro
+                      {isPro ? "Pro" : "Go Pro"}
                     </Button>
                   </Link>
                 )}
@@ -247,7 +249,7 @@ export function Header() {
                     href={routes.USER.PRO}
                     className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
                     onClick={closeMobileMenu}>
-                    Go Pro
+                    {isPro ? "Pro" : "Go Pro"}
                   </Link>
                   <Link
                     href={routes.USER.PROFILE}

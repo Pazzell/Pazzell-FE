@@ -16,6 +16,10 @@ let bankAccounts: { _id: string; accountName: string; bankName: string; accountN
 let withdrawalPostCalls: { body: any }[] = [];
 let failNextWithdrawal = false;
 
+// The header reads the plan through the shared API client, which this file's axios mock
+// (below) doesn't provide.
+vi.mock("@/hooks/use-plan", () => ({ usePlan: () => ({ isPro: false, daysLeft: 0 }) }));
+
 vi.mock("axios", () => ({
   default: {
     get: vi.fn((url: string) => {
