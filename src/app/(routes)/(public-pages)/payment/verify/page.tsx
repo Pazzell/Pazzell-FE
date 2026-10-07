@@ -14,7 +14,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { routes } from '@/app/_utils/routes'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { PLAN_QUERY_KEY } from '@/hooks/use-plan'
 import { api } from '@/lib/api'
 import { ENDPOINTS } from '@/app/_utils/endpoints'
 import { useAtomValue } from 'jotai'
@@ -25,6 +26,7 @@ function PaymentVerify() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const user = useAtomValue(userAtom)
+  const queryClient = useQueryClient()
   const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'failed' | 'pending'>('loading')
   const [result, setResult] = useState<VerifyPaymentResponse | null>(null)
 
@@ -39,6 +41,7 @@ function PaymentVerify() {
       setResult(data)
       if (data.payment.status === 'success') {
         setVerificationStatus('success')
+        queryClient.invalidateQueries({ queryKey: PLAN_QUERY_KEY })
       } else if (data.payment.status === 'pending') {
         setVerificationStatus('pending')
       } else {

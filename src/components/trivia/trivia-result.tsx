@@ -6,6 +6,7 @@ import { Grid2x2, Loader2, RotateCcw, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
+import { BrandCta } from "@/components/trivia/brand-cta";
 import { CampaignGate } from "@/components/trivia/campaign-gate";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
@@ -76,17 +77,18 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
       </div>
 
       {result.brand && (
-        <p className="text-white/60 text-sm flex items-center gap-2">
+        <div className="w-full max-w-sm flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-card/50 p-5">
           {result.brand.logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={result.brand.logoUrl}
-              alt=""
-              className="h-6 w-6 rounded object-contain bg-white"
+              alt={`${result.brand.brandName} logo`}
+              className="h-14 w-14 rounded-xl object-contain bg-white p-1"
             />
           )}
-          Sponsored by {result.brand.brandName}
-        </p>
+          <p className="text-white/70 text-sm">Sponsored by {result.brand.brandName}</p>
+          <BrandCta brand={result.brand} variant="button" />
+        </div>
       )}
 
       {owedCampaign && (

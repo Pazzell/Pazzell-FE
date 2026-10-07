@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
@@ -82,7 +83,10 @@ export function CampaignGate({ campaign, timerSeconds, cardCount }: CampaignGate
         {campaign.description && <p className="text-white/70 text-sm">{campaign.description}</p>}
       </div>
       <p className="text-white/70 text-sm">
-        Play this short sponsored trivia to keep going. Pro players are never interrupted.
+        Play this short sponsored trivia to keep going.{" "}
+        <Link href={routes.USER.PRO} className="text-secondary hover:text-secondary/80 font-medium">
+          Pro players are never interrupted.
+        </Link>
       </p>
       <Button
         onClick={() => play.mutate()}

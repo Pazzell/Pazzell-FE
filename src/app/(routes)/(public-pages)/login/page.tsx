@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import axios, { type AxiosError } from "axios";
 import { endpointUrl } from "@/app/_utils/helper";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { toast } from "sonner";
@@ -102,7 +102,7 @@ export default function LoginPage() {
       return;
     }
 
-    const onProfileError = (error: any) => {
+    const onProfileError = (error: AxiosError<{ message?: string }>) => {
       toast.error("Error", {
         description:
           error.response?.data?.message || "Couldn't load your profile. Please try again.",

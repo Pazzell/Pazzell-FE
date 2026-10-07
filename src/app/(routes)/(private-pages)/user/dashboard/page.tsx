@@ -14,9 +14,11 @@ import Link from "next/link";
 import { routes } from "@/app/_utils/routes";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/atom/user";
+import { usePlan } from "@/hooks/use-plan";
 
 export default function UserDashboardPage() {
   const user = useAtomValue(userAtom);
+  const { isPro, daysLeft } = usePlan();
 
   return (
     <MainLayout maxWidth="6xl">
@@ -92,11 +94,17 @@ export default function UserDashboardPage() {
               <CardContent className="pt-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Sparkles className="h-5 w-5 text-yellow-400" />
-                  <span className="text-white font-medium">Go Pro</span>
+                  <span className="text-white font-medium">{isPro ? "Pro" : "Go Pro"}</span>
                 </div>
-                <Button size="sm" variant="outline" className="border-white/20 text-white/70">
-                  Upgrade
-                </Button>
+                {isPro ? (
+                  <span className="text-white/70 text-sm">
+                    {daysLeft} {daysLeft === 1 ? "day" : "days"} left
+                  </span>
+                ) : (
+                  <Button size="sm" variant="outline" className="border-white/20 text-white/70">
+                    Upgrade
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </Link>

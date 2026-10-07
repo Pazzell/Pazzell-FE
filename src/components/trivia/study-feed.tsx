@@ -14,6 +14,7 @@ import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { routes } from "@/app/_utils/routes";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
+import { BrandCta } from "@/components/trivia/brand-cta";
 import type { ApiErrorBody, TriviaSession, TriviaStudyResponse } from "@/types";
 
 interface StudyFeedProps {
@@ -121,7 +122,7 @@ export function StudyFeed({ session, onQuizBegun }: StudyFeedProps) {
             {session.source.title}
           </h1>
           {brand ? (
-            <p className="text-white/60 text-sm flex items-center gap-2">
+            <p className="text-white/60 text-sm flex items-center gap-2 flex-wrap">
               {brand.logoUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -131,6 +132,7 @@ export function StudyFeed({ session, onQuizBegun }: StudyFeedProps) {
                 />
               )}
               Sponsored by {brand.brandName}
+              <BrandCta brand={brand} />
             </p>
           ) : (
             <p className="text-white/60 text-sm">Study the cards, then start the quiz.</p>
