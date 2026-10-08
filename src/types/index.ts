@@ -43,6 +43,7 @@ export interface BrandProfileData {
   name: string;
   email: string;
   role: "brand";
+  avatar?: string | null;
   companyName: string;
   isVerified: boolean;
   createdAt: string;
@@ -53,7 +54,7 @@ export interface BrandProfileData {
     websiteUrl?: string | null;
     verified: boolean;
     totalCampaigns: number;
-  };
+  } | null;
 }
 
 export interface MeResponse {

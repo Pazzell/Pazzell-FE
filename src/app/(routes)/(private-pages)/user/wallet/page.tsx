@@ -192,7 +192,7 @@ export default function WalletPage() {
             Wallet
           </h1>
           <p className="text-white/70">
-            Your weekly cash winnings, and withdrawals to your bank account.
+            Your reward balance, and withdrawals to your bank account.
           </p>
         </div>
 

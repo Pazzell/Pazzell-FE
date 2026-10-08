@@ -2,7 +2,8 @@
 
 What the frontend needs from the API that it does not have today, found by checking every
 frontend call against the backend source (`pazzell-BE`, branch `pazzell-brain-training`) on
-2026-10-07. Every path the frontend calls already exists; these are gaps in behaviour, missing
+2026-10-07. Items 4 and 5 came from
+clicking through the app against the running backend on 2026-10-08. Every path the frontend calls already exists; these are gaps in behaviour, missing
 fields and one missing endpoint.
 
 Each item says what the frontend does in the meantime.
@@ -49,9 +50,36 @@ Requested: its own, looser limiter (for example 60 per 10 minutes).
 **Meanwhile:** the return page polls with stretching delays (3s up to 30s, six times) and then
 asks the user to check again later.
 
+### 4. No checkout can start: "Currency not supported by merchant"
+
+Found in the click-through on 2026-10-08. Every `POST /plan/pro/checkout` and
+`POST /brand/campaigns/:id/checkout` answers `502 CHECKOUT_FAILED`. The stored failure reason
+on the payment records is `Paystack initialization failed: Currency not supported by merchant`:
+`payments.currency` is `USD` and the Paystack test account does not accept USD.
+
+Requested: either enable USD on the Paystack account, or set `payments.currency` (and the two
+prices) to a currency the account supports. Until then nobody can buy Pro or put a campaign
+live, so campaign delivery, the campaign gate and admin pause/resume cannot be exercised.
+
+It would also help if the `502` carried the gateway's reason in `details` for admins, since the
+message "Could not start checkout" gives the brand nothing to act on.
+
+### 5. A brand without a brand record cannot save its website or logo
+
+Found in the click-through. `PUT /profile/brand` updates the brand record with
+`findOneAndUpdate` and no upsert. The test brand account has no brand record
+(`GET /profile/brand` returns `brandDetails: null`), so the website and logo are silently
+dropped while the response still says "Profile updated successfully". The logo does reach
+`user.avatar`.
+
+Requested: create the brand record on brand registration, and upsert it in `PUT /profile/brand`.
+
+**Meanwhile:** the settings page shows the avatar as the logo and warns when the website did
+not stick; each campaign asks for its own website and logo.
+
 ## Missing endpoint
 
-### 4. `GET /admin/users`
+### 6. `GET /admin/users`
 
 There is no way for an admin to list or look up users. Requested:
 
@@ -62,7 +90,7 @@ where `q` matches email, name or username. The admin area has no user list until
 
 ## Missing fields
 
-### 5. No way to remove a cover image
+### 7. No way to remove a cover image
 
 `PATCH /custom-quizzes/:id`, `PATCH /brand/campaigns/:id` and `PATCH /admin/trivia/topics/:id`
 ignore `coverImageUrl: null` (and `""`), so once a cover is set it can only be replaced.
@@ -71,24 +99,24 @@ Requested: treat an explicit `coverImageUrl: null` as "remove the cover".
 
 **Meanwhile:** the remove button is hidden for a cover that is already saved.
 
-### 6. `GET /admin/campaigns` items have no `cardCount`
+### 8. `GET /admin/campaigns` items have no `cardCount`
 
 The brand's list has it; the admin's does not, so the admin list cannot show how many cards a
 campaign has without opening it.
 
-### 7. `GET /admin/payments` returns raw records
+### 9. `GET /admin/payments` returns raw records
 
 - Items carry `_id`, where every other endpoint (including `GET /payments/mine`) uses `id`.
 - There is only `userId`, so the table cannot show who paid. Requested: a
   `user: { id, email, name }` block (and the campaign title for campaign payments).
 
-### 8. `GET /settings/game` has no `campaign.minCardsToPublish`
+### 10. `GET /settings/game` has no `campaign.minCardsToPublish`
 
 `customQuiz.minCardsToPublish` is there; the campaign equivalent is only on the brand-only
 `GET /brand/campaigns/pricing` and on a single campaign. Requested: add it to the public
 settings so every screen reads limits from one place.
 
-### 9. Reusing an image the user did not upload through `/uploads/images`
+### 11. Reusing an image the user did not upload through `/uploads/images`
 
 A `logoUrl` / `coverImageUrl` / `imageUrl` in a JSON body is accepted only if that same user
 uploaded it through `POST /uploads/images`. Two cases fall outside that:

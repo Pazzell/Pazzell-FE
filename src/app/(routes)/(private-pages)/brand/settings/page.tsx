@@ -42,7 +42,9 @@ export default function BrandSettingsPage() {
     setCompanyName(profile.brandDetails?.companyName ?? profile.companyName ?? "");
     setWebsiteUrl(profile.brandDetails?.websiteUrl ?? "");
     setLogoFile(null);
-    setLogoPreview(profile.brandDetails?.logoUrl ?? null);
+    // The logo doubles as the account avatar, which is all an account without a brand
+    // record has.
+    setLogoPreview(profile.brandDetails?.logoUrl ?? profile.avatar ?? null);
   }, [profile]);
 
   // Release the local preview of a picked file when it is replaced or the page closes.
@@ -61,10 +63,17 @@ export default function BrandSettingsPage() {
       if (websiteUrl.trim()) formData.append("websiteUrl", websiteUrl.trim());
       // The brand logo travels in the `avatar` field.
       if (logoFile) formData.append("avatar", logoFile);
-      return api.put(ENDPOINTS.UPDATE_BRAND_PROFILE, formData);
+      return api
+        .put<{ profile: { websiteUrl: string | null } }>(ENDPOINTS.UPDATE_BRAND_PROFILE, formData)
+        .then((res) => res.data.profile);
     },
-    onSuccess: () => {
-      toast.success("Brand profile saved.");
+    onSuccess: (saved) => {
+      // The website lives on the brand record; say so if the server had nowhere to put it.
+      if (websiteUrl.trim() && !saved?.websiteUrl) {
+        toast.warning("Saved, but your website could not be stored. Add it on each campaign for now.");
+      } else {
+        toast.success("Brand profile saved.");
+      }
       setUser((current) =>
         current ? { ...current, fullName: name.trim(), companyName: companyName.trim() } : current
       );

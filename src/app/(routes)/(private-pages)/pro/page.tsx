@@ -43,11 +43,9 @@ export default function ProPage() {
     },
     onError: (err: AxiosError<ApiErrorBody>) => {
       const body = err.response?.data;
-      // The key belongs to a checkout that is finished: the next press needs a new one.
-      if (body?.code === "ALREADY_PAID" || body?.code === "CHECKOUT_EXPIRED") {
-        idempotencyKey.current = crypto.randomUUID();
-        refetch();
-      }
+      // A key that has failed once is dead on the server: the next press needs a new one.
+      idempotencyKey.current = crypto.randomUUID();
+      if (body?.code === "ALREADY_PAID") refetch();
       toast.error(body?.message || "Couldn't start the checkout. Please try again.");
     },
   });

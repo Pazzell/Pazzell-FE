@@ -9,8 +9,8 @@ import { FloatingAnalytics } from "@/components/analytics/floating-analytics";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Pazzell - Gamified Marketing Platform",
-  description: "Play branded puzzle games and earn real rewards. Where brands create engaging campaigns and users earn money through fun puzzles.",
+  title: "Pazzell - Brain-Training Games",
+  description: "Brain-training games for sharper thinking: Match for little ones and Trivia for everyone. Study, play and build your own.",
 };
 
 export default function RootLayout({

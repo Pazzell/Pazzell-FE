@@ -104,10 +104,8 @@ function CampaignBuilder() {
       window.location.href = response.checkout.authorizationUrl;
     },
     onError: (err) => {
-      const code = getApiError(err)?.code;
-      if (code === "ALREADY_PAID" || code === "CHECKOUT_EXPIRED") {
-        idempotencyKey.current = crypto.randomUUID();
-      }
+      // A key that has failed once is dead on the server: the next press needs a new one.
+      idempotencyKey.current = crypto.randomUUID();
       onActionError(err, "Couldn't start the checkout. Please try again.");
     },
   });

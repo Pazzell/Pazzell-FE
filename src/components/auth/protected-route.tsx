@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAtomValue } from 'jotai/react'
 import { userAtom } from '@/atom/user'
@@ -21,8 +21,13 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const router = useRouter()
   const user: UserData | null = useAtomValue(userAtom)
+  // The stored user only exists in the browser. Rendering the spinner until mount keeps
+  // the first client render identical to the server's, which never has a user.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   useEffect(() => {
+    if (!mounted) return
     // If no user is logged in, redirect to login
     if (!user) {
       router.push(redirectTo)
@@ -41,10 +46,10 @@ export function ProtectedRoute({
       }
       return
     }
-  }, [user, router, allowedUserTypes, redirectTo])
+  }, [mounted, user, router, allowedUserTypes, redirectTo])
 
   // Show loading or nothing while checking auth
-  if (!user || !allowedUserTypes.includes(user.userType)) {
+  if (!mounted || !user || !allowedUserTypes.includes(user.userType)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

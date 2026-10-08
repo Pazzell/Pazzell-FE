@@ -17,6 +17,11 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { ENDPOINTS } from '@/app/_utils/endpoints'
 import type { AppAnalyticsResponse } from '@/types'
+import { useAtomValue } from 'jotai/react'
+import { userAtom } from '@/atom/user'
+
+// The server forgets an online user after 5 minutes without a ping.
+const ONLINE_PING_MS = 4 * 60 * 1000
 
 export function FloatingAnalytics() {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -32,6 +37,16 @@ export function FloatingAnalytics() {
   })
 
   const analytics = analyticsData?.analytics
+
+  // Keep a logged-in visitor counted as online for as long as the app is open.
+  const userId = useAtomValue(userAtom)?.id
+  useEffect(() => {
+    if (!userId) return
+    const ping = () => api.post(ENDPOINTS.ANALYTICS_USER_ONLINE).catch(() => {})
+    ping()
+    const interval = setInterval(ping, ONLINE_PING_MS)
+    return () => clearInterval(interval)
+  }, [userId])
 
   // Auto-hide after initial display
   useEffect(() => {
