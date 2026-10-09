@@ -133,7 +133,7 @@ describe("small helpers", () => {
   });
 
   it("formatPrice shows whole amounts without decimals", () => {
-    expect(formatPrice(10, "USD")).toMatch(/10$/);
-    expect(formatPrice(1.5, "USD")).toMatch(/1\.50?$/);
+    expect(formatPrice(1500, "NGN")).toMatch(/1,500$/);
+    expect(formatPrice(1.5, "NGN")).toMatch(/1\.50?$/);
   });
 });

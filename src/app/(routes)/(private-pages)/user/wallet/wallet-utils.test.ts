@@ -24,7 +24,7 @@ describe("formatCurrency", () => {
   });
 
   it("formats other currencies with a code prefix", () => {
-    expect(formatCurrency(50, "USD")).toBe("USD 50");
+    expect(formatCurrency(50, "GHS")).toBe("GHS 50");
   });
 });
 

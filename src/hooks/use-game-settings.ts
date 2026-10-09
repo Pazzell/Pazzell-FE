@@ -9,8 +9,8 @@ const FALLBACK_SETTINGS: GameSettings = {
   timer: { minSeconds: 1, maxSeconds: 7, matchDefaultSeconds: 5 },
   trivia: { minCards: 5, maxCards: 30 },
   customQuiz: { freeLimit: 1, minCardsToPublish: 5 },
-  pro: { amount: 1330.21, currency: "NGN", durationDays: 30 },
-  campaign: { amount: 13302.07, currency: "NGN", durationDays: 30, interruptionThreshold: 10 },
+  pro: { amount: 1500, currency: "NGN", durationDays: 30 },
+  campaign: { amount: 15000, currency: "NGN", durationDays: 30, interruptionThreshold: 10 },
 };
 
 export function useGameSettings() {

@@ -52,8 +52,9 @@ asks the user to check again later.
 
 ### 4. No checkout can start: "Currency not supported by merchant"
 
-_Update 2026-10-09: the contract's defaults are now NGN. Not re-tested against a running
-backend yet; remove this item once a test checkout goes through._
+_Update 2026-10-09: the defaults are now NGN (1,500 for Pro, 15,000 for a campaign), and the
+backend converts a database still holding the old dollar settings when it starts. Not re-tested
+against a running backend yet; remove this item once a test checkout goes through._
 
 Found in the click-through on 2026-10-08. Every `POST /plan/pro/checkout` and
 `POST /brand/campaigns/:id/checkout` answers `502 CHECKOUT_FAILED`. The stored failure reason

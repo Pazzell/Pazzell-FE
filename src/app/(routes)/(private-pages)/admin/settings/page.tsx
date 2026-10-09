@@ -64,7 +64,7 @@ const GROUPS: { title: string; settings: SettingDef[] }[] = [
     settings: [
       { key: "pro.priceAmount", label: "Pro price", type: "number", moreThan: 0 },
       { key: "pro.durationDays", label: "Pro length (days)", type: "integer", min: 1 },
-      { key: "payments.currency", label: "Currency", hint: "A 3-letter code such as USD.", type: "currency" },
+      { key: "payments.currency", label: "Currency", hint: "A 3-letter code such as NGN.", type: "currency" },
     ],
   },
 ];
