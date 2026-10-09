@@ -363,6 +363,8 @@ export interface TriviaStudyCard {
   type: "definition" | "image";
   imageUrl: string | null;
   text: string | null;
+  /** Image credit for a picture fetched from an API; its licence requires showing it. */
+  attribution?: string | null;
   options: TriviaCardOption[];
 }
 
@@ -383,6 +385,7 @@ export interface TriviaQuestion {
   type: "definition" | "image";
   imageUrl: string | null;
   text: string | null;
+  attribution?: string | null;
   options: TriviaQuestionOption[];
   timerSeconds: number;
   servedAt: string;
@@ -440,6 +443,7 @@ export interface TriviaCard {
   text: string | null;
   options: [string, string];
   correctOptionIndex: 0 | 1;
+  attribution?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -612,6 +616,35 @@ export interface AdminConfigResponse {
 
 export interface AdminTriviaTopic extends TriviaTopic {
   isActive: boolean;
+}
+
+export interface ImportCategory {
+  key: string;
+  topicName: string;
+  topicSlug: string;
+  /** People categories can be narrowed to a country. */
+  supportsCountry: boolean;
+}
+
+export interface ImportCategoriesResponse {
+  success: boolean;
+  categories: ImportCategory[];
+  /** "mixed", "worldwide", then the countries that can be picked. */
+  countries: string[];
+  maxCount: number;
+}
+
+export interface ImportCardsResult {
+  category: string;
+  topic: { id: string; name: string; slug: string };
+  requested: number;
+  created: number;
+  skipped: { unusableLicense: number; imageFailed: number; noWrongOption: number };
+}
+
+export interface ImportCardsResponse {
+  success: boolean;
+  import: ImportCardsResult;
 }
 
 export interface AdminTopicsResponse {

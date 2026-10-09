@@ -54,7 +54,7 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
   const [selected, setSelected] = useState<number | null>(null);
   const [locked, setLocked] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
-  // Mirrors `locked` synchronously so a submit and a timer expiry can't both settle a question.
+  // Mirrors `locked` synchronously so a tap and a timer expiry can't both settle a question.
   const lockedRef = useRef(false);
   const lock = (value: boolean) => {
     lockedRef.current = value;
@@ -141,10 +141,12 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
     onError: () => fetchQuestion.mutate(),
   });
 
-  const handleSubmit = () => {
-    if (lockedRef.current || !question || selected === null) return;
+  // One tap answers: the choice is final, like every other question in the app.
+  const handlePick = (optionIndex: number) => {
+    if (lockedRef.current || !question) return;
     lock(true);
-    submitAnswer.mutate({ questionIndex: question.index, optionIndex: selected });
+    setSelected(optionIndex);
+    submitAnswer.mutate({ questionIndex: question.index, optionIndex });
   };
 
   // Nothing submitted in time: the server has already failed the question.
@@ -212,6 +214,11 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
             className="max-h-56 w-auto max-w-full rounded-xl object-contain"
           />
         )}
+        {question.imageUrl && question.attribution && (
+          <p className="-mt-3 text-white/40 text-[11px] text-center max-w-md break-words">
+            {question.attribution}
+          </p>
+        )}
         {question.text && (
           <p className="text-white text-lg sm:text-xl text-center font-medium max-w-md">
             {question.text}
@@ -249,7 +256,7 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
             <button
               key={option.index}
               type="button"
-              onClick={() => setSelected(option.index)}
+              onClick={() => handlePick(option.index)}
               disabled={locked}
               aria-pressed={selected === option.index}
               className={cn(
@@ -270,16 +277,6 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
             </button>
           );
         })}
-      </div>
-
-      <div className="max-w-xl mx-auto">
-        <Button
-          onClick={handleSubmit}
-          disabled={locked || selected === null}
-          className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka text-lg py-6"
-        >
-          Submit
-        </Button>
       </div>
     </div>
   );

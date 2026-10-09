@@ -40,6 +40,7 @@ const GROUPS: { title: string; settings: SettingDef[] }[] = [
     settings: [
       { key: "trivia.minCards", label: "Minimum cards per session", type: "integer", min: 1 },
       { key: "trivia.maxCards", label: "Maximum cards per session", type: "integer", min: 1 },
+      { key: "trivia.imagePercent", label: "Image cards per session (%)", hint: "The rest are text cards. If a topic is short of one kind, the other fills the gap.", type: "integer", min: 0, max: 100 },
     ],
   },
   {

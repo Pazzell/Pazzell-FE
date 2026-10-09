@@ -66,8 +66,8 @@ are never read from the client. Sending them has no effect.
     "timer": { "minSeconds": 1, "maxSeconds": 7, "matchDefaultSeconds": 5 },
     "trivia": { "minCards": 5, "maxCards": 30 },
     "customQuiz": { "freeLimit": 1, "minCardsToPublish": 5 },
-    "pro": { "amount": 1, "currency": "USD", "durationDays": 30 },
-    "campaign": { "amount": 10, "currency": "USD", "durationDays": 30, "interruptionThreshold": 10 }
+    "pro": { "amount": 1330.21, "currency": "NGN", "durationDays": 30 },
+    "campaign": { "amount": 13302.07, "currency": "NGN", "durationDays": 30, "interruptionThreshold": 10 }
   }
 }
 ```
@@ -144,7 +144,7 @@ Presence endpoints (optional): `POST /analytics/user/online`, `POST /analytics/u
 ## 4. Plans, Pro and payments
 
 - Two tiers: **freemium** (default) and **pro**.
-- Pro costs the configured price (default 1 USD) for the configured duration (default 30 days)
+- Pro costs the configured price (default 1,330.21 NGN) for the configured duration (default 30 days)
   starting from the payment time. Renewing while still Pro adds the duration to the current
   `proUntil`; renewing after expiry starts from the new payment time.
 - Pro benefits: never interrupted by campaign trivia, and unlimited custom trivias.
@@ -157,7 +157,7 @@ Presence endpoints (optional): `POST /analytics/user/online`, `POST /analytics/u
 {
   "success": true,
   "plan": { "tier": "pro", "isPro": true, "proUntil": "2026-11-05T09:12:44.000Z" },
-  "pricing": { "amount": 1, "currency": "USD", "durationDays": 30 },
+  "pricing": { "amount": 1330.21, "currency": "NGN", "durationDays": 30 },
   "campaignGate": { "required": false, "counter": 4, "threshold": 10, "campaign": null },
   "history": [ { "paidAt": "…", "startsAt": "…", "endsAt": "…", "paymentId": "…" } ]
 }
@@ -174,7 +174,7 @@ returns the same checkout (`200`) instead of creating a second one.
   "checkout": {
     "authorizationUrl": "https://checkout.paystack.com/abc123",
     "reference": "pz_pro_5f0c…",
-    "payment": { "id": "…", "purpose": "pro", "amount": 1, "currency": "USD", "durationDays": 30,
+    "payment": { "id": "…", "purpose": "pro", "amount": 1330.21, "currency": "NGN", "durationDays": 30,
                  "reference": "pz_pro_5f0c…", "status": "pending", "paidAt": null }
   }
 }
@@ -511,10 +511,20 @@ Errors: `403 CAMPAIGN_REQUIRED` (see 8.3), `400 INVALID_TIMER`, `400 INVALID_CAR
     { "position": 1, "total": 10, "type": "definition", "imageUrl": null,
       "text": "The only player allowed to handle the ball in open play",
       "options": [ { "text": "Goalkeeper", "isCorrect": true }, { "text": "Striker", "isCorrect": false } ] },
-    { "position": 2, "total": 10, "type": "image", "imageUrl": "https://…/a1b2.webp", "text": null,
-      "options": [ { "text": "Ghana", "isCorrect": false }, { "text": "Nigeria", "isCorrect": true } ] }
+    { "position": 2, "total": 10, "type": "image", "imageUrl": "https://…/a1b2.webp",
+      "text": "Which animal is this?",
+      "attribution": "Markus Trienke · CC BY-SA 2.0 · Wikimedia Commons",
+      "options": [ { "text": "Monkey", "isCorrect": false }, { "text": "Dog", "isCorrect": true } ] }
   ] }
 ```
+
+Every card also carries `attribution`: the image credit for a picture fetched from an API, or
+`null`. When it is set, show it as small text with the image (the picture's licence requires it).
+The same field is on each quiz question.
+
+**Card mix.** A session's cards are picked at random with about 70% image cards and 30%
+definitions (the `trivia.imagePercent` setting). When a topic has too few cards of one type, the
+other type fills the gap, so the session always has the number of cards asked for.
 
 The order is stable for the life of the session, so it suits a continuous vertical feed: one
 card per screen, scroll-snap, a "7 of 20" indicator from `position`/`total`. Highlight the
@@ -688,7 +698,7 @@ The campaign gate applies to it, and a completed play counts toward the player's
 
 Invalid cards return `400 INVALID_CARD`; in bulk the message names the row (`Card 3: …`) and
 `details.index` is its zero-based position. Editor responses return a card as
-`{ id, type, imageUrl, text, options, correctOptionIndex, createdAt, updatedAt }`.
+`{ id, type, imageUrl, text, options, correctOptionIndex, attribution, createdAt, updatedAt }`.
 
 ---
 
@@ -709,7 +719,7 @@ Sponsored trivia created by `brand` accounts and delivered to freemium players.
         any state ──(admin takedown, with a reason)──▶ taken_down
 ```
 
-- Flat price (default 10 USD) for a fixed duration (default 30 days). No packages, no tiers, no
+- Flat price (default 13,302.07 NGN) for a fixed duration (default 30 days). No packages, no tiers, no
   start date to choose. `startsAt` is the confirmed payment time; `endsAt` is exactly the
   duration later.
 - A campaign is editable only as a `draft`. It needs at least `campaign.minCardsToPublish` (5)
@@ -754,8 +764,8 @@ Checkout response (`201`, or `200` when a checkout opened in the last 30 minutes
 ```json
 { "success": true,
   "checkout": { "authorizationUrl": "https://checkout.paystack.com/…", "reference": "pz_campaign_…",
-                "payment": { "id": "…", "purpose": "campaign", "campaignId": "6705…", "amount": 10,
-                             "currency": "USD", "durationDays": 30, "status": "pending" } },
+                "payment": { "id": "…", "purpose": "campaign", "campaignId": "6705…", "amount": 13302.07,
+                             "currency": "NGN", "durationDays": 30, "status": "pending" } },
   "campaign": { "id": "6705…", "status": "awaiting_payment" } }
 ```
 
@@ -845,12 +855,13 @@ any other role).
 | `game.submitGraceMs` | 1000 | Yes (0–5000) |
 | `match.defaultTimerSeconds` | 5 | Yes (1–7) |
 | `trivia.minCards` / `trivia.maxCards` | 5 / 30 | Yes |
+| `trivia.imagePercent` | 70 | Yes (0–100) |
 | `customQuiz.freeLimit` / `customQuiz.minCardsToPublish` | 1 / 5 | Yes |
 | `campaign.minCardsToPublish` | 5 | Yes |
 | `campaign.interruptionThreshold` | 10 | Yes (positive integer) |
-| `campaign.priceAmount` / `campaign.durationDays` | 10 / 30 | Yes |
-| `pro.priceAmount` / `pro.durationDays` | 1 / 30 | Yes |
-| `payments.currency` | `USD` | Yes (3-letter code) |
+| `campaign.priceAmount` / `campaign.durationDays` | 13302.07 / 30 | Yes |
+| `pro.priceAmount` / `pro.durationDays` | 1330.21 / 30 | Yes |
+| `payments.currency` | `NGN` | Yes (3-letter code) |
 
 A price or duration change applies to checkouts started afterwards; existing payments keep the
 values they were created with.
@@ -884,6 +895,44 @@ cannot produce that many distinct questions is rejected with `400`.
 For bulk entry with images: upload each image with `POST /uploads/images`, then put the returned
 `url` in the card's `imageUrl`.
 
+### Importing image cards
+
+Image cards can also be fetched automatically. The server looks up the best-known entries of a
+category on Wikidata, downloads each picture from Wikimedia Commons into our own storage, and
+adds it to a topic as an image card with two options. No API key is needed.
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/trivia/import/categories` | `{ categories: [ { key, topicName, topicSlug, supportsCountry } ], countries, maxCount }` |
+| POST | `/admin/trivia/import` | `{ category, count?, topicId?, country? }` |
+
+- `category`: `animals`, `plants`, `food`, `tech`, `footballers`, `musicians`, `celebrities` or
+  `pastors`.
+- `count`: how many cards to add, 1 to 50 (default 20). Call it again for more: each call
+  continues after the entries already imported, most famous first.
+- `topicId`: the topic to add to. Without it the cards go to the category's own topic
+  (`topicSlug`), which is created if it does not exist.
+- `country`: for the people categories only (`footballers`, `musicians`, `celebrities`,
+  `pastors`); ignored for the others. Without it, or with `"mixed"`, the cards alternate between
+  Nigerian and worldwide people. `"worldwide"` drops the Nigerian half; a country from
+  `countries` (e.g. `"ghana"`) or a Wikidata id (e.g. `"Q117"`) fetches that country only.
+  Mixed and worldwide requests can take up to a minute.
+
+```json
+{ "success": true,
+  "import": { "category": "footballers",
+              "topic": { "id": "6701…", "name": "Football", "slug": "football" },
+              "requested": 20, "created": 20,
+              "skipped": { "unusableLicense": 1, "imageFailed": 0, "noWrongOption": 0 } } }
+```
+
+The request answers when the import has finished, so show a progress state. Imported cards are
+live at once: players get them in the topic's next session, with no approval step. Only pictures under
+a free licence (public domain, CC0, CC BY, CC BY-SA) are taken; the credit is stored in the
+card's `attribution`. Imported cards are ordinary cards afterwards: review, edit or delete them
+with the card endpoints above. Errors: `400 INVALID_IMPORT_CATEGORY`, `400 INVALID_IMPORT_COUNT`,
+`400 INVALID_IMPORT_COUNTRY`, `502 IMPORT_SOURCE_UNAVAILABLE`.
+
 ### Campaigns and revenue
 
 | Method | Path | Purpose |
@@ -900,9 +949,9 @@ For bulk entry with images: upload each image with `POST /uploads/images`, then 
 
 ```json
 { "success": true, "range": { "from": null, "to": null },
-  "breakdown": [ { "purpose": "campaign", "currency": "USD", "payments": 3, "total": 30 },
-                 { "purpose": "pro", "currency": "USD", "payments": 41, "total": 41 } ],
-  "totalsByCurrency": { "USD": 71 }, "pendingPayments": 2 }
+  "breakdown": [ { "purpose": "campaign", "currency": "NGN", "payments": 3, "total": 39906.21 },
+                 { "purpose": "pro", "currency": "NGN", "payments": 41, "total": 54538.61 } ],
+  "totalsByCurrency": { "NGN": 94444.82 }, "pendingPayments": 2 }
 ```
 
 Forum moderation (`/forum/moderation/flags`) is unchanged.
@@ -1035,7 +1084,8 @@ Per user (per IP when logged out). Exceeding one returns `429 RATE_LIMITED`.
 | `DB_URI`, `REDIS_URL` | MongoDB and Redis |
 | `ACCESS_TOKEN`, `REFRESH_TOKEN`, `ACCESS_TOKEN_EXPIRE`, `REFRESH_TOKEN_EXPIRE`, `ACTIVATION_SECRET` | JWT secrets and lifetimes |
 | `PAYSTACK_SECRET_KEY`, `TRANSFER_PROVIDER` | Payment gateway and withdrawals |
-| `PAYMENT_CURRENCY`, `PRO_PRICE_AMOUNT`, `PRO_DURATION_DAYS`, `CAMPAIGN_PRICE_AMOUNT`, `CAMPAIGN_DURATION_DAYS`, `CAMPAIGN_INTERRUPTION_THRESHOLD`, `GAME_SUBMIT_GRACE_MS` | Defaults for the settings in section 9 (an admin override wins) |
+| `PAYMENT_CURRENCY`, `PRO_PRICE_AMOUNT`, `PRO_DURATION_DAYS`, `CAMPAIGN_PRICE_AMOUNT`, `CAMPAIGN_DURATION_DAYS`, `CAMPAIGN_INTERRUPTION_THRESHOLD`, `GAME_SUBMIT_GRACE_MS`, `TRIVIA_IMAGE_PERCENT` | Defaults for the settings in section 9 (an admin override wins) |
+| `WIKIMEDIA_CONTACT` | Contact email or URL sent to Wikimedia with image-import requests |
 | `STORAGE_PROVIDER` (`firebase` \| `aws` \| `memory`), `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET_NAME`, `AWS_S3_PUBLIC_BASE_URL`, `FIREBASE_STORAGE_BUCKET` | Image storage |
 | `TYPE`, `PROJECT_ID`, `PRIVATE_KEY_ID`, `PRIVATE_KEY`, `CLIENT_EMAIL`, `CLIENT_ID`, `AUTH_URI`, `TOKEN_URI`, `AUTH_PROVIDER_CERT_URL`, `CLIENT_CERT_URL`, `UNIVERSE_DOMAIN` | Firebase service account (Google sign-in, Firebase storage) |
 | `EMAIL_PROVIDER`, `SMTP_*`, `SENDGRID_API_KEY`, `TWILIO_SMTP_*`, `AWS_SES_FROM_EMAIL` | Email |

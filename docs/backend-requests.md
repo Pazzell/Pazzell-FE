@@ -52,6 +52,9 @@ asks the user to check again later.
 
 ### 4. No checkout can start: "Currency not supported by merchant"
 
+_Update 2026-10-09: the contract's defaults are now NGN. Not re-tested against a running
+backend yet; remove this item once a test checkout goes through._
+
 Found in the click-through on 2026-10-08. Every `POST /plan/pro/checkout` and
 `POST /brand/campaigns/:id/checkout` answers `502 CHECKOUT_FAILED`. The stored failure reason
 on the payment records is `Paystack initialization failed: Currency not supported by merchant`:

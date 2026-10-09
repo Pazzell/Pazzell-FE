@@ -39,6 +39,9 @@ export function CardList({ cards, onEdit, onDelete }: CardListProps) {
           )}
           <div className="flex-1 min-w-0 space-y-2">
             {card.text && <p className="text-white break-words">{card.text}</p>}
+            {card.attribution && (
+              <p className="text-white/40 text-xs break-words">Picture: {card.attribution}</p>
+            )}
             <div className="flex flex-wrap gap-2">
               {card.options.map((option, optionIndex) => {
                 const isCorrect = optionIndex === card.correctOptionIndex;

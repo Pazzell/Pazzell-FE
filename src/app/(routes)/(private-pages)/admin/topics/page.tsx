@@ -4,10 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, ChevronRight, Layers, Plus } from "lucide-react";
+import { BookOpen, ChevronRight, DownloadCloud, Layers, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageError } from "@/components/ui/page-error";
+import { ImportCardsDialog } from "@/components/admin/import-cards-dialog";
 import { TopicFormDialog } from "@/components/admin/topic-form-dialog";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
@@ -19,6 +20,7 @@ export default function AdminTopicsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["admin-topics"],
@@ -33,13 +35,23 @@ export default function AdminTopicsPage() {
           <h1 className="text-3xl font-bold text-white font-fredoka">Trivia Topics</h1>
           <p className="text-white/70">Create and manage topics and their cards</p>
         </div>
-        <Button
-          onClick={() => setCreating(true)}
-          className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Topic
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => setImporting(true)}
+            className="border-white/20 text-white/80 hover:bg-white/10"
+          >
+            <DownloadCloud className="h-4 w-4 mr-2" />
+            Import Image Cards
+          </Button>
+          <Button
+            onClick={() => setCreating(true)}
+            className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Topic
+          </Button>
+        </div>
       </div>
 
       {isLoading && (
@@ -108,6 +120,16 @@ export default function AdminTopicsPage() {
         </ul>
       )}
 
+      <ImportCardsDialog
+        open={importing}
+        onOpenChange={setImporting}
+        onImported={() => {
+          // The import may have created the category's topic, and players see the cards at once.
+          queryClient.invalidateQueries({ queryKey: ["admin-topics"] });
+          queryClient.invalidateQueries({ queryKey: ["admin-topic"] });
+          queryClient.invalidateQueries({ queryKey: ["trivia-topics"] });
+        }}
+      />
       <TopicFormDialog
         open={creating}
         onOpenChange={setCreating}

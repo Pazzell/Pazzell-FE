@@ -110,6 +110,8 @@ export const ENDPOINTS = {
     `/admin/trivia/topics/${id}/cards/bulk`,
   ADMIN_TRIVIA_TOPIC_CARD: (id: string, cardId: string) =>
     `/admin/trivia/topics/${id}/cards/${cardId}`,
+  ADMIN_TRIVIA_IMPORT_CATEGORIES: "/admin/trivia/import/categories",
+  ADMIN_TRIVIA_IMPORT: "/admin/trivia/import",
   ADMIN_CAMPAIGNS: "/admin/campaigns",
   ADMIN_CAMPAIGN: (id: string) => `/admin/campaigns/${id}`,
   ADMIN_CAMPAIGN_PAUSE: (id: string) => `/admin/campaigns/${id}/pause`,

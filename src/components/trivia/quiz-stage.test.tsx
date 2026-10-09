@@ -90,19 +90,16 @@ const answered = (overrides: object) => () =>
   });
 
 describe("QuizStage", () => {
-  it("only submits once an option is selected and Submit is pressed", async () => {
+  it("answers with a single tap on an option, with no Submit button", async () => {
     questions = [question(0, 5), question(1, 5)];
     answer = answered({});
     renderWithQuery(<QuizStage session={session} onCompleted={vi.fn()} />);
 
     await screen.findByText("Question text 1");
-    const submit = screen.getByRole("button", { name: "Submit" });
-    expect(submit).toBeDisabled();
-
-    await userEvent.click(screen.getByRole("button", { name: "Goalkeeper" }));
+    expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
     expect(answerCalls()).toHaveLength(0);
 
-    await userEvent.click(submit);
+    await userEvent.click(screen.getByRole("button", { name: "Goalkeeper" }));
     expect(await screen.findByText("Correct!")).toBeInTheDocument();
     expect(answerCalls()).toEqual([
       ["/trivia/sessions/s1/answer", { questionIndex: 0, optionIndex: 1 }],
@@ -116,7 +113,7 @@ describe("QuizStage", () => {
     renderWithQuery(<QuizStage session={session} onCompleted={vi.fn()} />);
 
     expect(await screen.findByText("Time is up!")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Goalkeeper" })).toBeDisabled();
     expect(await screen.findByText("Question text 2", {}, { timeout: 3000 })).toBeInTheDocument();
     expect(answerCalls()).toHaveLength(0);
   });
@@ -129,7 +126,6 @@ describe("QuizStage", () => {
 
     await screen.findByText("Question text 2");
     await userEvent.click(screen.getByRole("button", { name: "Goalkeeper" }));
-    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
 
     await waitFor(() => expect(onCompleted).toHaveBeenCalledWith(result), { timeout: 3000 });
   });
@@ -149,9 +145,34 @@ describe("QuizStage", () => {
 
     await screen.findByText("Question text 1");
     await userEvent.click(screen.getByRole("button", { name: "Striker" }));
-    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
 
     expect(await screen.findByText("Question text 2")).toBeInTheDocument();
+  });
+
+  it("locks the options after a tap so a second tap can't answer twice", async () => {
+    questions = [question(0, 5), question(1, 5)];
+    answer = answered({ outcome: "wrong" });
+    renderWithQuery(<QuizStage session={session} onCompleted={vi.fn()} />);
+
+    await screen.findByText("Question text 1");
+    await userEvent.click(screen.getByRole("button", { name: /Striker/ }));
+    expect(await screen.findByText("Not quite")).toBeInTheDocument();
+
+    expect(screen.getByRole("button", { name: /Goalkeeper/ })).toBeDisabled();
+    expect(answerCalls()).toHaveLength(1);
+  });
+
+  it("shows the picture credit on an image question", async () => {
+    const withImage = question(0, 5) as { question: Record<string, unknown> };
+    withImage.question.imageUrl = "https://img.example/dog.webp";
+    withImage.question.attribution = "Markus Trienke · CC BY-SA 2.0 · Wikimedia Commons";
+    questions = [withImage];
+    answer = answered({});
+    renderWithQuery(<QuizStage session={session} onCompleted={vi.fn()} />);
+
+    expect(
+      await screen.findByText("Markus Trienke · CC BY-SA 2.0 · Wikimedia Commons")
+    ).toBeInTheDocument();
   });
 
   it("blocks the browser back button while the quiz is running", async () => {

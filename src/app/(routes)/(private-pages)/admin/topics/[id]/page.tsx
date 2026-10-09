@@ -5,12 +5,13 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, DownloadCloud, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CardManager } from "@/components/cards/card-manager";
+import { ImportCardsDialog } from "@/components/admin/import-cards-dialog";
 import { TopicFormDialog } from "@/components/admin/topic-form-dialog";
 import { api, getApiError } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
@@ -35,6 +36,7 @@ export default function AdminTopicPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const topicKey = ["admin-topic", id];
@@ -117,14 +119,24 @@ export default function AdminTopicPage() {
             {topic.description && <p className="text-white/70">{topic.description}</p>}
           </div>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => setEditing(true)}
-          className="border-white/20 text-white/80 hover:bg-white/10"
-        >
-          <Pencil className="h-4 w-4 mr-2" />
-          Edit Topic
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => setImporting(true)}
+            className="border-white/20 text-white/80 hover:bg-white/10"
+          >
+            <DownloadCloud className="h-4 w-4 mr-2" />
+            Import Image Cards
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setEditing(true)}
+            className="border-white/20 text-white/80 hover:bg-white/10"
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit Topic
+          </Button>
+        </div>
       </div>
 
       {stats.length > 0 && (
@@ -161,6 +173,12 @@ export default function AdminTopicPage() {
         </Button>
       </div>
 
+      <ImportCardsDialog
+        open={importing}
+        onOpenChange={setImporting}
+        topic={{ id: topic.id, name: topic.name }}
+        onImported={refresh}
+      />
       <TopicFormDialog open={editing} onOpenChange={setEditing} topic={topic} onSaved={refresh} />
       <ConfirmDialog
         open={confirmDelete}

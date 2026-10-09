@@ -36,7 +36,9 @@ browser and once on a phone-sized screen (360px wide).
       buttons, and the arrow and page keys all move one card and update the "N of M" counter.
 - [ ] The leave button abandons the session and returns to the topic list.
 - [ ] Start Quiz: the same cards appear in a different order with no answer shown.
-- [ ] Submit is disabled until an option is selected.
+- [ ] Tapping an option answers straight away (there is no Submit button), and a second tap
+      does nothing.
+- [ ] An imported image card shows its picture credit in small text, in study and in the quiz.
 - [ ] Correct, wrong and timeout each show the right feedback, then the next question.
 - [ ] Refresh during study and during the quiz: each lands back on the same phase.
 - [ ] Result: score, Retry (a new card set from the same topic) and Pick Another Topic.
@@ -91,6 +93,9 @@ browser and once on a phone-sized screen (360px wide).
 - [ ] Home: revenue totals match the payments made above; date range and filters work.
 - [ ] Topics: create a topic with a cover, add cards, mark it inactive (it disappears for
       players), delete it.
+- [ ] Import Image Cards from the topics list: pick a category and a count, wait for it to
+      finish, and confirm the cards (with picture credits) are on the category's topic. Repeat
+      from inside a topic, and for a people category with a country.
 - [ ] Match levels: edit a level and add one; the last remaining level cannot be removed.
 - [ ] Settings: change the Pro price; `/pro` shows the new price. The two timer limits are
       shown as fixed.

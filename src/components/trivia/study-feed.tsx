@@ -177,6 +177,11 @@ export function StudyFeed({ session, onQuizBegun }: StudyFeedProps) {
                   className="max-h-[45%] w-auto max-w-full rounded-xl object-contain"
                 />
               )}
+              {card.imageUrl && card.attribution && (
+                <p className="-mt-4 text-white/40 text-[11px] text-center max-w-md break-words">
+                  {card.attribution}
+                </p>
+              )}
               {card.text && (
                 <p className="text-white text-lg sm:text-xl text-center font-medium max-w-md">
                   {card.text}
