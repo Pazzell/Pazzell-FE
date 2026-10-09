@@ -167,32 +167,32 @@ export function StudyFeed({ session, onQuizBegun }: StudyFeedProps) {
           {cards.map((card) => (
             <article
               key={card.position}
-              className="h-full snap-start snap-always flex flex-col items-center justify-center gap-6 p-6 pr-16"
+              className="h-full snap-start snap-always overflow-y-auto flex flex-col items-center justify-center gap-3 p-4 pr-14"
             >
               {card.imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={card.imageUrl}
                   alt={card.text ?? "Card image"}
-                  className="max-h-[45%] w-auto max-w-full rounded-xl object-contain"
+                  className="max-h-[38%] min-h-0 w-auto max-w-full rounded-xl object-contain"
                 />
               )}
               {card.imageUrl && card.attribution && (
-                <p className="-mt-4 text-white/40 text-[11px] text-center max-w-md break-words">
+                <p className="-mt-2 text-white/40 text-[11px] leading-tight text-center max-w-md break-words">
                   {card.attribution}
                 </p>
               )}
               {card.text && (
-                <p className="text-white text-lg sm:text-xl text-center font-medium max-w-md">
+                <p className="text-white text-base sm:text-lg text-center font-medium max-w-md">
                   {card.text}
                 </p>
               )}
-              <ul className="w-full max-w-md space-y-3">
+              <ul className="w-full max-w-md grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {card.options.map((option) => (
                   <li
                     key={option.text}
                     className={cn(
-                      "flex items-center justify-between gap-3 rounded-xl border px-4 py-3",
+                      "flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5",
                       option.isCorrect
                         ? "border-green-400 bg-green-500/10 text-green-300 font-bold"
                         : "border-white/10 bg-white/5 text-white/70"

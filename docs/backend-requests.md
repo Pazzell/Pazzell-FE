@@ -50,23 +50,15 @@ Requested: its own, looser limiter (for example 60 per 10 minutes).
 **Meanwhile:** the return page polls with stretching delays (3s up to 30s, six times) and then
 asks the user to check again later.
 
-### 4. No checkout can start: "Currency not supported by merchant"
+### 4. Resolved: checkout currency
 
-_Update 2026-10-09: the defaults are now NGN (1,500 for Pro, 15,000 for a campaign), and the
-backend converts a database still holding the old dollar settings when it starts. Not re-tested
-against a running backend yet; remove this item once a test checkout goes through._
+Checkouts failed on 2026-10-08 with `Currency not supported by merchant` while
+`payments.currency` was USD. With the currency set to NGN (Pro 1,500, campaign 15,000), a Pro
+purchase and a campaign payment both went through Paystack test mode on 2026-10-09.
 
-Found in the click-through on 2026-10-08. Every `POST /plan/pro/checkout` and
-`POST /brand/campaigns/:id/checkout` answers `502 CHECKOUT_FAILED`. The stored failure reason
-on the payment records is `Paystack initialization failed: Currency not supported by merchant`:
-`payments.currency` is `USD` and the Paystack test account does not accept USD.
-
-Requested: either enable USD on the Paystack account, or set `payments.currency` (and the two
-prices) to a currency the account supports. Until then nobody can buy Pro or put a campaign
-live, so campaign delivery, the campaign gate and admin pause/resume cannot be exercised.
-
-It would also help if the `502` carried the gateway's reason in `details` for admins, since the
-message "Could not start checkout" gives the brand nothing to act on.
+One thing still worth doing: when a checkout does fail, the `502 CHECKOUT_FAILED` gives no
+reason. Carrying the gateway's reason in `details` for admins would have made this quick to
+diagnose.
 
 ### 5. A brand without a brand record cannot save its website or logo
 
