@@ -33,7 +33,7 @@ export function QuizDetailsForm({ quiz, submitLabel, pending, onSubmit }: QuizDe
   const [description, setDescription] = useState(quiz?.description ?? "");
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(quiz?.coverImageUrl ?? null);
   const [timerSeconds, setTimerSeconds] = useState(
-    quiz?.defaultTimerSeconds ?? settings.timer.matchDefaultSeconds
+    quiz?.defaultTimerSeconds ?? settings.timer.defaultSeconds
   );
   const [cardCount, setCardCount] = useState(
     quiz?.defaultCardCount ?? settings.customQuiz.minCardsToPublish

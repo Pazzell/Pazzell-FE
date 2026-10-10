@@ -8,6 +8,7 @@ const { api } = vi.hoisted(() => ({ api: { get: vi.fn(), post: vi.fn() } }));
 
 vi.mock("@/lib/api", () => ({ api, getApiError: (e: { response?: { data?: unknown } }) => e?.response?.data }));
 vi.mock("canvas-confetti", () => ({ default: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
 
 import { QuizStage } from "./quiz-stage";
 
@@ -16,12 +17,12 @@ const session: TriviaSession = {
   status: "quiz",
   source: { type: "topic", id: "t1", title: "Football" },
   isPreview: false,
+  practice: false,
   timerSeconds: 5,
   cardCount: 2,
   currentIndex: 0,
   brand: null,
   startedAt: "2026-10-06T10:00:00.000Z",
-  quizStartedAt: "2026-10-06T10:00:30.000Z",
   completedAt: null,
 };
 
@@ -173,6 +174,55 @@ describe("QuizStage", () => {
     expect(
       await screen.findByText("Markus Trienke · CC BY-SA 2.0 · Wikimedia Commons")
     ).toBeInTheDocument();
+  });
+
+  it("shows no pointer when practice is off", async () => {
+    questions = [question(0, 5)];
+    answer = answered({});
+    renderWithQuery(<QuizStage session={session} onCompleted={vi.fn()} />);
+
+    await screen.findByText("Question text 1");
+    expect(screen.queryByTestId("practice-pointer")).not.toBeInTheDocument();
+    expect(screen.queryByText("Practice")).not.toBeInTheDocument();
+  });
+
+  it("points at the correct option in practice, and still answers with a tap", async () => {
+    const practiceQuestion = (index: number) => {
+      const q = question(index, 5) as { question: Record<string, unknown> };
+      q.question.correctOptionIndex = 1;
+      return q;
+    };
+    questions = [practiceQuestion(0), practiceQuestion(1)];
+    answer = answered({});
+    renderWithQuery(<QuizStage session={{ ...session, practice: true }} onCompleted={vi.fn()} />);
+
+    await screen.findByText("Question text 1");
+    expect(screen.getByText("Practice")).toBeInTheDocument();
+    const pointed = screen.getByRole("button", { name: /Goalkeeper/ });
+    expect(pointed).toContainElement(screen.getByTestId("practice-pointer"));
+    expect(screen.getByRole("button", { name: /Striker/ })).not.toContainElement(
+      screen.getByTestId("practice-pointer")
+    );
+
+    await userEvent.click(pointed);
+    expect(await screen.findByText("Correct!")).toBeInTheDocument();
+    expect(answerCalls()).toEqual([
+      ["/trivia/sessions/s1/answer", { questionIndex: 0, optionIndex: 1 }],
+    ]);
+    // The pointer gives way to the normal feedback once the question is answered.
+    expect(screen.queryByTestId("practice-pointer")).not.toBeInTheDocument();
+  });
+
+  it("marks a wrong tap as wrong in practice too", async () => {
+    const q = question(0, 5) as { question: Record<string, unknown> };
+    q.question.correctOptionIndex = 1;
+    questions = [q, question(1, 5)];
+    answer = answered({ outcome: "wrong" });
+    renderWithQuery(<QuizStage session={{ ...session, practice: true }} onCompleted={vi.fn()} />);
+
+    await screen.findByText("Question text 1");
+    await userEvent.click(screen.getByRole("button", { name: "Striker" }));
+    expect(await screen.findByText("Not quite")).toBeInTheDocument();
   });
 
   it("blocks the browser back button while the quiz is running", async () => {

@@ -387,7 +387,7 @@ export default function SettingsPage() {
             <NotifRow
               icon={Trophy}
               label="Weekly Progress Summary"
-              description="Receive a weekly email recap of your Match and Trivia activity."
+              description="Receive a weekly email recap of your trivia activity."
               checked={notifs.weeklyDigest}
               onChange={(v) => updateNotif("weeklyDigest", v)}
               disabled={!notifs.emailNotifications}

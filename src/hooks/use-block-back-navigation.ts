@@ -3,7 +3,7 @@ import { useEffect } from "react";
 /**
  * Traps the browser back button while `active` is true by re-pushing the
  * current history entry whenever a popstate fires. Used so a player can't
- * navigate back mid-question in Match/Trivia (the server only ever serves
+ * navigate back mid-question (the server only ever serves
  * the current question — there's nothing sane to go "back" to).
  */
 export function useBlockBackNavigation(active: boolean) {

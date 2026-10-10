@@ -36,7 +36,7 @@ export default function TriviaTopicsPage() {
             Trivia
           </h1>
           <p className="text-white/70">
-            Pick a topic, study the cards, then quiz yourself on what you just learned.
+            Pick a topic and start the quiz. Turn on Practice to have the correct option pointed out.
           </p>
         </div>
 

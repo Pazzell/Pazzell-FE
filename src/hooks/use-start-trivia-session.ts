@@ -14,6 +14,7 @@ import type {
 } from "@/types";
 
 export const TRIVIA_TIMER_STORAGE_KEY = "pazzell_trivia_timer_seconds";
+export const TRIVIA_PRACTICE_STORAGE_KEY = "pazzell_trivia_practice";
 
 export interface StartTriviaSessionPayload {
   sourceType: TriviaSourceType;
@@ -21,6 +22,8 @@ export interface StartTriviaSessionPayload {
   slug?: string;
   timerSeconds?: number;
   cardCount?: number;
+  /** Practice mode: the correct option is pointed at on every question. */
+  practice?: boolean;
 }
 
 /**

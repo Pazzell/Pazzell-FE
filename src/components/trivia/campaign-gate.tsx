@@ -26,13 +26,14 @@ interface CampaignGateProps {
   /** The player's choices for the trivia they were about to play, when known. */
   timerSeconds?: number;
   cardCount?: number;
+  practice?: boolean;
 }
 
 /**
  * The interstitial shown when a freemium player owes a sponsored trivia
  * (`CAMPAIGN_REQUIRED`, or `campaignGate.required` on a result).
  */
-export function CampaignGate({ campaign, timerSeconds, cardCount }: CampaignGateProps) {
+export function CampaignGate({ campaign, timerSeconds, cardCount, practice }: CampaignGateProps) {
   const router = useRouter();
   const { settings } = useGameSettings();
 
@@ -40,14 +41,15 @@ export function CampaignGate({ campaign, timerSeconds, cardCount }: CampaignGate
     mutationFn: async () => {
       const { data } = await api.get<CampaignByIdResponse>(ENDPOINTS.CAMPAIGN_BY_ID(campaign.id));
       const { min, max } = data.cardCountBounds;
-      const { minSeconds, maxSeconds, matchDefaultSeconds } = settings.timer;
+      const { minSeconds, maxSeconds, defaultSeconds } = settings.timer;
       const stored = Number(localStorage.getItem(TRIVIA_TIMER_STORAGE_KEY));
-      const timer = timerSeconds ?? (stored || matchDefaultSeconds);
+      const timer = timerSeconds ?? (stored || defaultSeconds);
       const res = await api.post<TriviaSessionResponse>(ENDPOINTS.TRIVIA_SESSIONS, {
         sourceType: "campaign",
         sourceId: campaign.id,
         timerSeconds: Math.min(maxSeconds, Math.max(minSeconds, Math.round(timer))),
         cardCount: Math.min(max, Math.max(min, cardCount ?? DEFAULT_CARD_COUNT)),
+        ...(practice ? { practice: true } : {}),
       });
       return res.data;
     },

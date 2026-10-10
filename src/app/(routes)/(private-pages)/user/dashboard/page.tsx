@@ -28,30 +28,11 @@ export default function UserDashboardPage() {
             Welcome back{user?.firstName ? `, ${user.firstName}` : ""}!
           </h1>
           <p className="text-white/70">
-            Pick a game to train your brain — no points, no leaderboard, just play.
+            Pick a topic and play: pictures and short definitions, two options, one tap.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <Link href={routes.USER.MATCH}>
-            <Card className="bg-card/50 backdrop-blur-sm border-white/10 hover:border-secondary/40 transition-colors h-full">
-              <CardHeader>
-                <div className="p-3 bg-pink-500/20 rounded-lg w-fit mb-2">
-                  <Sparkles className="h-6 w-6 text-pink-400" />
-                </div>
-                <CardTitle className="text-white font-fredoka text-xl">Match</CardTitle>
-                <CardDescription className="text-white/70">
-                  A reasoning game for little ones — match the artifact, level by level.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <span className="text-secondary inline-flex items-center gap-1 text-sm font-medium">
-                  Play Match <ArrowRight className="h-4 w-4" />
-                </span>
-              </CardContent>
-            </Card>
-          </Link>
-
+        <div className="grid grid-cols-1 gap-6">
           <Link href={routes.USER.TRIVIA}>
             <Card className="bg-card/50 backdrop-blur-sm border-white/10 hover:border-secondary/40 transition-colors h-full">
               <CardHeader>
@@ -60,7 +41,7 @@ export default function UserDashboardPage() {
                 </div>
                 <CardTitle className="text-white font-fredoka text-xl">Trivia</CardTitle>
                 <CardDescription className="text-white/70">
-                  Study a topic, then quiz yourself. Pick any topic, no levels.
+                  Footballers, musicians, animals, food and more. Turn on Practice to learn the answers as you go.
                 </CardDescription>
               </CardHeader>
               <CardContent>

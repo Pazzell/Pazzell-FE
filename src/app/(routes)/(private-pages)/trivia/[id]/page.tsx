@@ -7,7 +7,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
 import { CampaignGate } from "@/components/trivia/campaign-gate";
-import { SessionSetup } from "@/components/trivia/session-setup";
+import { SessionSetup, type SessionChoice } from "@/components/trivia/session-setup";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { routes } from "@/app/_utils/routes";
@@ -20,7 +20,7 @@ export default function TriviaTopicSetupPage() {
   const router = useRouter();
   const { start, isStarting, gate } = useStartTriviaSession();
   // Kept so the sponsored trivia, if one is owed, uses what the player just picked.
-  const [choice, setChoice] = useState<{ timerSeconds: number; cardCount: number } | null>(null);
+  const [choice, setChoice] = useState<SessionChoice | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["trivia-topics"],
@@ -65,6 +65,7 @@ export default function TriviaTopicSetupPage() {
             campaign={gate}
             timerSeconds={choice?.timerSeconds}
             cardCount={choice?.cardCount}
+            practice={choice?.practice}
           />
         ) : (
           <SessionSetup

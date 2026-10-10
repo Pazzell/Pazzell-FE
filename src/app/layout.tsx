@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Pazzell - Brain-Training Games",
-  description: "Brain-training games for sharper thinking: Match for little ones and Trivia for everyone. Study, play and build your own.",
+  description: "Picture and short-definition trivia across topics like footballers, musicians, animals and food. Practise, play and build your own.",
 };
 
 export default function RootLayout({

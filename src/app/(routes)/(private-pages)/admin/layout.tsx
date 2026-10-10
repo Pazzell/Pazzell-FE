@@ -9,7 +9,6 @@ import { LogoIcon } from '@/components/ui/logo-icon'
 import {
   LayoutDashboard,
   BookOpen,
-  Puzzle,
   Megaphone,
   Settings,
   Menu,
@@ -32,7 +31,6 @@ import {
 const sidebarNavItems = [
   { title: 'Dashboard', href: routes.ADMIN.DASHBOARD, icon: LayoutDashboard },
   { title: 'Trivia Topics', href: routes.ADMIN.TOPICS, icon: BookOpen },
-  { title: 'Match Levels', href: routes.ADMIN.MATCH_LEVELS, icon: Puzzle },
   { title: 'Campaigns', href: routes.ADMIN.CAMPAIGNS, icon: Megaphone },
   { title: 'Settings', href: routes.ADMIN.SETTINGS, icon: Settings },
 ]

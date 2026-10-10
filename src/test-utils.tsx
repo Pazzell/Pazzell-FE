@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { GameSettings } from "@/types";
 
 export const TEST_SETTINGS: GameSettings = {
-  timer: { minSeconds: 1, maxSeconds: 7, matchDefaultSeconds: 5 },
+  timer: { minSeconds: 1, maxSeconds: 7, defaultSeconds: 5 },
   trivia: { minCards: 5, maxCards: 30 },
   customQuiz: { freeLimit: 1, minCardsToPublish: 5 },
   pro: { amount: 1500, currency: "NGN", durationDays: 30 },

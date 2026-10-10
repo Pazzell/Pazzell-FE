@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
 import { CampaignGate } from "@/components/trivia/campaign-gate";
-import { SessionSetup } from "@/components/trivia/session-setup";
+import { SessionSetup, type SessionChoice } from "@/components/trivia/session-setup";
 import { userAtom } from "@/atom/user";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
@@ -25,7 +25,7 @@ export default function SharedQuizPage() {
   const router = useRouter();
   const user = useAtomValue(userAtom);
   const { start, isStarting, gate } = useStartTriviaSession();
-  const [choice, setChoice] = useState<{ timerSeconds: number; cardCount: number } | null>(null);
+  const [choice, setChoice] = useState<SessionChoice | null>(null);
 
   // The stored user is only known in the browser; wait for it to avoid a hydration mismatch.
   const [mounted, setMounted] = useState(false);
@@ -134,6 +134,7 @@ export default function SharedQuizPage() {
             campaign={gate}
             timerSeconds={choice?.timerSeconds}
             cardCount={choice?.cardCount}
+            practice={choice?.practice}
           />
         )}
 

@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock3, Layers, Loader2 } from "lucide-react";
+import { Clock3, Layers, Loader2, Pointer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useGameSettings } from "@/hooks/use-game-settings";
-import { TRIVIA_TIMER_STORAGE_KEY } from "@/hooks/use-start-trivia-session";
+import {
+  TRIVIA_PRACTICE_STORAGE_KEY,
+  TRIVIA_TIMER_STORAGE_KEY,
+} from "@/hooks/use-start-trivia-session";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_CARD_COUNT = 10;
 
@@ -16,27 +20,36 @@ interface SessionSetupProps {
   defaultCardCount?: number;
   startLabel?: string;
   isStarting: boolean;
-  onStart: (choice: { timerSeconds: number; cardCount: number }) => void;
+  onStart: (choice: SessionChoice) => void;
 }
 
-/** The "time per question" and "number of cards" pickers shown before any trivia starts. */
+export interface SessionChoice {
+  timerSeconds: number;
+  cardCount: number;
+  practice: boolean;
+}
+
+/**
+ * The choices made before any trivia starts: time per question, number of cards, and
+ * whether to practise (the correct option is pointed at on every question).
+ */
 export function SessionSetup({
   bounds,
   defaultTimerSeconds,
   defaultCardCount,
-  startLabel = "Start Studying",
+  startLabel = "Start Quiz",
   isStarting,
   onStart,
 }: SessionSetupProps) {
   const { settings } = useGameSettings();
-  const { minSeconds, maxSeconds, matchDefaultSeconds } = settings.timer;
+  const { minSeconds, maxSeconds, defaultSeconds } = settings.timer;
 
-  const [timerSeconds, setTimerSeconds] = useState(defaultTimerSeconds ?? matchDefaultSeconds);
+  const [timerSeconds, setTimerSeconds] = useState(defaultTimerSeconds ?? defaultSeconds);
   useEffect(() => {
     const stored = Number(localStorage.getItem(TRIVIA_TIMER_STORAGE_KEY));
-    const preferred = defaultTimerSeconds ?? (stored || matchDefaultSeconds);
+    const preferred = defaultTimerSeconds ?? (stored || defaultSeconds);
     setTimerSeconds(Math.min(maxSeconds, Math.max(minSeconds, preferred)));
-  }, [defaultTimerSeconds, matchDefaultSeconds, minSeconds, maxSeconds]);
+  }, [defaultTimerSeconds, defaultSeconds, minSeconds, maxSeconds]);
 
   const [cardCount, setCardCount] = useState(defaultCardCount ?? DEFAULT_CARD_COUNT);
   useEffect(() => {
@@ -44,9 +57,15 @@ export function SessionSetup({
     setCardCount(Math.min(bounds.max, Math.max(bounds.min, preferred)));
   }, [defaultCardCount, bounds.min, bounds.max]);
 
+  const [practice, setPractice] = useState(false);
+  useEffect(() => {
+    setPractice(localStorage.getItem(TRIVIA_PRACTICE_STORAGE_KEY) === "on");
+  }, []);
+
   const handleStart = () => {
     localStorage.setItem(TRIVIA_TIMER_STORAGE_KEY, String(timerSeconds));
-    onStart({ timerSeconds, cardCount });
+    localStorage.setItem(TRIVIA_PRACTICE_STORAGE_KEY, practice ? "on" : "off");
+    onStart({ timerSeconds, cardCount, practice });
   };
 
   return (
@@ -97,6 +116,42 @@ export function SessionSetup({
             </div>
           </>
         )}
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <div className="space-y-1">
+          <span
+            id="practice-label"
+            className="flex items-center gap-2 text-white/80 text-sm font-medium"
+          >
+            <Pointer className="h-4 w-4" />
+            Practice
+          </span>
+          <p id="practice-hint" className="text-xs text-white/50">
+            {practice
+              ? "A pointer shows the correct option on every question."
+              : "No hints: answer from what you know."}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={practice}
+          aria-labelledby="practice-label"
+          aria-describedby="practice-hint"
+          onClick={() => setPractice((on) => !on)}
+          className={cn(
+            "relative h-7 w-12 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary",
+            practice ? "bg-secondary" : "bg-white/20"
+          )}
+        >
+          <span
+            className={cn(
+              "absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform",
+              practice && "translate-x-5"
+            )}
+          />
+        </button>
       </div>
 
       <Button

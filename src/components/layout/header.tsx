@@ -61,11 +61,6 @@ export function Header() {
             {isMounted && userType === "gamer" ? (
               <>
                 <Link
-                  href={routes.USER.MATCH}
-                  className="text-white hover:text-secondary font-medium transition-colors">
-                  Match
-                </Link>
-                <Link
                   href={routes.USER.TRIVIA}
                   className="text-white hover:text-secondary font-medium transition-colors">
                   Trivia
@@ -223,12 +218,6 @@ export function Header() {
             <nav className="space-y-1">
               {isMounted && userType === "gamer" ? (
                 <>
-                  <Link
-                    href={routes.USER.MATCH}
-                    className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
-                    onClick={closeMobileMenu}>
-                    Match
-                  </Link>
                   <Link
                     href={routes.USER.TRIVIA}
                     className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"

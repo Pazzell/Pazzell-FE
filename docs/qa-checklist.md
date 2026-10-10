@@ -12,35 +12,28 @@ browser and once on a phone-sized screen (360px wide).
 - [ ] Leave a tab idle until the access token expires, then act: the request succeeds without a
       visible logout (cookie refresh), or the app returns to login if the session is truly over.
 
-## Match
-
-- [ ] The level map shows level 1 unlocked and later levels locked.
-- [ ] Setup: the timer slider runs 1 to 7 seconds and remembers the last choice.
-- [ ] A correct tap shows a green tick, confetti and the success sound.
-- [ ] A wrong tap shows a red cross, a shake and the wrong sound; the correct tile is revealed.
-- [ ] Let the timer run out: "Time is up!" appears and the next question loads.
-- [ ] Tap an option in the last half-second: one outcome is shown, not two.
-- [ ] Refresh mid-attempt: the same question returns with less time, not a fresh clock.
-- [ ] The browser back button does nothing mid-attempt.
-- [ ] A perfect attempt shows "Level Complete!" with Next Level; the map now shows the next
-      level unlocked. An imperfect attempt shows only Retry.
-- [ ] The mute button silences both sounds and stays muted after a reload.
-- [ ] With the OS "reduce motion" setting on, there is no confetti and no shake, and feedback
-      is still clear.
-
 ## Trivia (topics)
 
 - [ ] The topic list loads; a topic with no cover shows the placeholder.
-- [ ] Setup: the card slider respects the topic's minimum and maximum.
-- [ ] Study: one card per screen, correct option in green with a tick. Scroll, the up/down
-      buttons, and the arrow and page keys all move one card and update the "N of M" counter.
+- [ ] Setup: the timer slider runs 1 to 7 seconds and remembers the last choice; the card
+      slider respects the topic's minimum and maximum.
+- [ ] Setup: the Practice toggle is off the first time and remembers the last choice.
+- [ ] Start Quiz goes straight to the first question. There is no study screen.
+- [ ] Practice on: a hand pointer marks the correct option on every question and a "Practice"
+      badge shows. Tapping the pointed option gives confetti; tapping the other gives the red
+      shake; letting the timer run out shows "Time is up!".
+- [ ] Practice off: no pointer and no badge, on any question.
 - [ ] The leave button abandons the session and returns to the topic list.
-- [ ] Start Quiz: the same cards appear in a different order with no answer shown.
 - [ ] Tapping an option answers straight away (there is no Submit button), and a second tap
       does nothing.
-- [ ] An imported image card shows its picture credit in small text, in study and in the quiz.
+- [ ] An imported image card shows its picture credit in small text in the quiz.
 - [ ] Correct, wrong and timeout each show the right feedback, then the next question.
-- [ ] Refresh during study and during the quiz: each lands back on the same phase.
+- [ ] Refresh mid-quiz: the same question returns with less time, not a fresh clock, and the
+      practice setting is unchanged.
+- [ ] The browser back button does nothing mid-quiz.
+- [ ] The mute button silences both sounds and stays muted after a reload.
+- [ ] With the OS "reduce motion" setting on, there is no confetti, no shake and the pointer
+      does not pulse; feedback is still clear.
 - [ ] Result: score, Retry (a new card set from the same topic) and Pick Another Topic.
 
 ## Campaign gate and campaign play
@@ -48,7 +41,7 @@ browser and once on a phone-sized screen (360px wide).
 - [ ] As a freemium player, complete trivias until the threshold (default 10) is reached. The
       next start shows the sponsored trivia instead of starting.
 - [ ] The topic list shows the same prompt at the top.
-- [ ] Play the sponsored trivia: brand name and logo on the study screen and the result.
+- [ ] Play the sponsored trivia: brand name and logo on the quiz screen and the result.
 - [ ] The brand link opens in a new tab; the brand's "Link clicks" number goes up.
 - [ ] After completing it, normal trivias start again.
 - [ ] A Pro player is never shown the prompt.
@@ -96,7 +89,6 @@ browser and once on a phone-sized screen (360px wide).
 - [ ] Import Image Cards from the topics list: pick a category and a count, wait for it to
       finish, and confirm the cards (with picture credits) are on the category's topic. Repeat
       from inside a topic, and for a people category with a country.
-- [ ] Match levels: edit a level and add one; the last remaining level cannot be removed.
 - [ ] Settings: change the Pro price; `/pro` shows the new price. The two timer limits are
       shown as fixed.
 - [ ] Campaigns: pause a live campaign with a reason (players stop seeing it, the brand sees

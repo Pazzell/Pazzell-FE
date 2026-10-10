@@ -62,6 +62,7 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
       ...(slug ? { slug } : { sourceId: result.source.id }),
       timerSeconds: session.timerSeconds,
       cardCount: session.cardCount,
+      practice: session.practice,
     });
   };
 

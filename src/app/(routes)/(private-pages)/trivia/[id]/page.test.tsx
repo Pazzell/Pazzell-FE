@@ -85,23 +85,39 @@ beforeEach(() => {
 });
 
 describe("Trivia topic setup page", () => {
-  it("starts a topic session with the chosen timer and card count", async () => {
+  it("starts a topic session with the chosen timer and card count, practice off by default", async () => {
     renderWithQuery(<TriviaTopicSetupPage />);
+    expect(await screen.findByRole("switch", { name: "Practice" })).toHaveAttribute("aria-checked", "false");
 
-    await userEvent.click(await screen.findByRole("button", { name: "Start Studying" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Start Quiz" }));
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/play/s1"));
     expect(sessionStarts()).toEqual([
-      { sourceType: "topic", sourceId: "t1", timerSeconds: 5, cardCount: 10 },
+      { sourceType: "topic", sourceId: "t1", timerSeconds: 5, cardCount: 10, practice: false },
     ]);
     expect(localStorage.getItem("pazzell_trivia_timer_seconds")).toBe("5");
+  });
+
+  it("starts in practice when the toggle is on, and remembers the choice", async () => {
+    renderWithQuery(<TriviaTopicSetupPage />);
+
+    const toggle = await screen.findByRole("switch", { name: "Practice" });
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    await userEvent.click(screen.getByRole("button", { name: "Start Quiz" }));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/play/s1"));
+    expect(sessionStarts()).toEqual([
+      { sourceType: "topic", sourceId: "t1", timerSeconds: 5, cardCount: 10, practice: true },
+    ]);
+    expect(localStorage.getItem("pazzell_trivia_practice")).toBe("on");
   });
 
   it("shows the sponsored trivia when the server says one is owed, and plays it", async () => {
     campaignOwed = true;
     renderWithQuery(<TriviaTopicSetupPage />);
 
-    await userEvent.click(await screen.findByRole("button", { name: "Start Studying" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Start Quiz" }));
 
     expect(await screen.findByText("Spring launch")).toBeInTheDocument();
     expect(screen.getByText("by Acme")).toBeInTheDocument();

@@ -1,12 +1,10 @@
 # Pazzell
 
-Brain-training games for IQ development. This repository is the web frontend (Next.js).
+Picture and short-definition trivia across many topics. This repository is the web frontend
+(Next.js).
 
-- **Match** — a reasoning game for ages 2 to 5. One target artifact, a row of options, tap the
-  one that matches. Level based: level N+1 unlocks when every question in level N is answered
-  correctly in one attempt.
-- **Trivia** — study a set of cards with the answers shown, then get quizzed on the same cards.
-  Topic based, no levels.
+- **Trivia** — pick a topic, a timer and a number of cards, then answer by tapping one of two
+  options. With Practice on, a pointer marks the correct option on every question.
 - **Custom trivia** — any player can build their own trivia and share it by link.
 - **Brand campaigns** — brands pay a flat price to run a sponsored trivia, which freemium
   players are shown between their own games.
@@ -18,9 +16,9 @@ There are no points, leaderboards, rankings, ads or prize draws.
 
 | Role | Home | What they do |
 | --- | --- | --- |
-| Player (`gamer`) | `/user/dashboard` | Play Match and Trivia, build custom trivias, upgrade to Pro, withdraw from the wallet |
+| Player (`gamer`) | `/user/dashboard` | Play trivia, build custom trivias, upgrade to Pro, withdraw from the wallet |
 | Brand | `/brand/dashboard` | Set up a brand profile, build and pay for campaigns, read campaign results |
-| Admin | `/admin` | Manage topics, cards, Match levels and global settings; moderate campaigns; view revenue |
+| Admin | `/admin` | Manage topics, cards and global settings; moderate campaigns; view revenue |
 
 ## Tech stack
 
@@ -80,9 +78,8 @@ src/
 ├── app/
 │   ├── (routes)/
 │   │   ├── (private-pages)/        # Login required
-│   │   │   ├── match/              # Level map and the level play page
 │   │   │   ├── trivia/             # Topic picker and setup
-│   │   │   ├── play/[sessionId]/   # Study → quiz → result, for every kind of trivia
+│   │   │   ├── play/[sessionId]/   # Quiz → result, for every kind of trivia
 │   │   │   ├── my-quizzes/         # Custom trivia list, builder and preview
 │   │   │   ├── pro/                # Plan and Pro checkout
 │   │   │   ├── user/               # Player home, profile, settings, wallet
@@ -121,8 +118,7 @@ A few rules shape most of the code:
 
 ## Testing
 
-`npm run test` covers Match answer and timer handling, the Trivia quiz (timeout, forward only,
-resume), the campaign gate, the upgrade prompts, the wallet, and the small validation helpers.
+`npm run test` covers the trivia quiz (practice pointer, timeout, forward only, resume), the campaign gate, the upgrade prompts, the wallet, and the small validation helpers.
 Tests mock `@/lib/api` and render pages with a fresh query client (see `src/test-utils.tsx`).
 
 Before a release, walk through [`docs/qa-checklist.md`](docs/qa-checklist.md) against a real

@@ -216,7 +216,7 @@ export function CampaignDetailsForm({
         </div>
       </div>
       <p className="text-white/50 text-xs">
-        Players see your brand name and logo on the study cards and the result screen, with the
+        Players see your brand name and logo on the quiz screen and the result screen, with the
         link button under their score.
       </p>
 

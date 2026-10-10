@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TEST_SETTINGS, questionClock, renderWithQuery } from "@/test-utils";
 
@@ -22,19 +22,19 @@ vi.mock("@/components/layout/main-layout", () => ({
 import TriviaPlayPage from "./page";
 
 const source = { type: "topic", id: "t1", title: "Football" };
-let status = "studying";
+let status = "quiz";
 
 const session = () => ({
   id: "s1",
   status,
   source,
   isPreview: false,
+  practice: false,
   timerSeconds: 5,
   cardCount: 2,
   currentIndex: 0,
   brand: null,
   startedAt: "2026-10-06T10:00:00.000Z",
-  quizStartedAt: null,
   completedAt: null,
 });
 
@@ -42,44 +42,13 @@ const gate = { required: false, counter: 1, threshold: 10, campaign: null as obj
 
 beforeEach(() => {
   vi.clearAllMocks();
-  status = "studying";
+  status = "quiz";
   gate.required = false;
   gate.campaign = null;
 
   api.get.mockImplementation((url: string) => {
     if (url === "/settings/game") return Promise.resolve({ data: { settings: TEST_SETTINGS } });
     if (url === "/trivia/sessions/s1") return Promise.resolve({ data: { session: session() } });
-    if (url === "/trivia/sessions/s1/study") {
-      return Promise.resolve({
-        data: {
-          session: session(),
-          cards: [
-            {
-              position: 1,
-              total: 2,
-              type: "definition",
-              imageUrl: null,
-              text: "The only player allowed to handle the ball",
-              options: [
-                { text: "Goalkeeper", isCorrect: true },
-                { text: "Striker", isCorrect: false },
-              ],
-            },
-            {
-              position: 2,
-              total: 2,
-              type: "definition",
-              imageUrl: null,
-              text: "Players on the pitch per team",
-              options: [
-                { text: "Nine", isCorrect: false },
-                { text: "Eleven", isCorrect: true },
-              ],
-            },
-          ],
-        },
-      });
-    }
     if (url === "/trivia/sessions/s1/question") {
       return Promise.resolve({
         data: {
@@ -119,9 +88,6 @@ beforeEach(() => {
   });
 
   api.post.mockImplementation((url: string) => {
-    if (url === "/trivia/sessions/s1/quiz/begin") {
-      return Promise.resolve({ data: { session: { ...session(), status: "quiz" } } });
-    }
     if (url === "/trivia/sessions") {
       return Promise.resolve({ data: { resumed: false, session: { ...session(), id: "s2" } } });
     }
@@ -131,28 +97,27 @@ beforeEach(() => {
 });
 
 describe("Trivia play page", () => {
-  it("shows the study cards with the answers, then moves to the quiz on Start Quiz", async () => {
-    renderWithQuery(<TriviaPlayPage />);
-
-    expect(await screen.findByText("The only player allowed to handle the ball")).toBeInTheDocument();
-    expect(screen.getAllByText("(correct answer)")).toHaveLength(2);
-    expect(screen.getByText("1 of 2")).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: "Start Quiz" }));
-
-    expect(await screen.findByText("Question 2 of 2")).toBeInTheDocument();
-    expect(api.post).toHaveBeenCalledWith("/trivia/sessions/s1/quiz/begin");
-    // The quiz phase never shows which option is right.
-    expect(screen.queryByText("(correct answer)")).not.toBeInTheDocument();
-  });
-
-  it("resumes straight into the quiz on a refresh mid-quiz, without the study cards", async () => {
-    status = "quiz";
+  it("opens straight on the current question, with no study step", async () => {
     renderWithQuery(<TriviaPlayPage />);
 
     expect(await screen.findByText("Question 2 of 2")).toBeInTheDocument();
+    expect(screen.getByText("Football")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Start Quiz" })).not.toBeInTheDocument();
     expect(api.get).not.toHaveBeenCalledWith("/trivia/sessions/s1/study");
+    expect(api.post).not.toHaveBeenCalledWith("/trivia/sessions/s1/quiz/begin");
+  });
+
+  it("leaves the trivia from the quiz screen", async () => {
+    api.post.mockImplementation((url: string) =>
+      url === "/trivia/sessions/s1/abandon" || url.startsWith("/analytics/")
+        ? Promise.resolve({ data: {} })
+        : Promise.reject(new Error(`Unhandled POST ${url}`))
+    );
+    renderWithQuery(<TriviaPlayPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Leave this trivia" }));
+    expect(api.post).toHaveBeenCalledWith("/trivia/sessions/s1/abandon");
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/trivia"));
   });
 
   it("shows the result for a finished session and retries with the same choices", async () => {
@@ -167,6 +132,7 @@ describe("Trivia play page", () => {
       sourceId: "t1",
       timerSeconds: 5,
       cardCount: 2,
+      practice: false,
     });
     expect(await screen.findByRole("button", { name: /Pick Another Topic/ })).toBeInTheDocument();
   });

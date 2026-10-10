@@ -7,7 +7,6 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
-import { StudyFeed } from "@/components/trivia/study-feed";
 import { QuizStage } from "@/components/trivia/quiz-stage";
 import { TriviaResultView } from "@/components/trivia/trivia-result";
 import { api } from "@/lib/api";
@@ -16,9 +15,9 @@ import { routes } from "@/app/_utils/routes";
 import type { TriviaResult, TriviaSession, TriviaSessionStatus } from "@/types";
 
 /**
- * One page for every trivia session (topic, custom quiz or campaign). Which
- * screen shows is keyed on the server's `session.status`, so a refresh always
- * lands back on the right phase.
+ * One page for every trivia session (topic, custom quiz or campaign). A session
+ * starts straight in the quiz; which screen shows is keyed on the server's
+ * `session.status`, so a refresh always lands back in the right place.
  */
 export default function TriviaPlayPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -57,10 +56,6 @@ export default function TriviaPlayPage() {
 
   return (
     <MainLayout maxWidth="3xl" includeFooter={status === "completed"}>
-      {status === "studying" && (
-        <StudyFeed session={session} onQuizBegun={() => setLocalStatus("quiz")} />
-      )}
-
       {status === "quiz" && (
         <QuizStage
           session={session}

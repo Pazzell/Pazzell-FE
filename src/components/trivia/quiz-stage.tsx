@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import confetti from "canvas-confetti";
-import { AlertTriangle, Check, Volume2, VolumeX, X } from "lucide-react";
+import { toast } from "sonner";
+import { AlertTriangle, Check, LogOut, Volume2, VolumeX, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CountdownBar } from "@/components/ui/countdown-bar";
 import { PageLoader } from "@/components/ui/page-loader";
@@ -14,6 +16,8 @@ import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { useBlockBackNavigation } from "@/hooks/use-block-back-navigation";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { isSoundMuted, setSoundMuted, playSuccessSound, playWrongSound } from "@/lib/sound";
+import { sessionExit } from "@/lib/session-exit";
+import { BrandCta } from "@/components/trivia/brand-cta";
 import { cn } from "@/lib/utils";
 import type {
   AnswerOutcome,
@@ -40,11 +44,13 @@ interface QuizStageProps {
 }
 
 /**
- * The quiz phase. The server only ever serves the current question and owns
- * the clock, so this just renders what it is given: a refresh lands on the
- * same question with the remaining time.
+ * The quiz. The server only ever serves the current question and owns the
+ * clock, so this just renders what it is given: a refresh lands on the same
+ * question with the remaining time. In practice mode the server also says which
+ * option is right, and a pointer marks it; answering works the same either way.
  */
 export function QuizStage({ session, onCompleted }: QuizStageProps) {
+  const router = useRouter();
   const reducedMotion = useReducedMotion();
 
   const [muted, setMuted] = useState(false);
@@ -158,6 +164,12 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
     afterFeedback(() => fetchQuestion.mutate());
   };
 
+  const abandon = useMutation({
+    mutationFn: () => api.post(ENDPOINTS.TRIVIA_SESSION_ABANDON(session.id)),
+    onSuccess: () => router.push(sessionExit(session.source, session.isPreview).href),
+    onError: () => toast.error("Couldn't leave the trivia. Please try again."),
+  });
+
   const toggleMute = () => {
     const next = !muted;
     setMuted(next);
@@ -178,22 +190,63 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
     return <PageLoader message="Loading question..." withLayout={false} />;
   }
 
+  const brand = session.brand;
+  // The pointer is shown only while the question is open; after an answer the usual
+  // green and red feedback takes over.
+  const pointerIndex = feedback ? undefined : question.correctOptionIndex;
+
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-white font-fredoka truncate">
+            {session.source.title}
+          </h1>
+          {brand && (
+            <p className="text-white/60 text-sm flex items-center gap-2 flex-wrap">
+              {brand.logoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={brand.logoUrl} alt="" className="h-5 w-5 rounded object-contain bg-white" />
+              )}
+              Sponsored by {brand.brandName}
+              <BrandCta brand={brand} />
+            </p>
+          )}
+        </div>
+        <div className="flex items-center shrink-0">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={toggleMute}
+            aria-label={muted ? "Unmute sound" : "Mute sound"}
+            className="text-white/60 hover:text-white"
+          >
+            {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => abandon.mutate()}
+            disabled={abandon.isPending}
+            aria-label="Leave this trivia"
+            className="text-white/60 hover:text-white"
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <span className="text-white/60 text-sm font-medium">
           Question {question.index + 1} of {question.total}
         </span>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={toggleMute}
-          aria-label={muted ? "Unmute sound" : "Mute sound"}
-          className="text-white/60 hover:text-white"
-        >
-          {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-        </Button>
+        {session.practice && (
+          <span className="rounded-full bg-secondary/15 px-3 py-1 text-xs font-medium text-secondary">
+            Practice
+          </span>
+        )}
       </div>
 
       <CountdownBar
@@ -265,13 +318,27 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
                   ? "border-green-400 bg-green-500/10 font-bold"
                   : isWrongPick
                   ? cn("border-red-400 bg-red-500/10", !reducedMotion && "animate-shake")
-                  : selected === option.index
+                  : selected === option.index || pointerIndex === option.index
                   ? "border-secondary bg-secondary/10"
                   : "border-white/10 bg-white/5 hover:border-white/30",
                 locked ? "cursor-default" : "cursor-pointer active:scale-[0.98]"
               )}
             >
-              <span>{option.text}</span>
+              <span className="flex items-center gap-2">
+                {pointerIndex === option.index && (
+                  <>
+                    <span
+                      aria-hidden="true"
+                      data-testid="practice-pointer"
+                      className={cn("text-xl leading-none", !reducedMotion && "animate-pulse")}
+                    >
+                      👉
+                    </span>
+                    <span className="sr-only">Correct answer: </span>
+                  </>
+                )}
+                {option.text}
+              </span>
               {isCorrect && <Check className="h-5 w-5 shrink-0 text-green-400" />}
               {isWrongPick && <X className="h-5 w-5 shrink-0 text-red-400" />}
             </button>

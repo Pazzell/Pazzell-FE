@@ -100,7 +100,7 @@ export interface RegisterResponse {
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface GameSettings {
-  timer: { minSeconds: number; maxSeconds: number; matchDefaultSeconds: number };
+  timer: { minSeconds: number; maxSeconds: number; defaultSeconds: number };
   trivia: { minCards: number; maxCards: number };
   customQuiz: { freeLimit: number; minCardsToPublish: number };
   pro: { amount: number; currency: string; durationDays: number };
@@ -169,124 +169,6 @@ export interface PaymentsMineResponse {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Match
-// ─────────────────────────────────────────────────────────────────────────
-
-export interface MatchArtifact {
-  id: string;
-  category: "shape" | "color" | "letter" | "number" | "dots" | "figure";
-  name: string;
-  attributes: Record<string, unknown>;
-  svg?: string;
-}
-
-export type MatchSimilarity = "low" | "medium" | "high";
-export type MatchVariant = "rotation" | "mirror";
-export type MatchCategoryPool =
-  | "shapes"
-  | "colors"
-  | "letters_upper"
-  | "letters_lower"
-  | "numbers"
-  | "figures"
-  | "colored_shapes";
-
-export interface MatchLevelConfig {
-  level: number;
-  order?: number;
-  name?: string;
-  questionCount: number;
-  optionCount: number;
-  categories: MatchCategoryPool[];
-  similarity?: MatchSimilarity;
-  variants?: MatchVariant[];
-  dotCountTargets?: boolean;
-  isActive?: boolean;
-}
-
-export interface MatchLevelStatus extends MatchLevelConfig {
-  unlocked: boolean;
-  passed: boolean;
-  attempts: number;
-  best: { correct: number; total: number } | null;
-  activeAttemptId: string | null;
-}
-
-export interface MatchLevelsResponse {
-  success: boolean;
-  timer: { minSeconds: number; maxSeconds: number; defaultSeconds: number };
-  highestUnlockedLevel: number;
-  levels: MatchLevelStatus[];
-}
-
-export type MatchAttemptStatus = "in_progress" | "completed" | "abandoned";
-
-export interface MatchAttempt {
-  id: string;
-  level: number;
-  timerSeconds: number;
-  status: MatchAttemptStatus;
-  questionCount: number;
-  currentIndex: number;
-  startedAt: string;
-  completedAt: string | null;
-}
-
-export interface MatchAttemptResponse {
-  success: boolean;
-  resumed: boolean;
-  attempt: MatchAttempt;
-}
-
-export interface MatchQuestion {
-  index: number;
-  total: number;
-  target: MatchArtifact;
-  options: MatchArtifact[];
-  timerSeconds: number;
-  servedAt: string;
-  deadlineAt: string;
-  remainingMs: number;
-  serverTime: string;
-}
-
-export interface MatchQuestionResponse {
-  success: boolean;
-  completed: boolean;
-  attempt: MatchAttempt;
-  question?: MatchQuestion;
-  result?: MatchResult;
-}
-
-export type AnswerOutcome = "correct" | "wrong" | "timeout";
-
-export interface MatchAnswerResponse {
-  success: boolean;
-  questionIndex: number;
-  outcome: AnswerOutcome;
-  correctOptionId: string;
-  completed: boolean;
-  nextQuestionIndex: number | null;
-  result: MatchResult | null;
-}
-
-export interface MatchResult {
-  attemptId: string;
-  level: number;
-  correct: number;
-  total: number;
-  passed: boolean;
-  nextLevel: number | null;
-  nextLevelUnlocked: boolean;
-  completedAt: string;
-}
-
-export interface MatchFinishResponse {
-  success: boolean;
-  result: MatchResult;
-}
-
-// ─────────────────────────────────────────────────────────────────────────
 // Trivia (topics, custom quizzes, campaigns share this session engine)
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -305,8 +187,9 @@ export interface TriviaTopicsResponse {
   topics: TriviaTopic[];
 }
 
+export type AnswerOutcome = "correct" | "wrong" | "timeout";
 export type TriviaSourceType = "topic" | "custom" | "campaign";
-export type TriviaSessionStatus = "studying" | "quiz" | "completed" | "abandoned";
+export type TriviaSessionStatus = "quiz" | "completed" | "abandoned";
 
 export interface CampaignBrand {
   id: string;
@@ -337,12 +220,13 @@ export interface TriviaSession {
   status: TriviaSessionStatus;
   source: { type: TriviaSourceType; id: string; title: string };
   isPreview: boolean;
+  /** Practice mode: every question arrives with its correct option identified. */
+  practice: boolean;
   timerSeconds: number;
   cardCount: number;
   currentIndex: number;
   brand: CampaignBrand | null;
   startedAt: string;
-  quizStartedAt: string | null;
   completedAt: string | null;
 }
 
@@ -350,28 +234,6 @@ export interface TriviaSessionResponse {
   success: boolean;
   resumed: boolean;
   session: TriviaSession;
-}
-
-export interface TriviaCardOption {
-  text: string;
-  isCorrect: boolean;
-}
-
-export interface TriviaStudyCard {
-  position: number;
-  total: number;
-  type: "definition" | "image";
-  imageUrl: string | null;
-  text: string | null;
-  /** Image credit for a picture fetched from an API; its licence requires showing it. */
-  attribution?: string | null;
-  options: TriviaCardOption[];
-}
-
-export interface TriviaStudyResponse {
-  success: boolean;
-  session: TriviaSession;
-  cards: TriviaStudyCard[];
 }
 
 export interface TriviaQuestionOption {
@@ -387,6 +249,8 @@ export interface TriviaQuestion {
   text: string | null;
   attribution?: string | null;
   options: TriviaQuestionOption[];
+  /** The `index` of the right option. Sent only in practice mode; absent otherwise. */
+  correctOptionIndex?: number;
   timerSeconds: number;
   servedAt: string;
   deadlineAt: string;

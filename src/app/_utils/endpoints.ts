@@ -30,18 +30,6 @@ export const ENDPOINTS = {
   PAYMENTS_VERIFY: (reference: string) => `/payments/verify/${reference}`,
   PAYMENTS_MINE: "/payments/mine",
 
-  // Match
-  MATCH_ARTIFACTS: "/match/artifacts",
-  MATCH_ARTIFACT_SVG: (id: string) =>
-    `/match/artifacts/svg?id=${encodeURIComponent(id)}`,
-  MATCH_LEVELS: "/match/levels",
-  MATCH_PROGRESS: "/match/progress",
-  MATCH_LEVEL_ATTEMPTS: (level: number) => `/match/levels/${level}/attempts`,
-  MATCH_ATTEMPT: (id: string) => `/match/attempts/${id}`,
-  MATCH_ATTEMPT_QUESTION: (id: string) => `/match/attempts/${id}/question`,
-  MATCH_ATTEMPT_ANSWER: (id: string) => `/match/attempts/${id}/answer`,
-  MATCH_ATTEMPT_FINISH: (id: string) => `/match/attempts/${id}/finish`,
-
   // Trivia topics
   TRIVIA_TOPICS: "/trivia/topics",
   TRIVIA_TOPIC: (id: string) => `/trivia/topics/${id}`,
@@ -49,9 +37,6 @@ export const ENDPOINTS = {
   // Trivia sessions (topics, custom quizzes and campaigns)
   TRIVIA_SESSIONS: "/trivia/sessions",
   TRIVIA_SESSION: (id: string) => `/trivia/sessions/${id}`,
-  TRIVIA_SESSION_STUDY: (id: string) => `/trivia/sessions/${id}/study`,
-  TRIVIA_SESSION_QUIZ_BEGIN: (id: string) =>
-    `/trivia/sessions/${id}/quiz/begin`,
   TRIVIA_SESSION_QUESTION: (id: string) => `/trivia/sessions/${id}/question`,
   TRIVIA_SESSION_ANSWER: (id: string) => `/trivia/sessions/${id}/answer`,
   TRIVIA_SESSION_RESULT: (id: string) => `/trivia/sessions/${id}/result`,
@@ -101,8 +86,6 @@ export const ENDPOINTS = {
   // Admin
   ADMIN_CONFIG: "/admin/config",
   ADMIN_CONFIG_KEY: (key: string) => `/admin/config/${key}`,
-  ADMIN_MATCH_LEVELS: "/admin/match/levels",
-  ADMIN_MATCH_LEVEL: (level: number) => `/admin/match/levels/${level}`,
   ADMIN_TRIVIA_TOPICS: "/admin/trivia/topics",
   ADMIN_TRIVIA_TOPIC: (id: string) => `/admin/trivia/topics/${id}`,
   ADMIN_TRIVIA_TOPIC_CARDS: (id: string) => `/admin/trivia/topics/${id}/cards`,
