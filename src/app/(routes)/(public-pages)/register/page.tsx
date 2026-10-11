@@ -173,7 +173,7 @@ function RegisterForm() {
               Create account
             </h1>
             <p className="text-white/50 text-center text-sm mb-6">
-              Start your puzzle journey
+              Play, build and share trivia
             </p>
             
             {/* User Type Toggle */}

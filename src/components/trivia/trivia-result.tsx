@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Grid2x2, Loader2, RotateCcw, Trophy } from "lucide-react";
+import { Grid2x2, Loader2, Play, RotateCcw, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
@@ -24,6 +25,8 @@ interface TriviaResultViewProps {
 export function TriviaResultView({ session, initialResult }: TriviaResultViewProps) {
   const router = useRouter();
   const { start, isStarting, gate } = useStartTriviaSession({ replace: true });
+  // Which of the two "go again" buttons was pressed, so only that one shows the spinner.
+  const [startingPractice, setStartingPractice] = useState<boolean | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["trivia-result", session.id],
@@ -54,7 +57,9 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
   const owedCampaign =
     gate ?? (!isCampaign && result.campaignGate?.required ? result.campaignGate.campaign : null);
 
-  const handleRetry = () => {
+  // Starts the same trivia again with the same timer and number of cards.
+  const startAgain = (practice: boolean) => {
+    setStartingPractice(practice);
     // A shared custom quiz can only be started by its link; the owner starts it by id.
     const slug = result.source.type === "custom" ? recallQuizSlug(result.source.id) : null;
     start({
@@ -62,9 +67,10 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
       ...(slug ? { slug } : { sourceId: result.source.id }),
       timerSeconds: session.timerSeconds,
       cardCount: session.cardCount,
-      practice: session.practice,
+      practice,
     });
   };
+  const spinnerOn = (practice: boolean) => isStarting && startingPractice === practice;
 
   return (
     <div className="flex flex-col items-center justify-center py-10 text-center gap-6">
@@ -73,12 +79,17 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
       </div>
       <div>
         <h1 className="text-3xl font-bold text-white font-fredoka mb-2">
-          {perfect ? "Perfect Score!" : "Quiz Complete!"}
+          {session.practice ? "Practice Complete!" : perfect ? "Perfect Score!" : "Quiz Complete!"}
         </h1>
         <p className="text-white/60 mb-1">{result.source.title}</p>
         <p className="text-white/80 text-lg">
           You got {result.correct} out of {result.total} correct.
         </p>
+        {session.practice && !owedCampaign && (
+          <p className="text-white/60 text-sm mt-2">
+            Ready to play it for real, without the pointer?
+          </p>
+        )}
       </div>
 
       {result.brand && (
@@ -105,24 +116,43 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
       )}
 
       <div className="flex gap-4 flex-wrap justify-center">
+        {!owedCampaign && session.practice && (
+          <Button
+            onClick={() => startAgain(false)}
+            disabled={isStarting}
+            className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka"
+          >
+            {spinnerOn(false) ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Play className="h-4 w-4 mr-2" />
+            )}
+            Play Now
+          </Button>
+        )}
         {!owedCampaign && (
           <Button
-            onClick={handleRetry}
+            onClick={() => startAgain(session.practice)}
             disabled={isStarting}
             variant="outline"
             className="border-white/20 text-white/80 hover:bg-white/10"
           >
-            {isStarting ? (
+            {spinnerOn(session.practice) ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <RotateCcw className="h-4 w-4 mr-2" />
             )}
-            Retry
+            {session.practice ? "Practise Again" : "Retry"}
           </Button>
         )}
         <Button
           onClick={() => router.push(exit.href)}
-          className="bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+          variant={session.practice && !owedCampaign ? "outline" : "default"}
+          className={
+            session.practice && !owedCampaign
+              ? "border-white/20 text-white/80 hover:bg-white/10"
+              : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+          }
         >
           <Grid2x2 className="h-4 w-4 mr-2" />
           {exit.label}

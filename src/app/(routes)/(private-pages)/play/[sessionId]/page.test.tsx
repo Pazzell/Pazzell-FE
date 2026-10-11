@@ -23,13 +23,14 @@ import TriviaPlayPage from "./page";
 
 const source = { type: "topic", id: "t1", title: "Football" };
 let status = "quiz";
+let practice = false;
 
 const session = () => ({
   id: "s1",
   status,
   source,
   isPreview: false,
-  practice: false,
+  practice,
   timerSeconds: 5,
   cardCount: 2,
   currentIndex: 0,
@@ -43,6 +44,7 @@ const gate = { required: false, counter: 1, threshold: 10, campaign: null as obj
 beforeEach(() => {
   vi.clearAllMocks();
   status = "quiz";
+  practice = false;
   gate.required = false;
   gate.campaign = null;
 
@@ -135,6 +137,41 @@ describe("Trivia play page", () => {
       practice: false,
     });
     expect(await screen.findByRole("button", { name: /Pick Another Topic/ })).toBeInTheDocument();
+    // A real play has nothing to "play for real".
+    expect(screen.queryByRole("button", { name: /Play Now/ })).not.toBeInTheDocument();
+  });
+
+  it("offers Play Now after a practice, starting the same trivia without the pointer", async () => {
+    status = "completed";
+    practice = true;
+    renderWithQuery(<TriviaPlayPage />);
+
+    expect(await screen.findByText("Practice Complete!")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /Play Now/ }));
+    expect(api.post).toHaveBeenCalledWith("/trivia/sessions", {
+      sourceType: "topic",
+      sourceId: "t1",
+      timerSeconds: 5,
+      cardCount: 2,
+      practice: false,
+    });
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/play/s2"));
+  });
+
+  it("can practise the same trivia again after a practice", async () => {
+    status = "completed";
+    practice = true;
+    renderWithQuery(<TriviaPlayPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /Practise Again/ }));
+    expect(api.post).toHaveBeenCalledWith("/trivia/sessions", {
+      sourceType: "topic",
+      sourceId: "t1",
+      timerSeconds: 5,
+      cardCount: 2,
+      practice: true,
+    });
   });
 
   it("offers the sponsored trivia instead of Retry when one is owed", async () => {

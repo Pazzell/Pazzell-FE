@@ -459,8 +459,7 @@ export default function SettingsPage() {
               Delete Your Account?
             </DialogTitle>
             <DialogDescription className="text-white/70">
-              This will permanently delete your account and all data — points, referral history, and puzzle
-              progress included. This action <span className="text-white font-semibold">cannot</span> be undone.
+              This will permanently delete your account and everything in it. This action <span className="text-white font-semibold">cannot</span> be undone.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
