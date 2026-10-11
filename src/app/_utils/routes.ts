@@ -25,6 +25,8 @@ export const routes = {
     SESSION_PLAY: (sessionId: string) => `/play/${sessionId}`,
     MY_QUIZZES: "/my-quizzes",
     MY_QUIZ_NEW: "/my-quizzes/new",
+    MY_QUIZ_GENERATE: "/my-quizzes/generate",
+    MY_QUIZ_GENERATE_FOR: (id: string) => `/my-quizzes/generate?quiz=${id}`,
     MY_QUIZ_EDIT: (id: string) => `/my-quizzes/${id}/edit`,
     MY_QUIZ_PREVIEW: (id: string) => `/my-quizzes/${id}/preview`,
   },

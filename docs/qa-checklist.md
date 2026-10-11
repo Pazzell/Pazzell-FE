@@ -68,6 +68,16 @@ browser and once on a phone-sized screen (360px wide).
 - [ ] Test play from the builder returns to the builder, and the plays number does not go up.
 - [ ] "New link" kills the old link; "Revoke link" unpublishes the quiz.
 - [ ] As a freemium player with one quiz, New Quiz shows the upgrade prompt.
+- [ ] "From a document" on My Quizzes: upload a text PDF, a .docx and a .txt in turn; each
+      returns cards within about a minute, with the sentence each card came from.
+- [ ] On the review screen, edit a question, switch the correct option, remove a card, then
+      save: the quiz opens in the editor with exactly the kept cards.
+- [ ] "From a document" inside a quiz's editor saves the cards to that quiz.
+- [ ] A scanned PDF and a file over 10MB each show a clear message and do not use up one of
+      today's documents.
+- [ ] The fourth document in a day as a freemium player shows the upgrade prompt.
+- [ ] As a freemium player who already has a quiz, "A new quiz" is unavailable and the cards
+      go to the existing quiz.
 - [ ] After Pro expires, extra quizzes show as Locked and cannot be published.
 
 ## Brand

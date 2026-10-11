@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, ListPlus, Pencil, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Check, ListPlus, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { BulkAddDialog } from "@/components/cards/bulk-add-dialog";
@@ -103,13 +104,21 @@ interface CardManagerProps {
   onChanged: () => void;
   /** Shown as "N of M needed" guidance. */
   minCards?: number;
+  /** Where "From a document" leads; omit to hide it (campaigns do not have it). */
+  generateHref?: string;
 }
 
 /**
  * The card editor shared by custom quizzes and brand campaigns: the card
  * format is identical, only the endpoints differ.
  */
-export function CardManager({ cards, endpoints, onChanged, minCards }: CardManagerProps) {
+export function CardManager({
+  cards,
+  endpoints,
+  onChanged,
+  minCards,
+  generateHref,
+}: CardManagerProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [editing, setEditing] = useState<TriviaCard | null>(null);
@@ -144,7 +153,19 @@ export function CardManager({ cards, endpoints, onChanged, minCards }: CardManag
             </p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {generateHref && (
+            <Button
+              asChild
+              variant="outline"
+              className="border-white/20 text-white/80 hover:bg-white/10"
+            >
+              <Link href={generateHref}>
+                <Sparkles className="h-4 w-4 mr-2" />
+                From a document
+              </Link>
+            </Button>
+          )}
           <Button
             type="button"
             variant="outline"

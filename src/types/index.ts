@@ -357,6 +357,43 @@ export interface CustomQuizResponse {
   cardCountBounds?: { available: number; min: number; max: number };
 }
 
+/** A card written from an uploaded document, waiting for the owner's review. */
+export interface DraftTriviaCard {
+  type: "definition";
+  text: string;
+  options: [string, string];
+  correctOptionIndex: 0 | 1;
+  /** The sentence in the document that supports the answer. Not saved with the card. */
+  quote: string;
+}
+
+export interface GenerateAllowance {
+  dailyLimit: number;
+  usedToday: number;
+  remaining: number;
+  resetsAt: string;
+}
+
+export interface GenerateInfoResponse {
+  success: boolean;
+  generate: GenerateAllowance & {
+    enabled: boolean;
+    fileTypes: string[];
+    maxFileBytes: number;
+    minCharacters: number;
+    count: { default: number; min: number; max: number };
+  };
+}
+
+export interface GenerateCardsResponse {
+  success: boolean;
+  suggestedTitle: string | null;
+  requested: number;
+  cards: DraftTriviaCard[];
+  document: { name: string | null; kind: "pdf" | "docx" | "text"; characters: number; sampled: boolean };
+  usage: GenerateAllowance;
+}
+
 export interface CustomQuizStatsResponse {
   success: boolean;
   stats: { plays: number; averageScore: number | null; averageScorePercent: number | null };
