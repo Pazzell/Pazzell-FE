@@ -321,6 +321,7 @@ export default function EditQuizPage() {
           cards={cards}
           minCards={minCards}
           onChanged={refresh}
+          generateHref={routes.USER.MY_QUIZ_GENERATE_FOR(id)}
           endpoints={{
             create: ENDPOINTS.CUSTOM_QUIZ_CARDS(id),
             bulk: ENDPOINTS.CUSTOM_QUIZ_CARDS_BULK(id),

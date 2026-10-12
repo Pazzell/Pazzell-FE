@@ -357,6 +357,51 @@ export interface CustomQuizResponse {
   cardCountBounds?: { available: number; min: number; max: number };
 }
 
+/** A card written from an uploaded document, waiting for the owner's review. */
+export interface DraftTriviaCard {
+  type: "definition";
+  text: string;
+  options: [string, string];
+  correctOptionIndex: 0 | 1;
+  /** The sentence in the document that supports the answer. Not saved with the card. */
+  quote: string;
+}
+
+export interface GenerateAllowance {
+  dailyLimit: number;
+  usedToday: number;
+  remaining: number;
+  resetsAt: string;
+}
+
+export interface GenerateInfoResponse {
+  success: boolean;
+  generate: GenerateAllowance & {
+    enabled: boolean;
+    fileTypes: string[];
+    maxFileBytes: number;
+    minCharacters: number;
+    count: { default: number; min: number; max: number };
+  };
+}
+
+export interface GenerateCardsResponse {
+  success: boolean;
+  suggestedTitle: string | null;
+  requested: number;
+  cards: DraftTriviaCard[];
+  document: { name: string | null; kind: "pdf" | "docx" | "text"; characters: number; sampled: boolean };
+  usage: GenerateAllowance;
+}
+
+/** Admins write cards for a topic with no daily allowance, so none is reported. */
+export interface AdminGenerateInfoResponse {
+  success: boolean;
+  generate: Omit<GenerateInfoResponse["generate"], keyof GenerateAllowance>;
+}
+
+export type AdminGenerateCardsResponse = Omit<GenerateCardsResponse, "usage">;
+
 export interface CustomQuizStatsResponse {
   success: boolean;
   stats: { plays: number; averageScore: number | null; averageScorePercent: number | null };
@@ -509,6 +554,33 @@ export interface ImportCardsResult {
 export interface ImportCardsResponse {
   success: boolean;
   import: ImportCardsResult;
+}
+
+/** A built-in topic whose text questions can be loaded from the admin shell. */
+export interface StarterTopic {
+  slug: string;
+  name: string;
+  description: string;
+  /** null until the topic exists. */
+  topicId: string | null;
+  total: number;
+  /** How many of the built-in questions the topic doesn't have yet. */
+  missing: number;
+}
+
+export interface StarterTopicsResponse {
+  success: boolean;
+  topics: StarterTopic[];
+}
+
+export interface StarterLoadResult {
+  created: number;
+  topics: { slug: string; name: string; topicId: string; topicCreated: boolean; created: number }[];
+}
+
+export interface StarterLoadResponse {
+  success: boolean;
+  loaded: StarterLoadResult;
 }
 
 export interface AdminTopicsResponse {

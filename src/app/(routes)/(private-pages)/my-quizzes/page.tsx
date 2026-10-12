@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Copy, Eye, FolderKanban, Layers, Pencil, Plus, Trash2 } from "lucide-react";
+import { Copy, Eye, FolderKanban, Layers, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -82,14 +82,26 @@ export default function MyQuizzesPage() {
               </p>
             )}
           </div>
-          <Button
-            onClick={handleNew}
-            disabled={!data}
-            className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Quiz
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              asChild
+              variant="outline"
+              className="border-white/20 text-white/80 hover:bg-white/10 font-fredoka"
+            >
+              <Link href={routes.USER.MY_QUIZ_GENERATE}>
+                <Sparkles className="h-4 w-4 mr-2" />
+                From a document
+              </Link>
+            </Button>
+            <Button
+              onClick={handleNew}
+              disabled={!data}
+              className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Quiz
+            </Button>
+          </div>
         </div>
 
         {isLoading && (

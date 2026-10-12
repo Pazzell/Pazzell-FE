@@ -486,6 +486,68 @@ Invalid cards return `400 INVALID_CARD`; in bulk the message names the row (`Car
 `details.index` is its zero-based position. Editor responses return a card as
 `{ id, type, imageUrl, text, options, correctOptionIndex, attribution, createdAt, updatedAt }`.
 
+### 7.4 Cards from a document
+
+A player uploads their study material and gets draft cards to review. The server reads the text,
+asks Claude to write definition cards from it, and keeps only the cards whose supporting sentence
+really appears in the document. **Nothing is saved by this endpoint.** The drafts come back in the
+card format of 7.3, so the review screen edits them and saves the ones the player keeps through the
+existing endpoints.
+
+`GET /custom-quizzes/generate` — Auth. What the upload screen needs:
+
+```json
+{ "success": true, "generate": {
+  "enabled": true,
+  "fileTypes": ["pdf", "docx", "txt", "md"], "maxFileBytes": 10485760, "minCharacters": 300,
+  "count": { "default": 10, "min": 1, "max": 30 },
+  "dailyLimit": 3, "usedToday": 1, "remaining": 2, "resetsAt": "2026-10-12T00:00:00.000Z" } }
+```
+
+Hide or disable the feature when `enabled` is `false` (no API key on the server), and show
+`remaining` of `dailyLimit`. The allowance resets at `resetsAt` (midnight UTC).
+
+`POST /custom-quizzes/generate` — Auth. Either `multipart/form-data` with the file in a field
+named `document`, or JSON `{ "text": "pasted notes…" }`. Optional `count` (1–30, default 10).
+It can take up to a minute, so show progress and do not retry automatically.
+
+```json
+{ "success": true,
+  "suggestedTitle": "Financial accounting basics",
+  "requested": 10,
+  "cards": [
+    { "type": "definition",
+      "text": "What does the accounting equation state?",
+      "options": ["Assets = liabilities + equity", "Assets = revenue - expenses"],
+      "correctOptionIndex": 0,
+      "quote": "The accounting equation states that assets equal liabilities plus owner's equity." }
+  ],
+  "document": { "name": "accounting.pdf", "kind": "pdf", "characters": 48211, "sampled": false },
+  "usage": { "dailyLimit": 3, "usedToday": 2, "remaining": 1, "resetsAt": "2026-10-12T00:00:00.000Z" } }
+```
+
+- `cards` may hold fewer than `requested`: a card the document does not support is dropped.
+- `quote` is the sentence from the document that proves the answer. Show it on the review
+  screen so the player can check each card; it is not part of a saved card.
+- `document.kind` is `pdf`, `docx` or `text`. `sampled` is `true` when the document was longer
+  than about 60,000 characters and the cards were written from evenly spaced parts of it.
+- Only PDFs with real text work; a scanned PDF returns `DOCUMENT_UNREADABLE`. Only the first 150
+  pages of a PDF are read.
+
+**Review, then save.** Let the player edit the text and options, change which option is correct
+and remove cards. Then:
+
+1. `POST /custom-quizzes` with the title (prefill it from `suggestedTitle`), or use a quiz the
+   player already owns. The freemium quiz limit applies here as usual.
+2. `POST /custom-quizzes/:id/cards/bulk` with `{ "cards": [ …the kept drafts… ] }`. Extra
+   fields such as `quote` are ignored.
+3. `POST /custom-quizzes/:id/publish` when the player is ready (at least 5 cards).
+
+Limits: freemium players may generate from `customQuiz.generateDailyLimitFree` (3) documents a
+day and Pro players from `customQuiz.generateDailyLimitPro` (20). A request that fails does not
+use up the allowance. Over the limit returns `429 GENERATION_LIMIT_REACHED` with
+`details: { dailyLimit, resetsAt, isPro }`; offer Pro when `isPro` is `false`.
+
 ---
 
 ## 8. Brand campaigns
@@ -643,6 +705,7 @@ any other role).
 | `trivia.minCards` / `trivia.maxCards` | 5 / 30 | Yes |
 | `trivia.imagePercent` | 70 | Yes (0–100) |
 | `customQuiz.freeLimit` / `customQuiz.minCardsToPublish` | 1 / 5 | Yes |
+| `customQuiz.generateDailyLimitFree` / `customQuiz.generateDailyLimitPro` | 3 / 20 | Yes (documents turned into trivia per player per day) |
 | `campaign.minCardsToPublish` | 5 | Yes |
 | `campaign.interruptionThreshold` | 10 | Yes (positive integer) |
 | `campaign.priceAmount` / `campaign.durationDays` | 15000 / 30 | Yes |
@@ -680,8 +743,10 @@ adds it to a topic as an image card with two options. No API key is needed.
 | GET | `/admin/trivia/import/categories` | `{ categories: [ { key, topicName, topicSlug, supportsCountry } ], countries, maxCount }` |
 | POST | `/admin/trivia/import` | `{ category, count?, topicId?, country? }` |
 
-- `category`: `animals`, `plants`, `food`, `tech`, `footballers`, `musicians`, `celebrities` or
-  `pastors`.
+- `category`: `animals`, `plants`, `food`, `tech`, `footballers`, `musicians`, `celebrities`,
+  `pastors`, `instruments`, `music-symbols-beginner`, `music-symbols-intermediate` or
+  `music-symbols-advanced`. The three music-symbol categories use a fixed list of about 20
+  symbols each and go to the `Music Theory: Beginner / Intermediate / Advanced` topics.
 - `count`: how many cards to add, 1 to 50 (default 20). Call it again for more: each call
   continues after the entries already imported, most famous first.
 - `topicId`: the topic to add to. Without it the cards go to the category's own topic
@@ -706,6 +771,55 @@ a free licence (public domain, CC0, CC BY, CC BY-SA) are taken; the credit is st
 card's `attribution`. Imported cards are ordinary cards afterwards: review, edit or delete them
 with the card endpoints above. Errors: `400 INVALID_IMPORT_CATEGORY`, `400 INVALID_IMPORT_COUNT`,
 `400 INVALID_IMPORT_COUNTRY`, `502 IMPORT_SOURCE_UNAVAILABLE`.
+
+### Loading the starter questions
+
+The server ships with built-in definition questions for a set of topics (football, biology,
+food, the three music theory levels and musical instruments). An admin can load them without
+the seed script.
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/trivia/starter` | `{ topics: [ { slug, name, description, topicId, total, missing } ] }` |
+| POST | `/admin/trivia/starter` | `{ slugs? }` |
+
+- `topicId` is `null` until the topic exists; `missing` is how many of its `total` built-in
+  questions are not in the topic yet.
+- `slugs`: which topics to load. Without it every topic is loaded. A topic that does not
+  exist is created.
+- Only the questions a topic does not already have are added (matched by their text), so the
+  call is safe to repeat. A built-in question an admin deleted comes back on the next load; one
+  an admin edited (options only) is left as it is.
+
+```json
+{ "success": true,
+  "loaded": { "created": 44,
+              "topics": [ { "slug": "music-theory-beginner", "name": "Music Theory: Beginner",
+                            "topicId": "6701…", "topicCreated": true, "created": 44 } ] } }
+```
+
+Error: `400 INVALID_STARTER_TOPIC`.
+
+### Writing cards from a document
+
+An admin can have definition cards written from a document, the same way players do for their
+own quizzes (section 7.4), and add them to a topic.
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/trivia/generate` | `{ generate: { enabled, fileTypes, maxFileBytes, minCharacters, count } }` |
+| POST | `/admin/trivia/generate` | `multipart/form-data` with the file in `document`, or JSON `{ text }`. Optional `count`, `topicId` |
+
+- Request and response are those of `POST /custom-quizzes/generate`, except that admins have no
+  daily allowance: there are no `dailyLimit` / `remaining` fields in the info and no `usage` in
+  the result, and `GENERATION_LIMIT_REACHED` is never returned. The 10 requests per 10 minutes
+  rate limit still applies.
+- `topicId`: the topic the cards are for. Its existing questions (the newest 300) are not
+  written again, so the same document can be run several times for more cards. An unknown topic
+  returns `404 TOPIC_NOT_FOUND`.
+- Nothing is saved. Show the drafts for review, then send the kept ones to
+  `POST /admin/trivia/topics/:id/cards/bulk`. They are live for players as soon as they are saved.
+- Only definition cards are written. The pictures in a document are not read.
 
 ### Campaigns and revenue
 
@@ -792,7 +906,7 @@ returns the original withdrawal and never withdraws twice. Insufficient balance 
 | `UPGRADE_REQUIRED` | 403 | create/publish custom quiz | Freemium limit reached, or quiz locked. Show the Pro prompt |
 | `INVALID_TIMER` | 400 | start, quiz defaults | Timer outside 1–7 or not a whole number |
 | `INVALID_PRACTICE` | 400 | start session | `practice` is not `true` or `false` |
-| `INVALID_CARD_COUNT` | 400 | start session, quiz defaults | Outside `details.min`–`details.max` |
+| `INVALID_CARD_COUNT` | 400 | start session, quiz defaults, generate from a document | Outside `details.min`–`details.max` |
 | `NO_CARDS` | 400 | start session | The source has no cards |
 | `INVALID_SOURCE` | 400 | start session | Bad `sourceType` |
 | `TOPIC_NOT_FOUND` / `QUIZ_NOT_FOUND` / `CAMPAIGN_NOT_FOUND` | 404 | | Unknown, not yours, or not available |
@@ -809,6 +923,13 @@ returns the original withdrawal and never withdraws twice. Insufficient balance 
 | `QUIZ_NOT_LIVE` | 409 | regenerate link | Publish first |
 | `INVALID_CARD` | 400 | cards | See 7.3; `details.index` in bulk |
 | `CARD_NOT_FOUND` | 404 | cards | |
+| `AI_NOT_CONFIGURED` | 503 | generate from a document | The server has no Claude API key. Hide the feature |
+| `AI_UNAVAILABLE` | 502 | generate from a document | The AI request failed. Let the player retry |
+| `DOCUMENT_REQUIRED` / `DOCUMENT_TOO_LARGE` / `INVALID_DOCUMENT_TYPE` | 400 | generate from a document | No file or text; over 10MB; not a PDF, .docx or text file |
+| `DOCUMENT_UNREADABLE` | 400 | generate from a document | Scanned, password-protected or damaged PDF. Show the message |
+| `DOCUMENT_TOO_SHORT` | 400 | generate from a document | Under `details.minCharacters` characters of text |
+| `NO_CARDS_GENERATED` | 422 | generate from a document | No card could be backed by the document. Suggest another document |
+| `GENERATION_LIMIT_REACHED` | 429 | generate from a document | Daily allowance used; `details: { dailyLimit, resetsAt, isPro }` |
 | `INVALID_IMAGE_TYPE` / `IMAGE_REQUIRED` / `IMAGE_TOO_LARGE` / `LIMIT_FILE_SIZE` / `INVALID_IMAGE_URL` | 400 | uploads | See section 10 |
 | `CAMPAIGN_NOT_EDITABLE` | 409 | brand edits | Only drafts are editable |
 | `CAMPAIGN_NOT_PAYABLE` | 409 | checkout | Already paid or not payable |
@@ -833,6 +954,7 @@ Per user (per IP when logged out). Exceeding one returns `429 RATE_LIMITED`.
 | Checkout start and payment verify | 10 / 10 minutes |
 | Brand URL click | 20 / minute |
 | Image upload | 60 / 10 minutes |
+| Generate cards from a document | 10 / 10 minutes, plus the daily allowance in 7.4 |
 | Create/edit quizzes, campaigns and cards | 120 / minute |
 
 ---
@@ -855,6 +977,8 @@ Per user (per IP when logged out). Exceeding one returns `429 RATE_LIMITED`.
 | `PAYSTACK_SECRET_KEY`, `TRANSFER_PROVIDER` | Payment gateway and withdrawals |
 | `PAYMENT_CURRENCY`, `PRO_PRICE_AMOUNT`, `PRO_DURATION_DAYS`, `CAMPAIGN_PRICE_AMOUNT`, `CAMPAIGN_DURATION_DAYS`, `CAMPAIGN_INTERRUPTION_THRESHOLD`, `GAME_SUBMIT_GRACE_MS`, `TRIVIA_IMAGE_PERCENT` | Defaults for the settings in section 9 (an admin override wins) |
 | `WIKIMEDIA_CONTACT` | Contact email or URL sent to Wikimedia with image-import requests |
+| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Claude API key for trivia from a document (without it the feature answers `503 AI_NOT_CONFIGURED`), and the model that writes the cards (default `claude-haiku-4-5-20251001`) |
+| `QUIZ_GENERATE_DAILY_LIMIT_FREE`, `QUIZ_GENERATE_DAILY_LIMIT_PRO` | Defaults for the daily document allowance (an admin override wins) |
 | `STORAGE_PROVIDER` (`firebase` \| `aws` \| `memory`), `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET_NAME`, `AWS_S3_PUBLIC_BASE_URL`, `FIREBASE_STORAGE_BUCKET` | Image storage |
 | `TYPE`, `PROJECT_ID`, `PRIVATE_KEY_ID`, `PRIVATE_KEY`, `CLIENT_EMAIL`, `CLIENT_ID`, `AUTH_URI`, `TOKEN_URI`, `AUTH_PROVIDER_CERT_URL`, `CLIENT_CERT_URL`, `UNIVERSE_DOMAIN` | Firebase service account (Google sign-in, Firebase storage) |
 | `EMAIL_PROVIDER`, `SMTP_*`, `SENDGRID_API_KEY`, `TWILIO_SMTP_*`, `AWS_SES_FROM_EMAIL` | Email |

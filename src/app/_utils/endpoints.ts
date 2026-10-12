@@ -44,6 +44,7 @@ export const ENDPOINTS = {
 
   // Custom trivia (owner)
   CUSTOM_QUIZZES: "/custom-quizzes",
+  CUSTOM_QUIZ_GENERATE: "/custom-quizzes/generate",
   CUSTOM_QUIZ: (id: string) => `/custom-quizzes/${id}`,
   CUSTOM_QUIZ_PREVIEW: (id: string) => `/custom-quizzes/${id}/preview`,
   CUSTOM_QUIZ_CARDS: (id: string) => `/custom-quizzes/${id}/cards`,
@@ -95,6 +96,8 @@ export const ENDPOINTS = {
     `/admin/trivia/topics/${id}/cards/${cardId}`,
   ADMIN_TRIVIA_IMPORT_CATEGORIES: "/admin/trivia/import/categories",
   ADMIN_TRIVIA_IMPORT: "/admin/trivia/import",
+  ADMIN_TRIVIA_STARTER: "/admin/trivia/starter",
+  ADMIN_TRIVIA_GENERATE: "/admin/trivia/generate",
   ADMIN_CAMPAIGNS: "/admin/campaigns",
   ADMIN_CAMPAIGN: (id: string) => `/admin/campaigns/${id}`,
   ADMIN_CAMPAIGN_PAUSE: (id: string) => `/admin/campaigns/${id}/pause`,
