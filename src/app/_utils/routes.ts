@@ -47,6 +47,7 @@ export const routes = {
     DASHBOARD: "/admin",
     TOPICS: "/admin/topics",
     TOPIC: (id: string) => `/admin/topics/${id}`,
+    TOPIC_GENERATE: (id: string) => `/admin/topics/${id}/generate`,
     CAMPAIGNS: "/admin/campaigns",
     CAMPAIGN: (id: string) => `/admin/campaigns/${id}`,
     SETTINGS: "/admin/settings",

@@ -394,6 +394,14 @@ export interface GenerateCardsResponse {
   usage: GenerateAllowance;
 }
 
+/** Admins write cards for a topic with no daily allowance, so none is reported. */
+export interface AdminGenerateInfoResponse {
+  success: boolean;
+  generate: Omit<GenerateInfoResponse["generate"], keyof GenerateAllowance>;
+}
+
+export type AdminGenerateCardsResponse = Omit<GenerateCardsResponse, "usage">;
+
 export interface CustomQuizStatsResponse {
   success: boolean;
   stats: { plays: number; averageScore: number | null; averageScorePercent: number | null };
@@ -546,6 +554,33 @@ export interface ImportCardsResult {
 export interface ImportCardsResponse {
   success: boolean;
   import: ImportCardsResult;
+}
+
+/** A built-in topic whose text questions can be loaded from the admin shell. */
+export interface StarterTopic {
+  slug: string;
+  name: string;
+  description: string;
+  /** null until the topic exists. */
+  topicId: string | null;
+  total: number;
+  /** How many of the built-in questions the topic doesn't have yet. */
+  missing: number;
+}
+
+export interface StarterTopicsResponse {
+  success: boolean;
+  topics: StarterTopic[];
+}
+
+export interface StarterLoadResult {
+  created: number;
+  topics: { slug: string; name: string; topicId: string; topicCreated: boolean; created: number }[];
+}
+
+export interface StarterLoadResponse {
+  success: boolean;
+  loaded: StarterLoadResult;
 }
 
 export interface AdminTopicsResponse {

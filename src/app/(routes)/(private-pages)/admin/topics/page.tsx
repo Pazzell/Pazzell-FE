@@ -4,11 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, ChevronRight, DownloadCloud, Layers, Plus } from "lucide-react";
+import { BookOpen, ChevronRight, DownloadCloud, Layers, Library, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageError } from "@/components/ui/page-error";
 import { ImportCardsDialog } from "@/components/admin/import-cards-dialog";
+import { LoadStarterDialog } from "@/components/admin/load-starter-dialog";
 import { TopicFormDialog } from "@/components/admin/topic-form-dialog";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
@@ -21,6 +22,14 @@ export default function AdminTopicsPage() {
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [loadingStarter, setLoadingStarter] = useState(false);
+
+  // New cards (and maybe a new topic) are live for players at once.
+  const refreshTopics = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-topics"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-topic"] });
+    queryClient.invalidateQueries({ queryKey: ["trivia-topics"] });
+  };
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["admin-topics"],
@@ -36,6 +45,14 @@ export default function AdminTopicsPage() {
           <p className="text-white/70">Create and manage topics and their cards</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => setLoadingStarter(true)}
+            className="border-white/20 text-white/80 hover:bg-white/10"
+          >
+            <Library className="h-4 w-4 mr-2" />
+            Load Starter Questions
+          </Button>
           <Button
             variant="outline"
             onClick={() => setImporting(true)}
@@ -123,12 +140,12 @@ export default function AdminTopicsPage() {
       <ImportCardsDialog
         open={importing}
         onOpenChange={setImporting}
-        onImported={() => {
-          // The import may have created the category's topic, and players see the cards at once.
-          queryClient.invalidateQueries({ queryKey: ["admin-topics"] });
-          queryClient.invalidateQueries({ queryKey: ["admin-topic"] });
-          queryClient.invalidateQueries({ queryKey: ["trivia-topics"] });
-        }}
+        onImported={refreshTopics}
+      />
+      <LoadStarterDialog
+        open={loadingStarter}
+        onOpenChange={setLoadingStarter}
+        onLoaded={refreshTopics}
       />
       <TopicFormDialog
         open={creating}

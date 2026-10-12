@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, DownloadCloud, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, DownloadCloud, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
@@ -120,6 +120,16 @@ export default function AdminTopicPage() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button
+            asChild
+            variant="outline"
+            className="border-white/20 text-white/80 hover:bg-white/10"
+          >
+            <Link href={routes.ADMIN.TOPIC_GENERATE(id)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              Cards from a Document
+            </Link>
+          </Button>
           <Button
             variant="outline"
             onClick={() => setImporting(true)}
