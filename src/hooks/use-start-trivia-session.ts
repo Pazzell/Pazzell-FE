@@ -15,6 +15,7 @@ import type {
 
 export const TRIVIA_TIMER_STORAGE_KEY = "pazzell_trivia_timer_seconds";
 export const TRIVIA_PRACTICE_STORAGE_KEY = "pazzell_trivia_practice";
+export const TRIVIA_IMAGE_PERCENT_STORAGE_KEY = "pazzell_trivia_image_percent";
 
 export interface StartTriviaSessionPayload {
   sourceType: TriviaSourceType;
@@ -22,6 +23,8 @@ export interface StartTriviaSessionPayload {
   slug?: string;
   timerSeconds?: number;
   cardCount?: number;
+  /** Share of picture cards, 0 to 100; left out, the server's default mix applies. */
+  imagePercent?: number;
   /** Practice mode: the correct option is pointed at on every question. */
   practice?: boolean;
 }

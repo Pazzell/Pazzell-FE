@@ -180,6 +180,7 @@ export interface TriviaTopic {
   coverImageUrl?: string | null;
   cardCount: number;
   cardCountBounds: { available: number; min: number; max: number };
+  cardMix?: CardMix;
 }
 
 export interface TriviaTopicsResponse {
@@ -215,6 +216,13 @@ export interface CampaignGateDetails {
   endsAt: string;
 }
 
+/** How many cards of each kind a source has, and the picture share used when none is chosen. */
+export interface CardMix {
+  imageCards: number;
+  definitionCards: number;
+  defaultImagePercent: number;
+}
+
 export interface TriviaSession {
   id: string;
   status: TriviaSessionStatus;
@@ -224,6 +232,8 @@ export interface TriviaSession {
   practice: boolean;
   timerSeconds: number;
   cardCount: number;
+  /** The picture share the player chose; null when they left it to the default. */
+  imagePercent?: number | null;
   currentIndex: number;
   brand: CampaignBrand | null;
   startedAt: string;
@@ -355,6 +365,7 @@ export interface CustomQuizResponse {
   // Sent with the owner's full view of a quiz (GET /custom-quizzes/:id and /preview).
   minCardsToPublish?: number;
   cardCountBounds?: { available: number; min: number; max: number };
+  cardMix?: CardMix;
 }
 
 /** A card written from an uploaded document, waiting for the owner's review. */
@@ -428,6 +439,7 @@ export interface CustomQuizPlayInfo {
     defaultTimerSeconds: number;
     defaultCardCount: number;
     cardCountBounds: { available: number; min: number; max: number };
+    cardMix?: CardMix;
     isOwner: boolean;
   };
 }
@@ -525,6 +537,8 @@ export interface AdminConfigResponse {
 
 export interface AdminTriviaTopic extends TriviaTopic {
   isActive: boolean;
+  /** Share of picture cards in a session; null uses the global setting. */
+  imagePercent?: number | null;
 }
 
 export interface ImportCategory {

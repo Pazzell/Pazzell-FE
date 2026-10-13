@@ -70,6 +70,7 @@ export default function TriviaTopicSetupPage() {
         ) : (
           <SessionSetup
             bounds={topic.cardCountBounds}
+            cardMix={topic.cardMix}
             isStarting={isStarting}
             onStart={(picked) => {
               setChoice(picked);

@@ -90,6 +90,7 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
       ...(slug ? { slug } : { sourceId: result.source.id }),
       timerSeconds: session.timerSeconds,
       cardCount: session.cardCount,
+      ...(typeof session.imagePercent === "number" ? { imagePercent: session.imagePercent } : {}),
       practice,
     });
   };

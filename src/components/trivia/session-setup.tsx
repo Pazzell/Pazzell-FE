@@ -1,23 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock3, Layers, Loader2, Pointer } from "lucide-react";
+import { Clock3, Image as ImageIcon, Layers, Loader2, Pointer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useGameSettings } from "@/hooks/use-game-settings";
 import {
+  TRIVIA_IMAGE_PERCENT_STORAGE_KEY,
   TRIVIA_PRACTICE_STORAGE_KEY,
   TRIVIA_TIMER_STORAGE_KEY,
 } from "@/hooks/use-start-trivia-session";
 import { cn } from "@/lib/utils";
+import type { CardMix } from "@/types";
 
 const DEFAULT_CARD_COUNT = 10;
+const IMAGE_PERCENT_STEP = 10;
 
 interface SessionSetupProps {
   bounds: { min: number; max: number };
   /** Preferred starting values (e.g. a quiz creator's defaults); clamped to the allowed range. */
   defaultTimerSeconds?: number;
   defaultCardCount?: number;
+  /** The source's pictures and definitions; the mix picker shows only when it has both. */
+  cardMix?: CardMix;
   startLabel?: string;
   isStarting: boolean;
   onStart: (choice: SessionChoice) => void;
@@ -26,17 +31,20 @@ interface SessionSetupProps {
 export interface SessionChoice {
   timerSeconds: number;
   cardCount: number;
+  /** Share of picture cards; absent when the trivia has only one kind of card. */
+  imagePercent?: number;
   practice: boolean;
 }
 
 /**
- * The choices made before any trivia starts: time per question, number of cards, and
- * whether to practise (the correct option is pointed at on every question).
+ * The choices made before any trivia starts: time per question, number of cards, the mix
+ * of picture and short-definition questions, and whether to practise (the correct option is pointed at on every question).
  */
 export function SessionSetup({
   bounds,
   defaultTimerSeconds,
   defaultCardCount,
+  cardMix,
   startLabel = "Start Quiz",
   isStarting,
   onStart,
@@ -57,6 +65,17 @@ export function SessionSetup({
     setCardCount(Math.min(bounds.max, Math.max(bounds.min, preferred)));
   }, [defaultCardCount, bounds.min, bounds.max]);
 
+  // The player's own last choice wins; until they make one, the trivia's default applies.
+  const canMix = !!cardMix && cardMix.imageCards > 0 && cardMix.definitionCards > 0;
+  const defaultImagePercent = cardMix?.defaultImagePercent ?? 0;
+  const [imagePercent, setImagePercent] = useState(defaultImagePercent);
+  const [mixChanged, setMixChanged] = useState(false);
+  useEffect(() => {
+    const stored = localStorage.getItem(TRIVIA_IMAGE_PERCENT_STORAGE_KEY);
+    const preferred = stored === null || stored === "" ? defaultImagePercent : Number(stored);
+    setImagePercent(Math.min(100, Math.max(0, Number.isFinite(preferred) ? preferred : defaultImagePercent)));
+  }, [defaultImagePercent]);
+
   const [practice, setPractice] = useState(false);
   useEffect(() => {
     setPractice(localStorage.getItem(TRIVIA_PRACTICE_STORAGE_KEY) === "on");
@@ -65,7 +84,10 @@ export function SessionSetup({
   const handleStart = () => {
     localStorage.setItem(TRIVIA_TIMER_STORAGE_KEY, String(timerSeconds));
     localStorage.setItem(TRIVIA_PRACTICE_STORAGE_KEY, practice ? "on" : "off");
-    onStart({ timerSeconds, cardCount, practice });
+    if (canMix && mixChanged) {
+      localStorage.setItem(TRIVIA_IMAGE_PERCENT_STORAGE_KEY, String(imagePercent));
+    }
+    onStart({ timerSeconds, cardCount, practice, ...(canMix ? { imagePercent } : {}) });
   };
 
   return (
@@ -117,6 +139,33 @@ export function SessionSetup({
           </>
         )}
       </div>
+
+      {canMix && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between text-white/80 text-sm font-medium">
+            <span className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" />
+              Picture questions
+            </span>
+            <span className="text-white font-fredoka text-xl">{imagePercent}%</span>
+          </div>
+          <Slider
+            aria-label="Picture questions"
+            min={0}
+            max={100}
+            step={IMAGE_PERCENT_STEP}
+            value={[imagePercent]}
+            onValueChange={([v]) => {
+              setImagePercent(v);
+              setMixChanged(true);
+            }}
+          />
+          <div className="flex justify-between text-xs text-white/40">
+            <span>All short definitions</span>
+            <span>All pictures</span>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-1">

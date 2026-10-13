@@ -91,6 +91,7 @@ export default function PreviewQuizPage() {
               </p>
               <SessionSetup
                 bounds={bounds}
+                cardMix={data.cardMix}
                 defaultTimerSeconds={quiz.defaultTimerSeconds}
                 defaultCardCount={quiz.defaultCardCount}
                 startLabel="Start Test Play"

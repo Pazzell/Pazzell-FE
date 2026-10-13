@@ -141,6 +141,7 @@ export default function SharedQuizPage() {
         {loggedIn && info && !gate && (
           <SessionSetup
             bounds={info.cardCountBounds}
+            cardMix={info.cardMix}
             defaultTimerSeconds={info.defaultTimerSeconds}
             defaultCardCount={info.defaultCardCount}
             isStarting={isStarting}

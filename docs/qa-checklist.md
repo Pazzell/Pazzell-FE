@@ -14,6 +14,12 @@ browser and once on a phone-sized screen (360px wide).
 
 ## Trivia (topics)
 
+- [ ] Admin, topic form: unticking "Use the default" shows the "Picture questions" slider (0 to
+      100%); the players' slider for that topic then starts there, and ticking the box
+      again returns it to the share in Settings.
+- [ ] Setup: "Picture questions" runs 0 to 100% and shows only when the trivia has both
+      pictures and short definitions; 0% serves only definitions, 100% only pictures, and the
+      last value the player picked is remembered.
 - [ ] The topic list loads in alphabetical order; a topic with no cover shows the placeholder.
 - [ ] Typing in "Search topics" narrows the list by name or description; a search with no
       match says so, and the clear button brings every topic back.

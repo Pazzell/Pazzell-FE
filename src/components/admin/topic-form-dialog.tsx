@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { api, getApiError } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
@@ -30,11 +31,16 @@ interface TopicFormDialogProps {
   onSaved: (topicId: string) => void;
 }
 
+// Where the slider starts when a topic stops following the default.
+const DEFAULT_IMAGE_PERCENT = 50;
+
 export function TopicFormDialog({ open, onOpenChange, topic, onSaved }: TopicFormDialogProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
+  // null: the topic follows the global picture share from Settings.
+  const [imagePercent, setImagePercent] = useState<number | null>(null);
   const [image, setImage] = useState<File | null>(null);
 
   useEffect(() => {
@@ -42,12 +48,19 @@ export function TopicFormDialog({ open, onOpenChange, topic, onSaved }: TopicFor
     setName(topic?.name ?? "");
     setDescription(topic?.description ?? "");
     setIsActive(topic?.isActive ?? true);
+    setImagePercent(topic?.imagePercent ?? null);
     setImage(null);
   }, [open, topic]);
 
   const save = useMutation({
     mutationFn: async () => {
-      const fields = { name: name.trim(), description: description.trim(), isActive };
+      const fields = {
+        name: name.trim(),
+        description: description.trim(),
+        isActive,
+        // Empty means "use the default".
+        imagePercent: imagePercent ?? "",
+      };
       // The cover travels as a file, so a new one means a multipart body.
       let body: FormData | typeof fields = fields;
       if (image) {
@@ -136,6 +149,44 @@ export function TopicFormDialog({ open, onOpenChange, topic, onSaved }: TopicFor
             />
             Active
           </label>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-white/80 text-sm font-medium">Picture questions</span>
+              <label className="flex items-center gap-2 text-white/80 text-sm">
+                <Checkbox
+                  checked={imagePercent === null}
+                  onCheckedChange={(checked) =>
+                    setImagePercent(checked === true ? null : DEFAULT_IMAGE_PERCENT)
+                  }
+                />
+                Use the default
+              </label>
+            </div>
+            {imagePercent === null ? (
+              <p className="text-white/50 text-sm">
+                This topic starts on the picture share set in Settings.
+              </p>
+            ) : (
+              <>
+                <Slider
+                  aria-label="Picture questions"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={[imagePercent]}
+                  onValueChange={([value]) => setImagePercent(value)}
+                />
+                <div className="flex justify-between text-sm text-white/70">
+                  <span>{imagePercent}% pictures</span>
+                  <span>{100 - imagePercent}% short definitions</span>
+                </div>
+                <p className="text-white/50 text-xs">
+                  Where the players&apos; slider starts for this topic. They can change it.
+                </p>
+              </>
+            )}
+          </div>
 
           <div className="space-y-2">
             <Label className="text-white/80">Cover image (optional)</Label>
