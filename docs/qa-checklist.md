@@ -14,8 +14,10 @@ browser and once on a phone-sized screen (360px wide).
 
 ## Trivia (topics)
 
-- [ ] The topic list loads; a topic with no cover shows the placeholder.
-- [ ] Setup: the timer slider runs 1 to 7 seconds and remembers the last choice; the card
+- [ ] The topic list loads in alphabetical order; a topic with no cover shows the placeholder.
+- [ ] Typing in "Search topics" narrows the list by name or description; a search with no
+      match says so, and the clear button brings every topic back.
+- [ ] Setup: the timer slider runs 1 to 15 seconds and remembers the last choice; the card
       slider respects the topic's minimum and maximum.
 - [ ] Setup: the Practice toggle is off the first time and remembers the last choice.
 - [ ] Start Quiz goes straight to the first question. There is no study screen.

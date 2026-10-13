@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import confetti from "canvas-confetti";
 import { Grid2x2, Loader2, Play, RotateCcw, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/ui/page-loader";
@@ -37,6 +38,21 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
     enabled: !initialResult,
   });
   const result = initialResult ?? data;
+
+  // A clean sweep is celebrated once, when the game ends on this page; coming back to an
+  // old result (a refresh, a link) stays quiet.
+  const justWonAll =
+    !!initialResult && initialResult.total > 0 && initialResult.correct === initialResult.total;
+  useEffect(() => {
+    if (!justWonAll) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    confetti({
+      particleCount: 160,
+      spread: 90,
+      origin: { y: 0.6 },
+      colors: ["#22C55E", "#4ADE80", "#86EFAC", "#00D9FF", "#FFEAA7"],
+    });
+  }, [justWonAll]);
 
   if (!result) {
     if (isLoading) return <PageLoader message="Loading your result..." withLayout={false} />;

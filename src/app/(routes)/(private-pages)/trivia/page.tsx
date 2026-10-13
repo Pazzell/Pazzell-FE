@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -11,8 +12,10 @@ import { Brain, Layers } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageError } from "@/components/ui/page-error";
 import { CampaignGate } from "@/components/trivia/campaign-gate";
+import { filterTopics, TopicSearch } from "@/components/trivia/topic-search";
 
 export default function TriviaTopicsPage() {
+  const [search, setSearch] = useState("");
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["trivia-topics"],
     queryFn: () =>
@@ -26,6 +29,8 @@ export default function TriviaTopicsPage() {
       api.get<CampaignNextResponse>(ENDPOINTS.CAMPAIGNS_NEXT).then((res) => res.data),
     staleTime: 0,
   });
+
+  const topics = filterTopics(data?.topics ?? [], search);
 
   return (
     <MainLayout maxWidth="5xl">
@@ -65,9 +70,15 @@ export default function TriviaTopicsPage() {
           </p>
         )}
 
-        {data && data.topics.length > 0 && (
+        {data && data.topics.length > 0 && <TopicSearch value={search} onChange={setSearch} />}
+
+        {data && data.topics.length > 0 && topics.length === 0 && (
+          <p className="text-white/60 text-center py-16">No topics match your search.</p>
+        )}
+
+        {topics.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {data.topics.map((topic) => (
+            {topics.map((topic) => (
               <Link key={topic.id} href={routes.USER.TRIVIA_TOPIC(topic.id)}>
                 <div className="rounded-2xl border bg-card/50 border-white/10 hover:border-secondary/50 hover:-translate-y-1 transition-all overflow-hidden h-full flex flex-col">
                   {topic.coverImageUrl ? (

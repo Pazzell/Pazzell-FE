@@ -31,7 +31,7 @@ const GROUPS: { title: string; settings: SettingDef[] }[] = [
     settings: [
       { key: "game.timerMinSeconds", label: "Minimum seconds per question", type: "integer", readOnly: true },
       { key: "game.timerMaxSeconds", label: "Maximum seconds per question", type: "integer", readOnly: true },
-      { key: "trivia.defaultTimerSeconds", label: "Default timer (seconds)", type: "integer", min: 1, max: 7 },
+      { key: "trivia.defaultTimerSeconds", label: "Default timer (seconds)", type: "integer", min: 1, max: 15 },
       { key: "game.submitGraceMs", label: "Late-answer grace (milliseconds)", hint: "Allowance for network delay after the deadline.", type: "integer", min: 0, max: 5000 },
     ],
   },

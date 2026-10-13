@@ -109,7 +109,7 @@ A few rules shape most of the code:
   game, and the browser back button is blocked while one is running.
 - **Refresh safe.** `/play/[sessionId]` renders from the server's session status, so a refresh
   lands on the same phase and the same question with the time that is left.
-- **One timer range.** 1 to 7 whole seconds per question for every game, chosen by the player
+- **One timer range.** 1 to 15 whole seconds per question for every game, chosen by the player
   before starting. Limits and prices come from `GET /settings/game`; nothing is hard-coded.
 - **One trivia engine.** Topics, custom trivias and campaigns all run through the same session
   endpoints and the same play page.
