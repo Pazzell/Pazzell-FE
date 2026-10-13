@@ -218,7 +218,7 @@ describe("Trivia play page", () => {
       expect(
         await screen.findByText("You got 2 out of 2 correct.", {}, { timeout: 3000 })
       ).toBeInTheDocument();
-      expect(confetti).toHaveBeenCalledTimes(1);
+      expect(confetti).toHaveBeenCalled();
     }
   );
 

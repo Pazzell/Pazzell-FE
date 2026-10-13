@@ -17,6 +17,8 @@ import { recallQuizSlug } from "@/lib/return-path";
 import { sessionExit } from "@/lib/session-exit";
 import type { TriviaResult, TriviaResultResponse, TriviaSession } from "@/types";
 
+const CONFETTI_SIDE_ROUNDS = 5;
+
 interface TriviaResultViewProps {
   session: TriviaSession;
   /** The result handed over by the last answer, when the quiz just finished on this page. */
@@ -46,12 +48,17 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
   useEffect(() => {
     if (!justWonAll) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    confetti({
-      particleCount: 160,
-      spread: 90,
-      origin: { y: 0.6 },
-      colors: ["#22C55E", "#4ADE80", "#86EFAC", "#00D9FF", "#FFEAA7"],
-    });
+    // One big burst from the middle, then cannons from both sides for a couple of seconds,
+    // so it can't be missed on a large screen or a small one.
+    const colors = ["#22C55E", "#00E676", "#00D9FF", "#FFEAA7", "#FF6B9D", "#FFFFFF"];
+    confetti({ particleCount: 220, spread: 110, startVelocity: 50, scalar: 1.2, origin: { y: 0.6 }, colors });
+    let rounds = 0;
+    const sides = setInterval(() => {
+      confetti({ particleCount: 60, angle: 60, spread: 70, scalar: 1.2, origin: { x: 0, y: 0.7 }, colors });
+      confetti({ particleCount: 60, angle: 120, spread: 70, scalar: 1.2, origin: { x: 1, y: 0.7 }, colors });
+      if (++rounds >= CONFETTI_SIDE_ROUNDS) clearInterval(sides);
+    }, 400);
+    return () => clearInterval(sides);
   }, [justWonAll]);
 
   if (!result) {
