@@ -19,6 +19,7 @@ vi.mock("@/components/layout/main-layout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+import confetti from "canvas-confetti";
 import TriviaPlayPage from "./page";
 
 const source = { type: "topic", id: "t1", title: "Football" };
@@ -172,6 +173,90 @@ describe("Trivia play page", () => {
       cardCount: 2,
       practice: true,
     });
+  });
+
+  const finishWith = (correct: number, outcome: "correct" | "wrong") => {
+    api.post.mockImplementation((url: string) => {
+      if (url === "/trivia/sessions/s1/answer") {
+        return Promise.resolve({
+          data: {
+            questionIndex: 1,
+            outcome,
+            correctOptionIndex: 0,
+            completed: true,
+            nextQuestionIndex: null,
+            result: {
+              sessionId: "s1",
+              source,
+              correct,
+              total: 2,
+              isPreview: false,
+              brand: null,
+              completedAt: "2026-10-06T10:01:00.000Z",
+              campaignGate: gate,
+            },
+          },
+        });
+      }
+      if (url.startsWith("/analytics/")) return Promise.resolve({ data: {} });
+      return Promise.reject(new Error(`Unhandled POST ${url}`));
+    });
+  };
+
+  it.each([false, true])(
+    "throws confetti once the game ends with every answer correct (practice: %s)",
+    async (isPractice) => {
+      practice = isPractice;
+      finishWith(2, "correct");
+      renderWithQuery(<TriviaPlayPage />);
+
+      await userEvent.click(await screen.findByRole("button", { name: /Eleven/ }));
+      expect(await screen.findByText("Correct!")).toBeInTheDocument();
+      // A right answer on its own is not celebrated; only the clean sweep is.
+      expect(confetti).not.toHaveBeenCalled();
+
+      expect(
+        await screen.findByText("You got 2 out of 2 correct.", {}, { timeout: 3000 })
+      ).toBeInTheDocument();
+      expect(confetti).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it("throws no confetti when an answer was missed", async () => {
+    finishWith(1, "wrong");
+    renderWithQuery(<TriviaPlayPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /Nine/ }));
+    expect(
+      await screen.findByText("You got 1 out of 2 correct.", {}, { timeout: 3000 })
+    ).toBeInTheDocument();
+    expect(confetti).not.toHaveBeenCalled();
+  });
+
+  it("throws no confetti when an old perfect result is reopened", async () => {
+    status = "completed";
+    api.get.mockImplementation((url: string) => {
+      if (url === "/settings/game") return Promise.resolve({ data: { settings: TEST_SETTINGS } });
+      if (url === "/trivia/sessions/s1") return Promise.resolve({ data: { session: session() } });
+      return Promise.resolve({
+        data: {
+          result: {
+            sessionId: "s1",
+            source,
+            correct: 2,
+            total: 2,
+            isPreview: false,
+            brand: null,
+            completedAt: "2026-10-06T10:01:00.000Z",
+            campaignGate: gate,
+          },
+        },
+      });
+    });
+    renderWithQuery(<TriviaPlayPage />);
+
+    expect(await screen.findByText("You got 2 out of 2 correct.")).toBeInTheDocument();
+    expect(confetti).not.toHaveBeenCalled();
   });
 
   it("offers the sponsored trivia instead of Retry when one is owed", async () => {

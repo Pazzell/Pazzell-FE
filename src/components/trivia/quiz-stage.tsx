@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
-import confetti from "canvas-confetti";
 import { toast } from "sonner";
 import { AlertTriangle, Check, LogOut, Volume2, VolumeX, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -123,14 +122,6 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
       });
       if (data.outcome === "correct") {
         playSuccessSound();
-        if (!reducedMotion) {
-          confetti({
-            particleCount: 90,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ["#22C55E", "#4ADE80", "#86EFAC"],
-          });
-        }
       } else {
         playWrongSound();
       }
@@ -260,12 +251,15 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
 
       <div className="flex flex-col items-center gap-5 py-2">
         {question.imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={question.imageUrl}
-            alt={question.text ?? "Question image"}
-            className="max-h-56 w-auto max-w-full rounded-xl object-contain"
-          />
+          // A light backdrop, so dark or transparent pictures stay readable on the dark page.
+          <div className="rounded-2xl bg-gray-100 p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={question.imageUrl}
+              alt={question.text ?? "Question image"}
+              className="max-h-56 w-auto max-w-full rounded-xl object-contain"
+            />
+          </div>
         )}
         {question.imageUrl && question.attribution && (
           <p className="-mt-3 text-white/40 text-[11px] text-center max-w-md break-words">

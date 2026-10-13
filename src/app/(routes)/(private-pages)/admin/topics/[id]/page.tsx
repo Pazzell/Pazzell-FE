@@ -19,7 +19,7 @@ import { routes } from "@/app/_utils/routes";
 import type { AdminTriviaTopic, TriviaCard } from "@/types";
 
 interface AdminTopicDetail {
-  topic: AdminTriviaTopic & { order?: number };
+  topic: AdminTriviaTopic;
   cards?: TriviaCard[];
   stats?: Record<string, unknown>;
 }

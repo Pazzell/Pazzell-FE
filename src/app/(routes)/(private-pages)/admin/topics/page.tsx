@@ -11,6 +11,7 @@ import { PageError } from "@/components/ui/page-error";
 import { ImportCardsDialog } from "@/components/admin/import-cards-dialog";
 import { LoadStarterDialog } from "@/components/admin/load-starter-dialog";
 import { TopicFormDialog } from "@/components/admin/topic-form-dialog";
+import { filterTopics, TopicSearch } from "@/components/trivia/topic-search";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { routes } from "@/app/_utils/routes";
@@ -23,6 +24,7 @@ export default function AdminTopicsPage() {
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
   const [loadingStarter, setLoadingStarter] = useState(false);
+  const [search, setSearch] = useState("");
 
   // New cards (and maybe a new topic) are live for players at once.
   const refreshTopics = () => {
@@ -36,6 +38,8 @@ export default function AdminTopicsPage() {
     queryFn: () =>
       api.get<AdminTopicsResponse>(ENDPOINTS.ADMIN_TRIVIA_TOPICS).then((res) => res.data.topics),
   });
+
+  const topics = filterTopics(data ?? [], search);
 
   return (
     <div className="space-y-8">
@@ -95,9 +99,15 @@ export default function AdminTopicsPage() {
         </div>
       )}
 
-      {data && data.length > 0 && (
+      {data && data.length > 0 && <TopicSearch value={search} onChange={setSearch} />}
+
+      {data && data.length > 0 && topics.length === 0 && (
+        <p className="text-white/60 text-center py-16">No topics match your search.</p>
+      )}
+
+      {topics.length > 0 && (
         <ul className="space-y-3">
-          {data.map((topic) => (
+          {topics.map((topic) => (
             <li key={topic.id}>
               <Link
                 href={routes.ADMIN.TOPIC(topic.id)}

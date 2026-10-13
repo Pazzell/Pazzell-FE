@@ -26,7 +26,7 @@ interface TopicFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** The topic being edited; null to create one. */
-  topic: (AdminTriviaTopic & { order?: number }) | null;
+  topic: AdminTriviaTopic | null;
   onSaved: (topicId: string) => void;
 }
 
@@ -34,7 +34,6 @@ export function TopicFormDialog({ open, onOpenChange, topic, onSaved }: TopicFor
   const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [order, setOrder] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [image, setImage] = useState<File | null>(null);
 
@@ -42,19 +41,13 @@ export function TopicFormDialog({ open, onOpenChange, topic, onSaved }: TopicFor
     if (!open) return;
     setName(topic?.name ?? "");
     setDescription(topic?.description ?? "");
-    setOrder(topic?.order !== undefined ? String(topic.order) : "");
     setIsActive(topic?.isActive ?? true);
     setImage(null);
   }, [open, topic]);
 
   const save = useMutation({
     mutationFn: async () => {
-      const fields = {
-        name: name.trim(),
-        description: description.trim(),
-        isActive,
-        ...(order.trim() !== "" ? { order: Number(order) } : {}),
-      };
+      const fields = { name: name.trim(), description: description.trim(), isActive };
       // The cover travels as a file, so a new one means a multipart body.
       let body: FormData | typeof fields = fields;
       if (image) {
@@ -91,9 +84,6 @@ export function TopicFormDialog({ open, onOpenChange, topic, onSaved }: TopicFor
 
   const handleSave = () => {
     if (!name.trim()) return toast.error("Give the topic a name.");
-    if (order.trim() !== "" && !Number.isInteger(Number(order))) {
-      return toast.error("The order must be a whole number.");
-    }
     save.mutate();
   };
 
@@ -139,27 +129,13 @@ export function TopicFormDialog({ open, onOpenChange, topic, onSaved }: TopicFor
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 items-end">
-            <div className="space-y-2">
-              <Label htmlFor="topic-order" className="text-white/80">
-                Order (optional)
-              </Label>
-              <Input
-                id="topic-order"
-                inputMode="numeric"
-                value={order}
-                onChange={(event) => setOrder(event.target.value)}
-                className={inputClass}
-              />
-            </div>
-            <label className="flex items-center gap-2 text-white/80 text-sm h-9">
-              <Checkbox
-                checked={isActive}
-                onCheckedChange={(checked) => setIsActive(checked === true)}
-              />
-              Active
-            </label>
-          </div>
+          <label className="flex items-center gap-2 text-white/80 text-sm h-9">
+            <Checkbox
+              checked={isActive}
+              onCheckedChange={(checked) => setIsActive(checked === true)}
+            />
+            Active
+          </label>
 
           <div className="space-y-2">
             <Label className="text-white/80">Cover image (optional)</Label>
