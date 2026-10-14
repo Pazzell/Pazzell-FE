@@ -1,4 +1,5 @@
 import { routes } from "@/app/_utils/routes";
+import { isAiTrivia } from "@/lib/return-path";
 import type { TriviaSourceType } from "@/types";
 
 /**
@@ -14,6 +15,9 @@ export function sessionExit(
   }
   if (isPreview && source.type === "campaign") {
     return { href: routes.BRAND.CAMPAIGN_EDIT(source.id), label: "Back to Campaign" };
+  }
+  if (source.type === "custom" && isAiTrivia(source.id)) {
+    return { href: routes.USER.AI_TRIVIA, label: "Back to AI Trivia" };
   }
   return { href: routes.USER.TRIVIA, label: "Pick Another Topic" };
 }

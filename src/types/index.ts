@@ -405,6 +405,91 @@ export interface GenerateCardsResponse {
   usage: GenerateAllowance;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// AI generated trivia (a Pro player's own questions, from a topic and a prompt)
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Whether an admin has added the set's cards to General Trivia. */
+export type AiReviewStatus = "pending" | "approved" | "rejected";
+
+export interface AiTrivia {
+  id: string;
+  title: string;
+  /** `id` is set when the topic is one of the General Trivia topics. */
+  topic: { id: string | null; name: string | null };
+  prompt: string | null;
+  reviewStatus: AiReviewStatus;
+  inGeneralTrivia: boolean;
+  cardCount: number;
+  cardCountBounds: { available: number; min: number; max: number };
+  defaultTimerSeconds: number;
+  defaultCardCount: number;
+  createdAt: string;
+}
+
+export interface AiTriviaOptionsResponse {
+  success: boolean;
+  options: GenerateAllowance & {
+    enabled: boolean;
+    isPro: boolean;
+    pro: { amount: number; currency: string; durationDays: number } | null;
+    topics: { id: string; name: string }[];
+    topicMaxLength: number;
+    promptMaxLength: number;
+    count: { default: number; min: number; max: number };
+  };
+}
+
+export interface AiTriviasResponse {
+  success: boolean;
+  trivias: AiTrivia[];
+}
+
+export interface AiTriviaResponse {
+  success: boolean;
+  trivia: AiTrivia;
+}
+
+export interface CreateAiTriviaResponse extends AiTriviaResponse {
+  requested: number;
+  usage: GenerateAllowance;
+}
+
+/** An AI generated trivia as the admin reviewing it sees it. */
+export interface AdminAiTrivia {
+  id: string;
+  title: string;
+  topic: { id: string | null; name: string | null };
+  prompt: string | null;
+  reviewStatus: AiReviewStatus;
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  publishedTopicId: string | null;
+  publishedCardCount: number | null;
+  cardCount: number;
+  owner: { id: string; name: string | null };
+  createdAt: string;
+}
+
+export interface AdminAiTriviasResponse {
+  success: boolean;
+  trivias: AdminAiTrivia[];
+}
+
+export interface AdminAiTriviaResponse {
+  success: boolean;
+  trivia: AdminAiTrivia;
+  cards: TriviaCard[];
+}
+
+export interface AdminAiTriviaApproveResponse {
+  success: boolean;
+  trivia: AdminAiTrivia;
+  topic: AdminTriviaTopic;
+  added: number;
+  skipped: number;
+}
+
 /** Admins write cards for a topic with no daily allowance, so none is reported. */
 export interface AdminGenerateInfoResponse {
   success: boolean;

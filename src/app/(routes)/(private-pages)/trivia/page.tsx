@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageError } from "@/components/ui/page-error";
 import { CampaignGate } from "@/components/trivia/campaign-gate";
 import { filterTopics, TopicSearch } from "@/components/trivia/topic-search";
+import { TriviaKindTabs } from "@/components/trivia/trivia-kind-tabs";
 
 export default function TriviaTopicsPage() {
   const [search, setSearch] = useState("");
@@ -35,10 +36,11 @@ export default function TriviaTopicsPage() {
   return (
     <MainLayout maxWidth="5xl">
       <div className="space-y-8">
+        <TriviaKindTabs active="general" />
         <div>
           <h1 className="text-3xl font-bold text-white mb-2 font-fredoka flex items-center gap-2">
             <Brain className="h-7 w-7 text-blue-400" />
-            Trivia
+            General Trivia
           </h1>
           <p className="text-white/70">
             Pick a topic and start the quiz. Turn on Practice to have the correct option pointed out.
