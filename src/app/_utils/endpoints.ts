@@ -63,6 +63,11 @@ export const ENDPOINTS = {
   CUSTOM_QUIZ_LINK_PLAY_INFO: (slug: string) =>
     `/custom-quizzes/link/${slug}/play-info`,
 
+  // AI generated trivia (written for a Pro player from a topic and a prompt)
+  AI_TRIVIA_OPTIONS: "/ai-trivia/options",
+  AI_TRIVIAS: "/ai-trivia",
+  AI_TRIVIA: (id: string) => `/ai-trivia/${id}`,
+
   // Brand campaigns (brand role)
   BRAND_CAMPAIGNS_PRICING: "/brand/campaigns/pricing",
   BRAND_CAMPAIGNS: "/brand/campaigns",
@@ -98,6 +103,10 @@ export const ENDPOINTS = {
   ADMIN_TRIVIA_IMPORT: "/admin/trivia/import",
   ADMIN_TRIVIA_STARTER: "/admin/trivia/starter",
   ADMIN_TRIVIA_GENERATE: "/admin/trivia/generate",
+  ADMIN_AI_TRIVIAS: (status: string) => `/admin/trivia/ai?status=${status}`,
+  ADMIN_AI_TRIVIA: (id: string) => `/admin/trivia/ai/${id}`,
+  ADMIN_AI_TRIVIA_APPROVE: (id: string) => `/admin/trivia/ai/${id}/approve`,
+  ADMIN_AI_TRIVIA_REJECT: (id: string) => `/admin/trivia/ai/${id}/reject`,
   ADMIN_CAMPAIGNS: "/admin/campaigns",
   ADMIN_CAMPAIGN: (id: string) => `/admin/campaigns/${id}`,
   ADMIN_CAMPAIGN_PAUSE: (id: string) => `/admin/campaigns/${id}/pause`,

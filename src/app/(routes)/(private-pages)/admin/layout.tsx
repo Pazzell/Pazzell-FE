@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   BookOpen,
   Megaphone,
+  Sparkles,
   Settings,
   Menu,
   X,
@@ -31,6 +32,7 @@ import {
 const sidebarNavItems = [
   { title: 'Dashboard', href: routes.ADMIN.DASHBOARD, icon: LayoutDashboard },
   { title: 'Trivia Topics', href: routes.ADMIN.TOPICS, icon: BookOpen },
+  { title: 'AI Trivia Review', href: routes.ADMIN.AI_TRIVIA, icon: Sparkles },
   { title: 'Campaigns', href: routes.ADMIN.CAMPAIGNS, icon: Megaphone },
   { title: 'Settings', href: routes.ADMIN.SETTINGS, icon: Settings },
 ]

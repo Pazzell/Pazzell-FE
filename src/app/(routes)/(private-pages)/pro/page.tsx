@@ -80,7 +80,8 @@ export default function ProPage() {
             <Sparkles className="h-7 w-7 text-yellow-400" />
             Pazzell Pro
           </h1>
-          <p className="text-white/70">Play without interruptions and build as many trivias as you like.</p>
+          <p className="text-white/70">Play without interruptions, build as many trivias as you like, and have AI write
+            trivia on any topic you choose.</p>
         </div>
 
         <div className="bg-card/50 border border-white/10 rounded-2xl p-6 flex items-center justify-between gap-4 flex-wrap">

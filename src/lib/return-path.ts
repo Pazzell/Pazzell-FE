@@ -1,5 +1,6 @@
 const RETURN_PATH_KEY = "pazzell_return_to";
 const QUIZ_SLUG_KEY_PREFIX = "pazzell_quiz_slug_";
+const AI_TRIVIA_KEY_PREFIX = "pazzell_ai_trivia_";
 
 /**
  * Where to send a visitor after they log in or sign up, e.g. back to the
@@ -35,6 +36,24 @@ export function rememberQuizSlug(quizId: string, slug: string) {
   try {
     sessionStorage.setItem(QUIZ_SLUG_KEY_PREFIX + quizId, slug);
   } catch {}
+}
+
+/**
+ * A session only says its source is a custom quiz. Remembering which ids are AI
+ * generated trivias lets "leave" and "done" lead back to that list.
+ */
+export function rememberAiTrivia(triviaId: string) {
+  try {
+    sessionStorage.setItem(AI_TRIVIA_KEY_PREFIX + triviaId, "1");
+  } catch {}
+}
+
+export function isAiTrivia(triviaId: string): boolean {
+  try {
+    return sessionStorage.getItem(AI_TRIVIA_KEY_PREFIX + triviaId) !== null;
+  } catch {
+    return false;
+  }
 }
 
 export function recallQuizSlug(quizId: string): string | null {

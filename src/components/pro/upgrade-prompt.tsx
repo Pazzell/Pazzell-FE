@@ -40,7 +40,8 @@ export function UpgradePrompt({ open, onOpenChange, message }: UpgradePromptProp
           </DialogDescription>
         </DialogHeader>
         <p className="text-white/80 text-sm">
-          Pro gives you unlimited custom trivias and no sponsored interruptions for{" "}
+          Pro gives you unlimited custom trivias, AI generated trivia on any topic and no
+          sponsored interruptions for{" "}
           {formatPrice(amount, currency)} per {durationDays} days.
         </p>
         <DialogFooter>
