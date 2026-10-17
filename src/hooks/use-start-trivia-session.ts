@@ -27,6 +27,11 @@ export interface StartTriviaSessionPayload {
   imagePercent?: number;
   /** Practice mode: the correct option is pointed at on every question. */
   practice?: boolean;
+  /**
+   * The session being restarted (Play Now / Practise Again / Retry). After a practice
+   * the server reuses its cards so the player is tested on what they practised.
+   */
+  replayOf?: string;
 }
 
 /**

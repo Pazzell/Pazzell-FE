@@ -230,6 +230,8 @@ export interface TriviaSession {
   isPreview: boolean;
   /** Practice mode: every question arrives with its correct option identified. */
   practice: boolean;
+  /** The session whose practised cards this one replays; null for a fresh card set. */
+  replayOf?: string | null;
   timerSeconds: number;
   cardCount: number;
   /** The picture share the player chose; null when they left it to the default. */

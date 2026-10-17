@@ -14,13 +14,10 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { routes } from "@/app/_utils/routes";
 
+// Only the Google access token is sent: the server checks it with Google and reads
+// the profile from there, so a made-up email can never sign anyone in.
 type GoogleLoginPayload = {
-  googleId: string;
-  email: string;
-  fullName: string;
-  avatar: string;
-  givenName: string;
-  familyName: string;
+  googleAccessToken: string;
 };
 
 interface GoogleLoginResult {
@@ -138,37 +135,9 @@ const GoogleAuthBtn = () => {
   // Inner component uses the hook; only rendered when client id exists
   const GoogleAuthInner = () => {
     const handleGoogleAuth = useGoogleLogin({
-      onSuccess: async (tokenResponse) => {
-        try {
-          const userInfoResponse = await fetch(
-            "https://www.googleapis.com/oauth2/v3/userinfo",
-            {
-              headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-            }
-          ).then((res) => res.json());
-
-          const {
-            sub: googleId,
-            email,
-            name,
-            picture,
-            given_name,
-            family_name,
-          } = userInfoResponse;
-
-          googleAuthMutation.mutate({
-            googleId,
-            email,
-            fullName: name,
-            avatar: picture,
-            givenName: given_name,
-            familyName: family_name,
-          });
-          toast.info("Please wait, while we log you in.");
-        } catch (error) {
-          toast.error("Google login failed. Please try again.");
-          console.error("Google login error:", error);
-        }
+      onSuccess: (tokenResponse) => {
+        googleAuthMutation.mutate({ googleAccessToken: tokenResponse.access_token });
+        toast.info("Please wait, while we log you in.");
       },
       onError: () => {
         toast.error("Google login failed. Please try again.");
