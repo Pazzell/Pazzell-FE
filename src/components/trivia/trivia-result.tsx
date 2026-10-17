@@ -80,7 +80,8 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
   const owedCampaign =
     gate ?? (!isCampaign && result.campaignGate?.required ? result.campaignGate.campaign : null);
 
-  // Starts the same trivia again with the same timer and number of cards.
+  // Starts the same trivia again with the same timer and number of cards. `replayOf`
+  // lets the server hand back the same cards after a practice (in a new order).
   const startAgain = (practice: boolean) => {
     setStartingPractice(practice);
     // A shared custom quiz can only be started by its link; the owner starts it by id.
@@ -92,6 +93,7 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
       cardCount: session.cardCount,
       ...(typeof session.imagePercent === "number" ? { imagePercent: session.imagePercent } : {}),
       practice,
+      replayOf: session.id,
     });
   };
   const spinnerOn = (practice: boolean) => isStarting && startingPractice === practice;

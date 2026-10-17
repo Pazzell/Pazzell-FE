@@ -136,6 +136,7 @@ describe("Trivia play page", () => {
       timerSeconds: 5,
       cardCount: 2,
       practice: false,
+      replayOf: "s1",
     });
     expect(await screen.findByRole("button", { name: /Pick Another Topic/ })).toBeInTheDocument();
     // A real play has nothing to "play for real".
@@ -156,6 +157,7 @@ describe("Trivia play page", () => {
       timerSeconds: 5,
       cardCount: 2,
       practice: false,
+      replayOf: "s1",
     });
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/play/s2"));
   });
@@ -172,6 +174,7 @@ describe("Trivia play page", () => {
       timerSeconds: 5,
       cardCount: 2,
       practice: true,
+      replayOf: "s1",
     });
   });
 
