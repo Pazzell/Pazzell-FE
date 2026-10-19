@@ -48,7 +48,10 @@ export function CampaignGate({ campaign, timerSeconds, cardCount, practice }: Ca
         sourceType: "campaign",
         sourceId: campaign.id,
         timerSeconds: Math.min(maxSeconds, Math.max(minSeconds, Math.round(timer))),
-        cardCount: Math.min(max, Math.max(min, cardCount ?? DEFAULT_CARD_COUNT)),
+        cardCount: Math.min(
+          max,
+          Math.max(min, cardCount ?? Math.max(DEFAULT_CARD_COUNT, settings.points.minCards))
+        ),
         ...(practice ? { practice: true } : {}),
       });
       return res.data;

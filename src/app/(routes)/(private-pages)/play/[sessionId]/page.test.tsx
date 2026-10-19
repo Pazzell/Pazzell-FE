@@ -262,6 +262,49 @@ describe("Trivia play page", () => {
     expect(confetti).not.toHaveBeenCalled();
   });
 
+  const showResult = (extra: Record<string, unknown>) => {
+    status = "completed";
+    api.get.mockImplementation((url: string) => {
+      if (url === "/settings/game") return Promise.resolve({ data: { settings: TEST_SETTINGS } });
+      if (url === "/trivia/sessions/s1") return Promise.resolve({ data: { session: session() } });
+      return Promise.resolve({
+        data: {
+          result: {
+            sessionId: "s1",
+            source,
+            correct: 2,
+            total: 2,
+            isPreview: false,
+            brand: null,
+            completedAt: "2026-10-06T10:01:00.000Z",
+            campaignGate: gate,
+            points: { month: "2026-10", monthly: 3, lifetime: 12, today: 2, dailyCap: 5 },
+            ...extra,
+          },
+        },
+      });
+    });
+    renderWithQuery(<TriviaPlayPage />);
+  };
+
+  it("shows the point earned and the player's totals", async () => {
+    showResult({ pointEarned: true, noPointReason: null });
+
+    expect(await screen.findByText("+1 point")).toBeInTheDocument();
+    expect(screen.getByText("This month").nextSibling).toHaveTextContent("3");
+    expect(screen.getByText("Lifetime").nextSibling).toHaveTextContent("12");
+    expect(screen.getByText("Today").nextSibling).toHaveTextContent("2/5");
+  });
+
+  it("says why a quiz earned no point", async () => {
+    showResult({ pointEarned: false, noPointReason: "set_already_earned" });
+
+    expect(
+      await screen.findByText(/already earned a point for this set/)
+    ).toBeInTheDocument();
+    expect(screen.queryByText("+1 point")).not.toBeInTheDocument();
+  });
+
   it("offers the sponsored trivia instead of Retry when one is owed", async () => {
     status = "completed";
     gate.required = true;

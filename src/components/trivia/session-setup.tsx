@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock3, Image as ImageIcon, Layers, Loader2, Pointer } from "lucide-react";
+import { Clock3, Image as ImageIcon, Layers, Loader2, Pointer, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useGameSettings } from "@/hooks/use-game-settings";
+import { pointRulesSummary } from "@/hooks/use-points";
 import {
   TRIVIA_IMAGE_PERCENT_STORAGE_KEY,
   TRIVIA_PRACTICE_STORAGE_KEY,
@@ -59,11 +60,14 @@ export function SessionSetup({
     setTimerSeconds(Math.min(maxSeconds, Math.max(minSeconds, preferred)));
   }, [defaultTimerSeconds, defaultSeconds, minSeconds, maxSeconds]);
 
-  const [cardCount, setCardCount] = useState(defaultCardCount ?? DEFAULT_CARD_COUNT);
+  // Without a trivia's own default, start on enough cards to earn a point.
+  const pointRules = settings.points;
+  const fallbackCardCount = Math.max(DEFAULT_CARD_COUNT, pointRules.minCards);
+  const [cardCount, setCardCount] = useState(defaultCardCount ?? fallbackCardCount);
   useEffect(() => {
-    const preferred = defaultCardCount ?? DEFAULT_CARD_COUNT;
+    const preferred = defaultCardCount ?? fallbackCardCount;
     setCardCount(Math.min(bounds.max, Math.max(bounds.min, preferred)));
-  }, [defaultCardCount, bounds.min, bounds.max]);
+  }, [defaultCardCount, fallbackCardCount, bounds.min, bounds.max]);
 
   // The player's own last choice wins; until they make one, the trivia's default applies.
   const canMix = !!cardMix && cardMix.imageCards > 0 && cardMix.definitionCards > 0;
@@ -80,6 +84,16 @@ export function SessionSetup({
   useEffect(() => {
     setPractice(localStorage.getItem(TRIVIA_PRACTICE_STORAGE_KEY) === "on");
   }, []);
+
+  // Whether this choice can earn a point, so the player knows before starting.
+  const pointsHint =
+    practice && !pointRules.practiceEarns
+      ? "Practice doesn't earn points. Play without it to earn one."
+      : bounds.max < pointRules.minCards
+        ? `This trivia has fewer than ${pointRules.minCards} cards, so it doesn't earn points.`
+        : cardCount < pointRules.minCards
+          ? `Choose ${pointRules.minCards} or more cards to earn a point.`
+          : pointRulesSummary(pointRules);
 
   const handleStart = () => {
     localStorage.setItem(TRIVIA_TIMER_STORAGE_KEY, String(timerSeconds));
@@ -138,6 +152,10 @@ export function SessionSetup({
             </div>
           </>
         )}
+        <p className="flex items-start gap-2 text-xs text-white/50">
+          <Star className="h-3.5 w-3.5 mt-px shrink-0 text-secondary" aria-hidden />
+          <span>{pointsHint}</span>
+        </p>
       </div>
 
       {canMix && (

@@ -241,6 +241,9 @@ export default function Home() {
               </span>
               .
             </h1>
+            <p className="text-2xl sm:text-3xl font-fredoka text-secondary mb-4">
+              A fun way to learn.
+            </p>
             <p className="text-lg sm:text-xl text-white/70 mb-8 leading-relaxed">
               Pazzell is a quick trivia that trains recognition and recall. See
               a picture or a short definition, choose between two options, and

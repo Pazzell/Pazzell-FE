@@ -93,7 +93,7 @@ describe("Trivia topic setup page", () => {
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/play/s1"));
     expect(sessionStarts()).toEqual([
-      { sourceType: "topic", sourceId: "t1", timerSeconds: 5, cardCount: 10, practice: false },
+      { sourceType: "topic", sourceId: "t1", timerSeconds: 5, cardCount: 20, practice: false },
     ]);
     expect(localStorage.getItem("pazzell_trivia_timer_seconds")).toBe("5");
   });
@@ -108,7 +108,7 @@ describe("Trivia topic setup page", () => {
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/play/s1"));
     expect(sessionStarts()).toEqual([
-      { sourceType: "topic", sourceId: "t1", timerSeconds: 5, cardCount: 10, practice: true },
+      { sourceType: "topic", sourceId: "t1", timerSeconds: 5, cardCount: 20, practice: true },
     ]);
     expect(localStorage.getItem("pazzell_trivia_practice")).toBe("on");
   });
