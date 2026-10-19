@@ -11,6 +11,7 @@ const FALLBACK_SETTINGS: GameSettings = {
   customQuiz: { freeLimit: 1, minCardsToPublish: 5 },
   pro: { amount: 1500, currency: "NGN", durationDays: 30 },
   campaign: { amount: 15000, currency: "NGN", durationDays: 30, interruptionThreshold: 10 },
+  points: { minCards: 20, minScorePercent: 100, dailyCap: 5, practiceEarns: false, setEarnsOnce: true },
 };
 
 export function useGameSettings() {

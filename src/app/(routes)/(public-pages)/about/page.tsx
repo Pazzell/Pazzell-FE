@@ -43,8 +43,8 @@ const PRINCIPLES = [
   },
   {
     icon: ShieldCheck,
-    title: "No points to chase",
-    text: "There are no points, leaderboards or prize draws. You get your score at the end of a session, and that is all.",
+    title: "Points for what you recall",
+    text: "Recall a full session and you earn a point. Your monthly score starts again each month, and your lifetime score keeps them all.",
   },
 ];
 
