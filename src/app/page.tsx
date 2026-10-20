@@ -54,7 +54,7 @@ const SAMPLE_CARDS = [
   {
     kind: "picture",
     label: "Picture",
-    prompt: "Which animal is this?",
+    prompt: "What is this?",
     options: ["Cat", "Sheep"],
     correct: 0,
   },
