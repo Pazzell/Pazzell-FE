@@ -149,11 +149,17 @@ export function CardFormDialog({ open, onOpenChange, card, endpoints, onSaved }:
               id="card-text"
               value={text}
               maxLength={CARD_TEXT_MAX}
+              placeholder={type === "image" ? "What is this?" : undefined}
               onChange={(event) => setText(event.target.value)}
               className="bg-white/5 border-white/10 text-white"
             />
-            <p className="text-white/40 text-xs text-right">
-              {text.length}/{CARD_TEXT_MAX}
+            <p className="text-white/40 text-xs flex justify-between gap-3">
+              <span>
+                {type === "image" && "Picture questions are asked as “Who is this?” or “What is this?”."}
+              </span>
+              <span className="shrink-0">
+                {text.length}/{CARD_TEXT_MAX}
+              </span>
             </p>
           </div>
 
