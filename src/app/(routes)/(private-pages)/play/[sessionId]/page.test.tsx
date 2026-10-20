@@ -110,7 +110,7 @@ describe("Trivia play page", () => {
     expect(api.post).not.toHaveBeenCalledWith("/trivia/sessions/s1/quiz/begin");
   });
 
-  it("leaves the trivia from the quiz screen", async () => {
+  it("ends the trivia from the quiz screen", async () => {
     api.post.mockImplementation((url: string) =>
       url === "/trivia/sessions/s1/abandon" || url.startsWith("/analytics/")
         ? Promise.resolve({ data: {} })
@@ -118,7 +118,8 @@ describe("Trivia play page", () => {
     );
     renderWithQuery(<TriviaPlayPage />);
 
-    await userEvent.click(await screen.findByRole("button", { name: "Leave this trivia" }));
+    await userEvent.click(await screen.findByRole("button", { name: "End" }));
+    await userEvent.click(await screen.findByRole("button", { name: "End quiz" }));
     expect(api.post).toHaveBeenCalledWith("/trivia/sessions/s1/abandon");
     await waitFor(() => expect(push).toHaveBeenCalledWith("/trivia"));
   });
@@ -260,49 +261,6 @@ describe("Trivia play page", () => {
 
     expect(await screen.findByText("You got 2 out of 2 correct.")).toBeInTheDocument();
     expect(confetti).not.toHaveBeenCalled();
-  });
-
-  const showResult = (extra: Record<string, unknown>) => {
-    status = "completed";
-    api.get.mockImplementation((url: string) => {
-      if (url === "/settings/game") return Promise.resolve({ data: { settings: TEST_SETTINGS } });
-      if (url === "/trivia/sessions/s1") return Promise.resolve({ data: { session: session() } });
-      return Promise.resolve({
-        data: {
-          result: {
-            sessionId: "s1",
-            source,
-            correct: 2,
-            total: 2,
-            isPreview: false,
-            brand: null,
-            completedAt: "2026-10-06T10:01:00.000Z",
-            campaignGate: gate,
-            points: { month: "2026-10", monthly: 3, lifetime: 12, today: 2, dailyCap: 5 },
-            ...extra,
-          },
-        },
-      });
-    });
-    renderWithQuery(<TriviaPlayPage />);
-  };
-
-  it("shows the point earned and the player's totals", async () => {
-    showResult({ pointEarned: true, noPointReason: null });
-
-    expect(await screen.findByText("+1 point")).toBeInTheDocument();
-    expect(screen.getByText("This month").nextSibling).toHaveTextContent("3");
-    expect(screen.getByText("Lifetime").nextSibling).toHaveTextContent("12");
-    expect(screen.getByText("Today").nextSibling).toHaveTextContent("2/5");
-  });
-
-  it("says why a quiz earned no point", async () => {
-    showResult({ pointEarned: false, noPointReason: "set_already_earned" });
-
-    expect(
-      await screen.findByText(/already earned a point for this set/)
-    ).toBeInTheDocument();
-    expect(screen.queryByText("+1 point")).not.toBeInTheDocument();
   });
 
   it("offers the sponsored trivia instead of Retry when one is owed", async () => {

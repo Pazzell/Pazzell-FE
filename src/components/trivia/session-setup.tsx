@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock3, Image as ImageIcon, Layers, Loader2, Pointer, Star } from "lucide-react";
+import { Clock3, Image as ImageIcon, Layers, Loader2, Pointer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useGameSettings } from "@/hooks/use-game-settings";
-import { pointRulesSummary } from "@/hooks/use-points";
 import {
   TRIVIA_IMAGE_PERCENT_STORAGE_KEY,
   TRIVIA_PRACTICE_STORAGE_KEY,
   TRIVIA_TIMER_STORAGE_KEY,
 } from "@/hooks/use-start-trivia-session";
+import { storedTimerSeconds, timerLabel } from "@/lib/timer";
 import { cn } from "@/lib/utils";
 import type { CardMix } from "@/types";
 
@@ -55,19 +55,15 @@ export function SessionSetup({
 
   const [timerSeconds, setTimerSeconds] = useState(defaultTimerSeconds ?? defaultSeconds);
   useEffect(() => {
-    const stored = Number(localStorage.getItem(TRIVIA_TIMER_STORAGE_KEY));
-    const preferred = defaultTimerSeconds ?? (stored || defaultSeconds);
+    const preferred = defaultTimerSeconds ?? storedTimerSeconds() ?? defaultSeconds;
     setTimerSeconds(Math.min(maxSeconds, Math.max(minSeconds, preferred)));
   }, [defaultTimerSeconds, defaultSeconds, minSeconds, maxSeconds]);
 
-  // Without a trivia's own default, start on enough cards to earn a point.
-  const pointRules = settings.points;
-  const fallbackCardCount = Math.max(DEFAULT_CARD_COUNT, pointRules.minCards);
-  const [cardCount, setCardCount] = useState(defaultCardCount ?? fallbackCardCount);
+  const [cardCount, setCardCount] = useState(defaultCardCount ?? DEFAULT_CARD_COUNT);
   useEffect(() => {
-    const preferred = defaultCardCount ?? fallbackCardCount;
+    const preferred = defaultCardCount ?? DEFAULT_CARD_COUNT;
     setCardCount(Math.min(bounds.max, Math.max(bounds.min, preferred)));
-  }, [defaultCardCount, fallbackCardCount, bounds.min, bounds.max]);
+  }, [defaultCardCount, bounds.min, bounds.max]);
 
   // The player's own last choice wins; until they make one, the trivia's default applies.
   const canMix = !!cardMix && cardMix.imageCards > 0 && cardMix.definitionCards > 0;
@@ -84,16 +80,6 @@ export function SessionSetup({
   useEffect(() => {
     setPractice(localStorage.getItem(TRIVIA_PRACTICE_STORAGE_KEY) === "on");
   }, []);
-
-  // Whether this choice can earn a point, so the player knows before starting.
-  const pointsHint =
-    practice && !pointRules.practiceEarns
-      ? "Practice doesn't earn points. Play without it to earn one."
-      : bounds.max < pointRules.minCards
-        ? `This trivia has fewer than ${pointRules.minCards} cards, so it doesn't earn points.`
-        : cardCount < pointRules.minCards
-          ? `Choose ${pointRules.minCards} or more cards to earn a point.`
-          : pointRulesSummary(pointRules);
 
   const handleStart = () => {
     localStorage.setItem(TRIVIA_TIMER_STORAGE_KEY, String(timerSeconds));
@@ -112,7 +98,7 @@ export function SessionSetup({
             <Clock3 className="h-4 w-4" />
             Time per question
           </span>
-          <span className="text-white font-fredoka text-xl">{timerSeconds} sec</span>
+          <span className="text-white font-fredoka text-xl">{timerLabel(timerSeconds)}</span>
         </div>
         <Slider
           aria-label="Time per question"
@@ -123,9 +109,12 @@ export function SessionSetup({
           onValueChange={([v]) => setTimerSeconds(v)}
         />
         <div className="flex justify-between text-xs text-white/40">
-          <span>{minSeconds}s</span>
+          <span>{minSeconds === 0 ? "No timer" : `${minSeconds}s`}</span>
           <span>{maxSeconds}s</span>
         </div>
+        {timerSeconds === 0 && (
+          <p className="text-xs text-white/50">No countdown: press Next to move on after each answer.</p>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -152,10 +141,6 @@ export function SessionSetup({
             </div>
           </>
         )}
-        <p className="flex items-start gap-2 text-xs text-white/50">
-          <Star className="h-3.5 w-3.5 mt-px shrink-0 text-secondary" aria-hidden />
-          <span>{pointsHint}</span>
-        </p>
       </div>
 
       {canMix && (

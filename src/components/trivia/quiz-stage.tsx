@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import { toast } from "sonner";
-import { AlertTriangle, Check, LogOut, Volume2, VolumeX, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Square, Volume2, VolumeX, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CountdownBar } from "@/components/ui/countdown-bar";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
@@ -47,6 +48,8 @@ interface QuizStageProps {
  * clock, so this just renders what it is given: a refresh lands on the same
  * question with the remaining time. In practice mode the server also says which
  * option is right, and a pointer marks it; answering works the same either way.
+ * With a timer of 0 there is no countdown: after each answer the player moves on
+ * with Next. End cancels the session.
  */
 export function QuizStage({ session, onCompleted }: QuizStageProps) {
   const router = useRouter();
@@ -59,6 +62,9 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
   const [selected, setSelected] = useState<number | null>(null);
   const [locked, setLocked] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  // Without a countdown, the step after an answer waits for the Next button.
+  const [nextStep, setNextStep] = useState<(() => void) | null>(null);
+  const [confirmEnd, setConfirmEnd] = useState(false);
   // Mirrors `locked` synchronously so a tap and a timer expiry can't both settle a question.
   const lockedRef = useRef(false);
   const lock = (value: boolean) => {
@@ -97,6 +103,7 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
       setQuestion(data.question);
       setSelected(null);
       setFeedback(null);
+      setNextStep(null);
       lock(false);
     },
     onError: (error) => {
@@ -125,13 +132,18 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
       } else {
         playWrongSound();
       }
-      afterFeedback(() => {
+      const next = () => {
         if (data.completed) {
           onCompleted(data.result);
         } else {
           fetchQuestion.mutate();
         }
-      });
+      };
+      if (question?.deadlineAt) {
+        afterFeedback(next);
+      } else {
+        setNextStep(() => next);
+      }
     },
     // Whatever went wrong (stale index, finished session, network), the server knows the
     // current question — re-sync from it rather than leaving the board locked.
@@ -158,7 +170,7 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
   const abandon = useMutation({
     mutationFn: () => api.post(ENDPOINTS.TRIVIA_SESSION_ABANDON(session.id)),
     onSuccess: () => router.push(sessionExit(session.source, session.isPreview).href),
-    onError: () => toast.error("Couldn't leave the trivia. Please try again."),
+    onError: () => toast.error("Couldn't end the quiz. Please try again."),
   });
 
   const toggleMute = () => {
@@ -217,17 +229,28 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
           </Button>
           <Button
             type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => abandon.mutate()}
+            variant="outline"
+            size="sm"
+            onClick={() => setConfirmEnd(true)}
             disabled={abandon.isPending}
-            aria-label="Leave this trivia"
-            className="text-white/60 hover:text-white"
+            className="ml-1 border-red-400/40 text-red-300 hover:bg-red-500/10 hover:text-red-200"
           >
-            <LogOut className="h-5 w-5" />
+            <Square className="h-3.5 w-3.5 mr-1.5 fill-current" />
+            End
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmEnd}
+        onOpenChange={setConfirmEnd}
+        title="End this quiz?"
+        description="The quiz is cancelled. Your answers so far are not saved or scored."
+        confirmLabel="End quiz"
+        onConfirm={() => abandon.mutate()}
+        pending={abandon.isPending}
+        destructive
+      />
 
       <div className="flex items-center justify-between">
         <span className="text-white/60 text-sm font-medium">
@@ -240,14 +263,16 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
         )}
       </div>
 
-      <CountdownBar
-        key={question.index}
-        deadlineAt={question.deadlineAt}
-        servedAt={question.servedAt}
-        serverTime={question.serverTime}
-        timerSeconds={question.timerSeconds}
-        onExpire={handleExpire}
-      />
+      {question.deadlineAt && (
+        <CountdownBar
+          key={question.index}
+          deadlineAt={question.deadlineAt}
+          servedAt={question.servedAt}
+          serverTime={question.serverTime}
+          timerSeconds={question.timerSeconds}
+          onExpire={handleExpire}
+        />
+      )}
 
       <div className="flex flex-col items-center gap-5 py-2">
         {question.imageUrl && (
@@ -339,6 +364,22 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
           );
         })}
       </div>
+
+      {nextStep && (
+        <div className="flex justify-center">
+          <Button
+            type="button"
+            onClick={() => {
+              setNextStep(null);
+              nextStep();
+            }}
+            className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka text-lg px-10 py-6"
+          >
+            {question.index + 1 >= question.total ? "See result" : "Next"}
+            <ArrowRight className="h-5 w-5 ml-2" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

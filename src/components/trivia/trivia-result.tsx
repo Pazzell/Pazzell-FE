@@ -2,17 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import confetti from "canvas-confetti";
-import { Grid2x2, Loader2, Play, RotateCcw, Star, Trophy } from "lucide-react";
+import { Grid2x2, Loader2, Play, RotateCcw, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
 import { BrandCta } from "@/components/trivia/brand-cta";
 import { CampaignGate } from "@/components/trivia/campaign-gate";
-import { PointsSummary } from "@/components/trivia/points-summary";
-import { useGameSettings } from "@/hooks/use-game-settings";
-import { noPointMessage, POINTS_QUERY_KEY } from "@/hooks/use-points";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { useStartTriviaSession } from "@/hooks/use-start-trivia-session";
@@ -43,13 +40,6 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
     enabled: !initialResult,
   });
   const result = initialResult ?? data;
-
-  // The result carries the player's points after this quiz; keep the cached totals in step.
-  const queryClient = useQueryClient();
-  const { settings } = useGameSettings();
-  useEffect(() => {
-    if (result?.points) queryClient.setQueryData(POINTS_QUERY_KEY, result.points);
-  }, [result?.points, queryClient]);
 
   // A clean sweep is celebrated once, when the game ends on this page; coming back to an
   // old result (a refresh, a link) stays quiet.
@@ -127,28 +117,6 @@ export function TriviaResultView({ session, initialResult }: TriviaResultViewPro
           </p>
         )}
       </div>
-
-      {!result.isPreview && result.points && (
-        <div
-          className={`w-full max-w-sm rounded-2xl border p-5 space-y-3 ${
-            result.pointEarned ? "border-secondary/40 bg-secondary/10" : "border-white/10 bg-card/50"
-          }`}
-        >
-          {result.pointEarned ? (
-            <p className="flex items-center justify-center gap-2 text-secondary font-fredoka text-2xl">
-              <Star className="h-6 w-6 fill-current" aria-hidden />
-              +1 point
-            </p>
-          ) : (
-            result.noPointReason && (
-              <p className="text-white/70 text-sm">
-                {noPointMessage(result.noPointReason, settings.points)}
-              </p>
-            )
-          )}
-          <PointsSummary points={result.points} />
-        </div>
-      )}
 
       {result.brand && (
         <div className="w-full max-w-sm flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-card/50 p-5">

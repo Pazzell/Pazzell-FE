@@ -72,6 +72,7 @@ beforeEach(() => {
   });
   api.post.mockImplementation((url: string) => {
     if (url.endsWith("/answer")) return answer();
+    if (url.endsWith("/abandon")) return Promise.resolve({ data: {} });
     if (url.startsWith("/analytics/")) return Promise.resolve({ data: {} });
     return Promise.reject(new Error(`Unhandled POST ${url}`));
   });
@@ -117,6 +118,41 @@ describe("QuizStage", () => {
     expect(screen.getByRole("button", { name: "Goalkeeper" })).toBeDisabled();
     expect(await screen.findByText("Question text 2", {}, { timeout: 3000 })).toBeInTheDocument();
     expect(answerCalls()).toHaveLength(0);
+  });
+
+  it("waits for Next when there is no timer, with no countdown", async () => {
+    const noClock = (index: number) => {
+      const q = question(index, 5);
+      return { ...q, question: { ...q.question, timerSeconds: 0, deadlineAt: null, remainingMs: null } };
+    };
+    questions = [noClock(0), noClock(1)];
+    answer = answered({});
+    renderWithQuery(<QuizStage session={{ ...session, timerSeconds: 0 }} onCompleted={vi.fn()} />);
+
+    await screen.findByText("Question text 1");
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Next/ })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Goalkeeper" }));
+    expect(await screen.findByText("Correct!")).toBeInTheDocument();
+    await new Promise((r) => setTimeout(r, 1500));
+    expect(screen.queryByText("Question text 2")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /Next/ }));
+    expect(await screen.findByText("Question text 2")).toBeInTheDocument();
+  });
+
+  it("ends the quiz after confirming, which cancels the session", async () => {
+    questions = [question(0, 5)];
+    renderWithQuery(<QuizStage session={session} onCompleted={vi.fn()} />);
+    await screen.findByText("Question text 1");
+
+    await userEvent.click(screen.getByRole("button", { name: "End" }));
+    expect(screen.getByText("End this quiz?")).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalledWith("/trivia/sessions/s1/abandon");
+
+    await userEvent.click(screen.getByRole("button", { name: "End quiz" }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith("/trivia/sessions/s1/abandon"));
   });
 
   it("hands the result over when the last answer completes the session", async () => {

@@ -11,7 +11,7 @@ import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { routes } from "@/app/_utils/routes";
 import { useGameSettings } from "@/hooks/use-game-settings";
-import { TRIVIA_TIMER_STORAGE_KEY } from "@/hooks/use-start-trivia-session";
+import { storedTimerSeconds } from "@/lib/timer";
 import type {
   ApiErrorBody,
   CampaignByIdResponse,
@@ -42,16 +42,12 @@ export function CampaignGate({ campaign, timerSeconds, cardCount, practice }: Ca
       const { data } = await api.get<CampaignByIdResponse>(ENDPOINTS.CAMPAIGN_BY_ID(campaign.id));
       const { min, max } = data.cardCountBounds;
       const { minSeconds, maxSeconds, defaultSeconds } = settings.timer;
-      const stored = Number(localStorage.getItem(TRIVIA_TIMER_STORAGE_KEY));
-      const timer = timerSeconds ?? (stored || defaultSeconds);
+      const timer = timerSeconds ?? storedTimerSeconds() ?? defaultSeconds;
       const res = await api.post<TriviaSessionResponse>(ENDPOINTS.TRIVIA_SESSIONS, {
         sourceType: "campaign",
         sourceId: campaign.id,
         timerSeconds: Math.min(maxSeconds, Math.max(minSeconds, Math.round(timer))),
-        cardCount: Math.min(
-          max,
-          Math.max(min, cardCount ?? Math.max(DEFAULT_CARD_COUNT, settings.points.minCards))
-        ),
+        cardCount: Math.min(max, Math.max(min, cardCount ?? DEFAULT_CARD_COUNT)),
         ...(practice ? { practice: true } : {}),
       });
       return res.data;
