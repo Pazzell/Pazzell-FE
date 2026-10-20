@@ -10,6 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { useGameSettings } from "@/hooks/use-game-settings";
+import { timerLabel } from "@/lib/timer";
 import type { CustomQuiz } from "@/types";
 
 export interface QuizDetailsValues {
@@ -98,7 +99,7 @@ export function QuizDetailsForm({ quiz, submitLabel, pending, onSubmit }: QuizDe
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-white/80">Default time per question</Label>
-            <span className="text-white font-fredoka">{timerSeconds} sec</span>
+            <span className="text-white font-fredoka">{timerLabel(timerSeconds)}</span>
           </div>
           <Slider
             aria-label="Default time per question"

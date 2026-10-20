@@ -50,9 +50,9 @@ export default function TriviaTopicsPage() {
         {gate?.required && gate.campaign && <CampaignGate campaign={gate.campaign} />}
 
         {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-40 rounded-2xl" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 rounded-xl" />
             ))}
           </div>
         )}
@@ -79,32 +79,17 @@ export default function TriviaTopicsPage() {
         )}
 
         {topics.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {topics.map((topic) => (
               <Link key={topic.id} href={routes.USER.TRIVIA_TOPIC(topic.id)}>
-                <div className="rounded-2xl border bg-card/50 border-white/10 hover:border-secondary/50 hover:-translate-y-1 transition-all overflow-hidden h-full flex flex-col">
-                  {topic.coverImageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={topic.coverImageUrl}
-                      alt=""
-                      className="h-28 w-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-28 w-full bg-blue-500/10 flex items-center justify-center">
-                      <Brain className="h-10 w-10 text-blue-400/60" />
-                    </div>
-                  )}
-                  <div className="p-4 flex-1 flex flex-col gap-2">
-                    <h2 className="text-lg font-bold text-white font-fredoka">{topic.name}</h2>
-                    {topic.description && (
-                      <p className="text-sm text-white/60 line-clamp-2">{topic.description}</p>
-                    )}
-                    <span className="mt-auto text-xs text-white/50 inline-flex items-center gap-1">
-                      <Layers className="h-3.5 w-3.5" />
-                      {topic.cardCount} cards
-                    </span>
-                  </div>
+                <div className="rounded-xl border bg-card/50 border-white/10 hover:border-secondary/50 transition-colors h-full px-4 py-3 flex flex-col gap-1">
+                  <h2 className="text-base font-bold text-white font-fredoka leading-tight line-clamp-2">
+                    {topic.name}
+                  </h2>
+                  <span className="mt-auto text-xs text-white/50 inline-flex items-center gap-1">
+                    <Layers className="h-3.5 w-3.5" />
+                    {topic.cardCount} cards
+                  </span>
                 </div>
               </Link>
             ))}

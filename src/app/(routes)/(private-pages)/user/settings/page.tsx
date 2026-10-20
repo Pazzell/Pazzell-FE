@@ -429,7 +429,7 @@ export default function SettingsPage() {
               <div className="min-w-0">
                 <p className="text-white font-medium text-sm">Delete Account</p>
                 <p className="text-white/50 text-xs mt-1 leading-relaxed">
-                  Permanently removes your account, points, quizzes and all data. This cannot be undone.
+                  Permanently removes your account, quizzes and all data. This cannot be undone.
                 </p>
               </div>
               <Button

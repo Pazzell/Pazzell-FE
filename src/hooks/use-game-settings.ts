@@ -6,12 +6,11 @@ import type { GameSettings, GameSettingsResponse } from "@/types";
 // Sensible fallbacks only — never hard-code these for real decisions.
 // Used only while the request is in flight or if it fails.
 const FALLBACK_SETTINGS: GameSettings = {
-  timer: { minSeconds: 1, maxSeconds: 15, defaultSeconds: 5 },
+  timer: { minSeconds: 0, maxSeconds: 15, defaultSeconds: 5 },
   trivia: { minCards: 5, maxCards: 30 },
   customQuiz: { freeLimit: 1, minCardsToPublish: 5 },
   pro: { amount: 1500, currency: "NGN", durationDays: 30 },
   campaign: { amount: 15000, currency: "NGN", durationDays: 30, interruptionThreshold: 10 },
-  points: { minCards: 20, minScorePercent: 100, dailyCap: 5, practiceEarns: false, setEarnsOnce: true },
 };
 
 export function useGameSettings() {

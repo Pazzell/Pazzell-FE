@@ -24,33 +24,6 @@ export interface Plan {
   proUntil: string | null;
 }
 
-/** A player's points (section 6.3); the server applies the day and month changes. */
-export interface PlayerPoints {
-  month: string;
-  monthly: number;
-  /** Every point earned, the current month included. */
-  lifetime: number;
-  today: number;
-  dailyCap: number;
-}
-
-/** Why a completed quiz earned no point. */
-export type NoPointReason =
-  | "practice"
-  | "score_too_low"
-  | "too_few_cards"
-  | "set_already_earned"
-  | "daily_cap";
-
-/** What a completed quiz needs to earn 1 point; set by an admin. */
-export interface PointsRules {
-  minCards: number;
-  minScorePercent: number;
-  dailyCap: number;
-  practiceEarns: boolean;
-  setEarnsOnce: boolean;
-}
-
 export interface GamerProfileData {
   _id: string;
   firstName: string;
@@ -61,7 +34,6 @@ export interface GamerProfileData {
   role: "gamer";
   isVerified: boolean;
   plan?: Plan;
-  points?: PlayerPoints;
   createdAt: string;
   updatedAt: string;
 }
@@ -92,7 +64,6 @@ export interface MeResponse {
     nonCampaignPlaysSinceCampaign: number;
   };
   plan: Plan;
-  points: PlayerPoints;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -139,7 +110,6 @@ export interface GameSettings {
     durationDays: number;
     interruptionThreshold: number;
   };
-  points: PointsRules;
 }
 
 export interface GameSettingsResponse {
@@ -293,10 +263,11 @@ export interface TriviaQuestion {
   options: TriviaQuestionOption[];
   /** The `index` of the right option. Sent only in practice mode; absent otherwise. */
   correctOptionIndex?: number;
+  /** 0 means no countdown: `deadlineAt` and `remainingMs` are null and the player moves on with Next. */
   timerSeconds: number;
   servedAt: string;
-  deadlineAt: string;
-  remainingMs: number;
+  deadlineAt: string | null;
+  remainingMs: number | null;
   serverTime: string;
 }
 
@@ -325,11 +296,6 @@ export interface TriviaResult {
   isPreview: boolean;
   brand: CampaignBrand | null;
   completedAt: string;
-  /** True when this quiz earned a point; otherwise `noPointReason` says why (null on previews). */
-  pointEarned?: boolean;
-  noPointReason?: NoPointReason | null;
-  /** The player's points after this quiz. */
-  points?: PlayerPoints;
   campaignGate?: {
     required: boolean;
     counter: number;

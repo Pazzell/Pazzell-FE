@@ -9,21 +9,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, Sparkles, Star, Wallet, FolderKanban, ArrowRight } from "lucide-react";
+import { Brain, Sparkles, FolderKanban, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { routes } from "@/app/_utils/routes";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/atom/user";
 import { usePlan } from "@/hooks/use-plan";
-import { usePoints, pointRulesSummary } from "@/hooks/use-points";
-import { useGameSettings } from "@/hooks/use-game-settings";
-import { PointsSummary } from "@/components/trivia/points-summary";
 
 export default function UserDashboardPage() {
   const user = useAtomValue(userAtom);
   const { isPro, daysLeft } = usePlan();
-  const { points } = usePoints();
-  const { settings } = useGameSettings();
 
   return (
     <MainLayout maxWidth="6xl">
@@ -58,26 +53,6 @@ export default function UserDashboardPage() {
           </Link>
         </div>
 
-        <Card className="bg-card/50 backdrop-blur-sm border-white/10">
-          <CardHeader>
-            <CardTitle className="text-white font-fredoka text-xl flex items-center gap-2">
-              <Star className="h-5 w-5 text-secondary fill-current" aria-hidden />
-              Your points
-            </CardTitle>
-            <CardDescription className="text-white/70">
-              {pointRulesSummary(settings.points)} Your monthly score starts again on the 1st;
-              lifetime keeps them all.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {points ? (
-              <PointsSummary points={points} />
-            ) : (
-              <div className="h-[4.5rem] rounded-xl bg-white/5 animate-pulse" aria-hidden />
-            )}
-          </CardContent>
-        </Card>
-
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Link href={routes.USER.MY_QUIZZES}>
             <Card className="bg-card/50 backdrop-blur-sm border-white/10 hover:border-secondary/40 transition-colors">
@@ -87,11 +62,11 @@ export default function UserDashboardPage() {
               </CardContent>
             </Card>
           </Link>
-          <Link href={routes.USER.WALLET}>
+          <Link href={routes.USER.TRIVIA}>
             <Card className="bg-card/50 backdrop-blur-sm border-white/10 hover:border-secondary/40 transition-colors">
               <CardContent className="pt-6 flex items-center gap-3">
-                <Wallet className="h-5 w-5 text-secondary" />
-                <span className="text-white font-medium">Wallet</span>
+                <Brain className="h-5 w-5 text-secondary" />
+                <span className="text-white font-medium">Trivia</span>
               </CardContent>
             </Card>
           </Link>

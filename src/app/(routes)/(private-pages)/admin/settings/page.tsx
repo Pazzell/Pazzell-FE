@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
 import { api, getApiError } from "@/lib/api";
-import { cn } from "@/lib/utils";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import type { AdminConfigResponse } from "@/types";
 
@@ -17,7 +16,7 @@ interface SettingDef {
   key: string;
   label: string;
   hint?: string;
-  type: "integer" | "number" | "currency" | "boolean";
+  type: "integer" | "number" | "currency";
   min?: number;
   max?: number;
   /** Exclusive lower bound (prices must be above zero). */
@@ -42,16 +41,6 @@ const GROUPS: { title: string; settings: SettingDef[] }[] = [
       { key: "trivia.minCards", label: "Minimum cards per session", type: "integer", min: 1 },
       { key: "trivia.maxCards", label: "Maximum cards per session", type: "integer", min: 1 },
       { key: "trivia.imagePercent", label: "Image cards per session (%)", hint: "The rest are text cards. If a topic is short of one kind, the other fills the gap.", type: "integer", min: 0, max: 100 },
-    ],
-  },
-  {
-    title: "Points",
-    settings: [
-      { key: "points.minCards", label: "Cards needed to earn a point", hint: "Keep it at or below the maximum cards per session, or no session can earn.", type: "integer", min: 1 },
-      { key: "points.minScorePercent", label: "Score needed to earn a point (%)", hint: "100 means every question right.", type: "integer", min: 1, max: 100 },
-      { key: "points.dailyCap", label: "Points a player can earn per day", hint: "Days start at midnight Lagos time.", type: "integer", min: 1 },
-      { key: "points.practiceEarns", label: "Practice sessions earn points", hint: "Practice shows the correct option on every question.", type: "boolean" },
-      { key: "points.setEarnsOnce", label: "Each set of questions earns once", hint: "When on, replaying a set that has already earned gives nothing. Practising a set doesn't use it up.", type: "boolean" },
     ],
   },
   {
@@ -90,12 +79,8 @@ function readValue(entry: unknown): string {
 }
 
 /** Returns the value to send, or an error message. */
-function parseValue(
-  def: SettingDef,
-  raw: string
-): { value: number | string | boolean } | { error: string } {
+function parseValue(def: SettingDef, raw: string): { value: number | string } | { error: string } {
   const text = raw.trim();
-  if (def.type === "boolean") return { value: text === "true" };
   if (def.type === "currency") {
     return /^[A-Za-z]{3}$/.test(text)
       ? { value: text.toUpperCase() }
@@ -132,7 +117,7 @@ export default function AdminSettingsPage() {
   }, [config]);
 
   const save = useMutation({
-    mutationFn: ({ key, value }: { key: string; value: number | string | boolean }) =>
+    mutationFn: ({ key, value }: { key: string; value: number | string }) =>
       api.put(ENDPOINTS.ADMIN_CONFIG_KEY(key), { value }),
     onSuccess: () => {
       toast.success("Setting saved.");
@@ -159,9 +144,8 @@ export default function AdminSettingsPage() {
       <div>
         <h1 className="text-3xl font-bold text-white font-fredoka">Settings</h1>
         <p className="text-white/70">
-          Global game, points, pricing and campaign settings. A price or length change only
-          applies to checkouts started afterwards; a points change applies to quizzes finished
-          afterwards.
+          Global game, pricing and campaign settings. A price or length change only applies to
+          checkouts started afterwards.
         </p>
       </div>
 
@@ -199,46 +183,16 @@ export default function AdminSettingsPage() {
                       </span>
                     ) : (
                       <div className="flex items-center gap-2">
-                        {def.type === "boolean" ? (
-                          <div className="w-28 flex items-center gap-2">
-                            <button
-                              id={def.key}
-                              type="button"
-                              role="switch"
-                              aria-checked={draft === "true"}
-                              aria-label={def.label}
-                              onClick={() =>
-                                setDrafts((current) => ({
-                                  ...current,
-                                  [def.key]: draft === "true" ? "false" : "true",
-                                }))
-                              }
-                              className={cn(
-                                "relative h-7 w-12 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary",
-                                draft === "true" ? "bg-secondary" : "bg-white/20"
-                              )}
-                            >
-                              <span
-                                className={cn(
-                                  "absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform",
-                                  draft === "true" && "translate-x-5"
-                                )}
-                              />
-                            </button>
-                            <span className="text-white/70 text-sm">{draft === "true" ? "On" : "Off"}</span>
-                          </div>
-                        ) : (
-                          <Input
-                            id={def.key}
-                            value={draft}
-                            inputMode={def.type === "currency" ? "text" : "decimal"}
-                            maxLength={def.type === "currency" ? 3 : undefined}
-                            onChange={(event) =>
-                              setDrafts((current) => ({ ...current, [def.key]: event.target.value }))
-                            }
-                            className="bg-white/5 border-white/10 text-white w-28"
-                          />
-                        )}
+                        <Input
+                          id={def.key}
+                          value={draft}
+                          inputMode={def.type === "currency" ? "text" : "decimal"}
+                          maxLength={def.type === "currency" ? 3 : undefined}
+                          onChange={(event) =>
+                            setDrafts((current) => ({ ...current, [def.key]: event.target.value }))
+                          }
+                          className="bg-white/5 border-white/10 text-white w-28"
+                        />
                         <Button
                           onClick={() => handleSave(def)}
                           disabled={!changed || save.isPending}
