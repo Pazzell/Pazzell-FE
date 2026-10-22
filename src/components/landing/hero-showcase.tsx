@@ -6,6 +6,7 @@ import {
   Cat,
   Check,
   Copy,
+  FileText,
   Image as ImageIcon,
   Link2,
   Lock,
@@ -14,6 +15,8 @@ import {
   Send,
   Trophy,
   Type,
+  Upload,
+  Wand2,
 } from "lucide-react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
@@ -26,6 +29,7 @@ const SCENES = [
   { id: "picture", label: "Pictures", icon: ImageIcon, url: "pazzell.com/play/animals" },
   { id: "definition", label: "Definitions", icon: Type, url: "pazzell.com/play/football" },
   { id: "create", label: "Create", icon: PencilLine, url: "pazzell.com/my-quizzes/new" },
+  { id: "upload", label: "Upload", icon: Upload, url: "pazzell.com/my-quizzes/generate" },
   { id: "share", label: "Share", icon: Link2, url: "pazzell.com/q/plant-cells" },
   { id: "results", label: "Results", icon: BarChart3, url: "pazzell.com/my-quizzes/plant-cells" },
 ] as const;
@@ -209,6 +213,79 @@ function CreateScene({ t }: { t: number }) {
   );
 }
 
+// Questions the upload scene "writes" from the notes, one row at a time.
+const GENERATED = [
+  { text: "Where a plant cell makes its food", answer: "Chloroplast" },
+  { text: "The control centre of the cell", answer: "Nucleus" },
+  { text: "Gives a plant cell its firm shape", answer: "Cell wall" },
+];
+
+function UploadScene({ t }: { t: number }) {
+  const uploaded = t >= 3;
+  const reading = uploaded && t < 7;
+  const shown = GENERATED.slice(0, Math.max(0, Math.min(GENERATED.length, t - 6)));
+  const ready = t >= 11;
+  return (
+    <div className="flex h-full flex-col">
+      <p className="text-white/50 text-xs uppercase tracking-wide">Upload a document</p>
+      <p className="text-white font-fredoka text-xl font-bold mb-4">Turn your notes into trivia</p>
+
+      <div
+        className={cn(
+          "relative flex items-center gap-3 rounded-2xl border-2 border-dashed px-4 py-3 transition-colors duration-300",
+          uploaded ? "border-secondary/60 bg-secondary/10" : "border-white/20 bg-white/5"
+        )}>
+        <span className="h-10 w-10 shrink-0 rounded-xl bg-[#FF6B6B]/20 flex items-center justify-center">
+          <FileText className="h-5 w-5 text-[#FF6B6B]" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-white text-sm font-semibold">Biology notes.pdf</span>
+          <span className="block text-white/50 text-xs">
+            {uploaded ? "Uploaded" : "PDF, Word or pasted text"}
+          </span>
+        </span>
+        {uploaded ? (
+          <Check className="h-5 w-5 text-green-400 shrink-0" />
+        ) : (
+          <span className="rounded-xl bg-secondary px-3 py-2 text-sm font-semibold text-[#1A1A2E]">Upload</span>
+        )}
+        {t >= 1 && t < 4 && <Tap />}
+      </div>
+
+      <div className="mt-4 min-h-[1.5rem]">
+        {uploaded && (
+          <p className={cn("flex items-center gap-2 text-sm", appear, ready ? "text-green-400" : "text-white/60")}>
+            {ready ? <Check className="h-4 w-4" /> : <Wand2 className="h-4 w-4 text-[#FFEAA7] animate-pulse" />}
+            {reading ? "Reading your notes..." : ready ? `${CARDS_PER_TRIVIA} cards ready to play` : "Writing questions..."}
+          </p>
+        )}
+      </div>
+      {reading && (
+        <div className="mt-2 h-2 w-full rounded-full bg-white/10 overflow-hidden" aria-hidden>
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-[#6C5CE7] to-[#FF6B9D] transition-[width] duration-500"
+            style={{ width: `${((t - 2) / 4) * 100}%` }}
+          />
+        </div>
+      )}
+
+      <ul className="mt-3 space-y-2">
+        {shown.map((card) => (
+          <li
+            key={card.text}
+            className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 animate-slide-in motion-reduce:animate-none">
+            <Type className="h-4 w-4 text-secondary shrink-0" />
+            <span className="flex-1 truncate text-white text-sm">{card.text}</span>
+            <span className="shrink-0 rounded-lg bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-400">
+              {card.answer}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function ShareScene({ t }: { t: number }) {
   const copied = t >= 3;
   const shown = PLAYERS.slice(0, Math.max(0, t - 5));
@@ -312,7 +389,8 @@ function ResultsScene({ t }: { t: number }) {
 
 /**
  * The hero's product screen: it slides through what Pazzell does, from answering
- * cards to creating a trivia, sharing its link and seeing everyone's results.
+ * cards to creating a trivia (by hand or from an uploaded document), sharing its
+ * link and seeing everyone's results.
  */
 export function HeroShowcase() {
   const reducedMotion = useReducedMotion();
@@ -378,6 +456,7 @@ export function HeroShowcase() {
               />
             )}
             {scene.id === "create" && <CreateScene t={t} />}
+            {scene.id === "upload" && <UploadScene t={t} />}
             {scene.id === "share" && <ShareScene t={t} />}
             {scene.id === "results" && <ResultsScene t={t} />}
           </div>
@@ -385,7 +464,7 @@ export function HeroShowcase() {
       </div>
 
       <div
-        className="relative mt-5 grid grid-cols-5 gap-1.5"
+        className="relative mt-5 grid grid-cols-6 gap-1.5"
         role="tablist"
         aria-label="What you can do on Pazzell">
         {SCENES.map((s, i) => {
