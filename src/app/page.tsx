@@ -1,12 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import {
   BarChart3,
   Brain,
-  Cat,
-  Check,
   FileText,
   Image as ImageIcon,
   Link2,
@@ -28,8 +25,8 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { routes } from "@/app/_utils/routes";
 import { useGameSettings } from "@/hooks/use-game-settings";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { cn, formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
+import { HeroShowcase } from "@/components/landing/hero-showcase";
 
 const PuzzlePiece = ({
   className,
@@ -48,121 +45,6 @@ const PuzzlePiece = ({
     <path d="M30 10 H70 C75 10 80 15 80 20 V35 C90 35 95 45 95 50 C95 55 90 65 80 65 V80 C80 85 75 90 70 90 H55 C55 80 45 75 40 75 C35 75 25 80 25 90 H30 C25 90 20 85 20 80 V65 C10 65 5 55 5 50 C5 45 10 35 20 35 V20 C20 15 25 10 30 10Z" />
   </svg>
 );
-
-// The two kinds of card a player meets, shown as a sample in the hero.
-const SAMPLE_CARDS = [
-  {
-    kind: "picture",
-    label: "Picture",
-    prompt: "What is this?",
-    options: ["Cat", "Sheep"],
-    correct: 0,
-  },
-  {
-    kind: "definition",
-    label: "Definition",
-    prompt: "The only player allowed to handle the ball in open play",
-    options: ["Striker", "Goalkeeper"],
-    correct: 1,
-  },
-] as const;
-
-const SAMPLE_SWITCH_MS = 4000;
-
-/** A static preview of a question: a picture or a short definition, and two options. */
-function SampleCard() {
-  const reducedMotion = useReducedMotion();
-  const [index, setIndex] = useState(0);
-  const card = SAMPLE_CARDS[index];
-
-  useEffect(() => {
-    if (reducedMotion) return;
-    const timer = setInterval(
-      () => setIndex((i) => (i + 1) % SAMPLE_CARDS.length),
-      SAMPLE_SWITCH_MS
-    );
-    return () => clearInterval(timer);
-  }, [reducedMotion]);
-
-  return (
-    <div className="w-full max-w-sm mx-auto">
-      <div
-        className="flex justify-center gap-2 mb-4"
-        role="tablist"
-        aria-label="Sample card type">
-        {SAMPLE_CARDS.map((sample, i) => (
-          <button
-            key={sample.kind}
-            type="button"
-            role="tab"
-            aria-selected={i === index}
-            onClick={() => setIndex(i)}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
-              i === index
-                ? "border-secondary bg-secondary/10 text-white"
-                : "border-white/15 text-white/60 hover:border-white/40"
-            )}>
-            {sample.kind === "picture" ? (
-              <ImageIcon className="h-4 w-4" />
-            ) : (
-              <Type className="h-4 w-4" />
-            )}
-            {sample.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-[#6C5CE7]/20 backdrop-blur-sm">
-        <div className="flex items-center justify-between text-white/60 text-sm mb-3">
-          <span>Question 3 of 10</span>
-          <span className="inline-flex items-center gap-1">
-            <Timer className="h-4 w-4" />5 sec
-          </span>
-        </div>
-        <div
-          className="h-2.5 w-full rounded-full bg-white/10 overflow-hidden mb-6"
-          aria-hidden>
-          <div className="h-full w-2/3 rounded-full bg-green-400" />
-        </div>
-
-        <div className="min-h-[11rem] flex flex-col items-center justify-center gap-4 mb-5">
-          {card.kind === "picture" && (
-            <div
-              className="h-28 w-40 rounded-2xl bg-gradient-to-br from-[#FF9F43] to-[#FF6B9D] flex items-center justify-center"
-              aria-hidden>
-              <Cat className="h-16 w-16 text-white" />
-            </div>
-          )}
-          <p className="text-white text-lg text-center font-medium">
-            {card.prompt}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          {card.options.map((option, i) => (
-            <div
-              key={option}
-              className={cn(
-                "flex items-center justify-between gap-2 rounded-xl border-2 px-4 py-3 text-white",
-                i === card.correct
-                  ? "border-green-400 bg-green-500/10 font-bold"
-                  : "border-white/10 bg-white/5"
-              )}>
-              {option}
-              {i === card.correct && (
-                <Check className="h-5 w-5 text-green-400 shrink-0" />
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-      <p className="text-center text-white/40 text-xs mt-3">
-        A sample question, not a live game.
-      </p>
-    </div>
-  );
-}
 
 function Step({
   num,
@@ -246,8 +128,9 @@ export default function Home() {
             </p>
             <p className="text-lg sm:text-xl text-white/70 mb-8 leading-relaxed">
               Pazzell is a quick trivia that trains recognition and recall. See
-              a picture or a short definition, choose between two options, and
-              answer in a few seconds.
+              a picture or a short definition and choose between two options.
+              Or make your own trivia, share the link, and see how everyone
+              did.
             </p>
             <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
               <Link href={`${routes.REGISTER}?type=user`}>
@@ -264,7 +147,7 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          <SampleCard />
+          <HeroShowcase />
         </div>
       </section>
 
