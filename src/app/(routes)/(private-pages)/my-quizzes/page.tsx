@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Copy, Eye, FolderKanban, Layers, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Copy, Eye, FolderKanban, Layers, Pencil, Plus, Sparkles, Trash2, Users } from "lucide-react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +13,7 @@ import { PageError } from "@/components/ui/page-error";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { UpgradePrompt } from "@/components/pro/upgrade-prompt";
 import { QuizStatusBadge } from "@/components/quizzes/quiz-status-badge";
+import { HostTeamGameDialog } from "@/components/team-game/host-team-game-dialog";
 import { api, getApiError } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { routes } from "@/app/_utils/routes";
@@ -23,6 +24,7 @@ export default function MyQuizzesPage() {
   const queryClient = useQueryClient();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [deleting, setDeleting] = useState<CustomQuiz | null>(null);
+  const [hosting, setHosting] = useState<CustomQuiz | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["custom-quizzes"],
@@ -159,6 +161,18 @@ export default function MyQuizzesPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-1">
+                  {quiz.status !== "locked" && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setHosting(quiz)}
+                      aria-label={`Play ${quiz.title} as teams`}
+                      title="Play as teams"
+                      className="text-white/60 hover:text-white"
+                    >
+                      <Users className="h-4 w-4" />
+                    </Button>
+                  )}
                   {quiz.shareUrl && (
                     <Button
                       size="icon"
@@ -218,6 +232,7 @@ export default function MyQuizzesPage() {
             : undefined
         }
       />
+      <HostTeamGameDialog quiz={hosting} onOpenChange={(open) => !open && setHosting(null)} />
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}

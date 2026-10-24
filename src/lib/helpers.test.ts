@@ -75,8 +75,13 @@ describe("return path", () => {
     expect(getReturnPath()).toBeNull();
   });
 
+  it("round-trips a team game join link", () => {
+    setReturnPath("/team/Ab3_dE-fGh12");
+    expect(getReturnPath()).toBe("/team/Ab3_dE-fGh12");
+  });
+
   it("ignores anything that is not an in-app share link", () => {
-    for (const path of ["https://evil.example/q/abc", "//evil.example", "/admin", "/q/abc/../../admin", "/q/"]) {
+    for (const path of ["https://evil.example/q/abc", "//evil.example", "/admin", "/q/abc/../../admin", "/q/", "/team/abc/result/x", "/teams/abc"]) {
       setReturnPath(path);
       expect(getReturnPath()).toBeNull();
     }

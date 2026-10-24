@@ -12,6 +12,8 @@ export const routes = {
   CONTACT: "/contact",
   PAYMENT_VERIFY: "/payment/verify",
   QUIZ_SHARE: (slug: string) => `/q/${slug}`,
+  TEAM_GAME: (code: string) => `/team/${code}`,
+  TEAM_GAME_RESULT: (code: string) => `/team/${code}/result`,
 
   // User (gamer)
   USER: {

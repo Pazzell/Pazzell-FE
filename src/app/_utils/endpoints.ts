@@ -63,6 +63,22 @@ export const ENDPOINTS = {
   CUSTOM_QUIZ_LINK_PLAY_INFO: (slug: string) =>
     `/custom-quizzes/link/${slug}/play-info`,
 
+  // Team games (a custom quiz played as tic-tac-toe between teams)
+  TEAM_GAMES: "/team-games",
+  TEAM_GAME: (code: string) => `/team-games/${code}`,
+  TEAM_GAME_JOIN: (code: string) => `/team-games/${code}/join`,
+  TEAM_GAME_LEAVE: (code: string) => `/team-games/${code}/leave`,
+  TEAM_GAME_MOVE_PLAYER: (code: string, userId: string) =>
+    `/team-games/${code}/players/${userId}/team`,
+  TEAM_GAME_LEADER: (code: string, teamId: string) =>
+    `/team-games/${code}/teams/${teamId}/leader`,
+  TEAM_GAME_START: (code: string) => `/team-games/${code}/start`,
+  TEAM_GAME_PICK: (code: string) => `/team-games/${code}/pick`,
+  TEAM_GAME_ANSWER: (code: string) => `/team-games/${code}/answer`,
+  TEAM_GAME_END: (code: string) => `/team-games/${code}/end`,
+  TEAM_GAME_MESSAGES: (code: string) => `/team-games/${code}/messages`,
+  TEAM_GAME_RESULT: (code: string) => `/team-games/${code}/result`,
+
   // AI generated trivia (written for a Pro player from a topic and a prompt)
   AI_TRIVIA_OPTIONS: "/ai-trivia/options",
   AI_TRIVIAS: "/ai-trivia",
