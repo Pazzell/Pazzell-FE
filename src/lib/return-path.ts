@@ -15,8 +15,8 @@ export function setReturnPath(path: string) {
 export function getReturnPath(): string | null {
   try {
     const path = sessionStorage.getItem(RETURN_PATH_KEY);
-    // Only ever an in-app share link — never an arbitrary or external URL.
-    return path && /^\/q\/[\w-]+$/.test(path) ? path : null;
+    // Only ever an in-app share or team-game link — never an arbitrary or external URL.
+    return path && /^\/(q|team)\/[\w-]+$/.test(path) ? path : null;
   } catch {
     return null;
   }

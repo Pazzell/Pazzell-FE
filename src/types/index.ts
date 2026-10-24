@@ -812,3 +812,135 @@ export interface CreateWithdrawalRequest {
   amount: number;
   idempotencyKey: string;
 }
+
+// Team games: a custom quiz played as tic-tac-toe between teams (see /team/:code)
+export type TeamGameStatus = "lobby" | "playing" | "finished" | "cancelled";
+export type TeamGameEndReason = "line" | "board_full" | "host_ended";
+export type TeamPlayOutcome = "correct" | "wrong" | "timeout";
+
+export interface TeamGamePerson {
+  userId: string;
+  name: string;
+  avatar: string | null;
+}
+
+export interface TeamGameTeam {
+  id: string;
+  name: string;
+  color: string;
+  leaderId: string | null;
+  score: number;
+  members: TeamGamePerson[];
+}
+
+export interface TeamGameCell {
+  index: number;
+  number: number;
+  owner: string | null;
+}
+
+export interface TeamGameBoard {
+  size: number;
+  lineLength: number;
+  cells: TeamGameCell[];
+}
+
+export interface TeamGameState {
+  code: string;
+  status: TeamGameStatus;
+  quiz: { id: string; title: string; coverImageUrl: string | null };
+  host: TeamGamePerson;
+  timerSeconds: number;
+  board: TeamGameBoard;
+  teams: TeamGameTeam[];
+  unassigned: TeamGamePerson[];
+  turnTeamId: string | null;
+  current: {
+    cellIndex: number;
+    number: number;
+    teamId: string;
+    servedAt: string;
+    deadlineAt: string;
+    timerSeconds: number;
+    question: {
+      type: "image" | "definition";
+      imageUrl: string | null;
+      text: string | null;
+      attribution: string | null;
+      options: { index: number; text: string }[];
+    };
+  } | null;
+  lastPlay: {
+    cellIndex: number;
+    number: number;
+    teamId: string;
+    outcome: TeamPlayOutcome;
+    optionIndex: number | null;
+    correctOptionIndex: number;
+    at: string;
+  } | null;
+  playCount: number;
+  winnerTeamId: string | null;
+  winningLine: number[] | null;
+  isDraw: boolean;
+  endReason: TeamGameEndReason | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  joinUrl: string;
+  resultUrl: string | null;
+  serverTime: string;
+}
+
+export interface TeamGameResponse {
+  success: boolean;
+  game: TeamGameState;
+}
+
+export interface TeamGameMessage {
+  id: string;
+  teamId: string;
+  userId: string;
+  name: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface TeamGameMessagesResponse {
+  success: boolean;
+  teamId: string;
+  messages: TeamGameMessage[];
+}
+
+export interface TeamGameResultTeam {
+  id: string;
+  name: string;
+  color: string;
+  score: number;
+  cellsClaimed: number;
+  questionsAnswered: number;
+  correctAnswers: number;
+  leaderName: string | null;
+  members: { name: string; avatar: string | null; isLeader: boolean }[];
+  isWinner: boolean;
+}
+
+export interface TeamGameResult {
+  code: string;
+  quiz: { title: string; coverImageUrl: string | null };
+  host: { name: string; avatar: string | null };
+  endReason: TeamGameEndReason | null;
+  isDraw: boolean;
+  winnerTeamId: string | null;
+  board: TeamGameBoard;
+  winningLine: number[] | null;
+  teams: TeamGameResultTeam[];
+  questionsPlayed: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+  resultUrl: string;
+}
+
+export interface TeamGameResultResponse {
+  success: boolean;
+  result: TeamGameResult;
+}
