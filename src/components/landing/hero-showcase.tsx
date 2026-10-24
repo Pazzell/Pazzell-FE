@@ -26,12 +26,12 @@ const TICK_MS = 400;
 const TICKS_PER_SCENE = 14;
 
 const SCENES = [
-  { id: "picture", label: "Pictures", icon: ImageIcon, url: "pazzell.com/play/animals" },
-  { id: "definition", label: "Definitions", icon: Type, url: "pazzell.com/play/football" },
   { id: "create", label: "Create", icon: PencilLine, url: "pazzell.com/my-quizzes/new" },
-  { id: "upload", label: "Upload", icon: Upload, url: "pazzell.com/my-quizzes/generate" },
   { id: "share", label: "Share", icon: Link2, url: "pazzell.com/q/plant-cells" },
   { id: "results", label: "Results", icon: BarChart3, url: "pazzell.com/my-quizzes/plant-cells" },
+  { id: "upload", label: "Upload", icon: Upload, url: "pazzell.com/my-quizzes/generate" },
+  { id: "picture", label: "Pictures", icon: ImageIcon, url: "pazzell.com/play/animals" },
+  { id: "definition", label: "Definitions", icon: Type, url: "pazzell.com/play/football" },
 ] as const;
 
 const PLAYERS = [
@@ -388,9 +388,9 @@ function ResultsScene({ t }: { t: number }) {
 }
 
 /**
- * The hero's product screen: it slides through what Pazzell does, from answering
- * cards to creating a trivia (by hand or from an uploaded document), sharing its
- * link and seeing everyone's results.
+ * The hero's product screen: it slides through what Pazzell does, from creating a
+ * trivia, sharing its link and seeing everyone's results, to generating one from an
+ * uploaded document and answering cards.
  */
 export function HeroShowcase() {
   const reducedMotion = useReducedMotion();

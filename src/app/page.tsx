@@ -110,10 +110,10 @@ export default function Home() {
           <div className="text-center lg:text-left">
             <p className="inline-flex items-center gap-2 rounded-full border border-secondary/40 bg-secondary/10 px-4 py-1.5 text-sm text-secondary font-medium mb-6">
               <Brain className="h-4 w-4" />
-              Brain training, one card at a time
+              Gain and test knowledge, one card at a time
             </p>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight font-fredoka">
-              Sharpen your mind with{" "}
+              A fun way to learn with{" "}
               <span className="bg-gradient-to-r from-secondary to-[#00E676] bg-clip-text text-transparent">
                 pictures
               </span>{" "}
@@ -123,9 +123,6 @@ export default function Home() {
               </span>
               .
             </h1>
-            <p className="text-2xl sm:text-3xl font-fredoka text-secondary mb-4">
-              A fun way to learn.
-            </p>
             <p className="text-lg sm:text-xl text-white/70 mb-8 leading-relaxed">
               Pazzell is a quick trivia that trains recognition and recall. See
               a picture or a short definition and choose between two options.

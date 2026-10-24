@@ -88,6 +88,13 @@ export function Header() {
                   className="text-white hover:text-secondary font-medium transition-colors">
                   About
                 </Link>
+                {!(isMounted && userType) && (
+                  <Link
+                    href={routes.LOGIN}
+                    className="text-white hover:text-secondary font-medium transition-colors">
+                    Login
+                  </Link>
+                )}
               </>
             )}
           </nav>
@@ -176,13 +183,6 @@ export function Header() {
               </div>
             ) : (
               <div className="lg:flex items-center space-x-2 hidden ">
-                <Link href={routes.LOGIN}>
-                  <Button
-                    variant="ghost"
-                    className="text-white hover:text-secondary hover:bg-transparent font-semibold text-base font-fredoka py-5 px-5">
-                    Login
-                  </Button>
-                </Link>
                 <Link href={`${routes.REGISTER}?type=user`}>
                   <Button
                     variant="outline"
@@ -317,14 +317,13 @@ export function Header() {
                     onClick={closeMobileMenu}>
                     About
                   </Link>
+                  <Link
+                    href={routes.LOGIN}
+                    className="block py-3 px-2 rounded-md transition-colors text-white hover:text-secondary hover:bg-white/5"
+                    onClick={closeMobileMenu}>
+                    Login
+                  </Link>
                   <div className="border-t border-white/10 pt-4 flex flex-col space-y-2">
-                    <Link href={routes.LOGIN} onClick={closeMobileMenu}>
-                      <Button
-                        variant="ghost"
-                        className="w-full text-white hover:text-secondary hover:bg-white/5 font-fredoka justify-start">
-                        Login
-                      </Button>
-                    </Link>
                     <Link
                       href={`${routes.REGISTER}?type=user`}
                       onClick={closeMobileMenu}>
