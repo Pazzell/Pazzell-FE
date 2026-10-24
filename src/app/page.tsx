@@ -110,7 +110,7 @@ export default function Home() {
           <div className="text-center lg:text-left">
             <p className="inline-flex items-center gap-2 rounded-full border border-secondary/40 bg-secondary/10 px-4 py-1.5 text-sm text-secondary font-medium mb-6">
               <Brain className="h-4 w-4" />
-              Gain and test knowledge, one card at a time
+              Test knowledge, one card at a time
             </p>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight font-fredoka">
               A fun way to learn with{" "}
