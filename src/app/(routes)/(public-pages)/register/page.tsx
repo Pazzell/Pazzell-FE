@@ -212,7 +212,7 @@ function RegisterForm() {
 
             {userType === 'user' ? (
               <Form {...userForm} key="user-form">
-                <form className="space-y-4" onSubmit={userForm.handleSubmit(onSubmitUser)}>
+                <form method="post" className="space-y-4" onSubmit={userForm.handleSubmit(onSubmitUser)}>
                   <FormField
                     control={userForm.control}
                     name="firstName"
@@ -321,7 +321,7 @@ function RegisterForm() {
               </Form>
             ) : (
               <Form {...brandForm} key="brand-form">
-                <form className="space-y-4" onSubmit={brandForm.handleSubmit(onSubmitBrand)}>
+                <form method="post" className="space-y-4" onSubmit={brandForm.handleSubmit(onSubmitBrand)}>
                   <FormField
                     control={brandForm.control}
                     name="name"

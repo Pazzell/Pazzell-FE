@@ -153,7 +153,7 @@ function ResetPasswordContent() {
                 </p>
 
                 <Form {...form}>
-                  <form
+                  <form method="post"
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="space-y-4"
                   >

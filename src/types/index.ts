@@ -339,9 +339,13 @@ export interface TriviaCardInput {
 
 export type CustomQuizStatus = "draft" | "live" | "unpublished" | "locked";
 
+/** "broadcast": shared with a link and played alone. "team": hosted as a team game. */
+export type CustomQuizMode = "broadcast" | "team";
+
 export interface CustomQuiz {
   id: string;
   title: string;
+  mode: CustomQuizMode;
   description: string | null;
   coverImageUrl: string | null;
   status: CustomQuizStatus;
@@ -396,6 +400,8 @@ export interface GenerateInfoResponse {
     maxFileBytes: number;
     minCharacters: number;
     count: { default: number; min: number; max: number };
+    /** Writing the cards from a description instead of a document. */
+    prompt: { maxLength: number; count: { default: number; min: number; max: number } };
   };
 }
 
@@ -404,7 +410,9 @@ export interface GenerateCardsResponse {
   suggestedTitle: string | null;
   requested: number;
   cards: DraftTriviaCard[];
-  document: { name: string | null; kind: "pdf" | "docx" | "text"; characters: number; sampled: boolean };
+  /** The description the cards were written for, or null when they came from a document. */
+  prompt: string | null;
+  document: { name: string | null; kind: "pdf" | "docx" | "text"; characters: number; sampled: boolean } | null;
   usage: GenerateAllowance;
 }
 

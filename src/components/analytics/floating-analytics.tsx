@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { 
@@ -24,6 +25,7 @@ import { userAtom } from '@/atom/user'
 const ONLINE_PING_MS = 4 * 60 * 1000
 
 export function FloatingAnalytics() {
+  const pathname = usePathname()
   const [isExpanded, setIsExpanded] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
 
@@ -55,6 +57,9 @@ export function FloatingAnalytics() {
     }, 3000)
     return () => clearTimeout(timer)
   }, [])
+
+  // A team game's board and team chat fill the corner the widget sits in.
+  if (pathname?.startsWith('/team/')) return null
 
   if (!isVisible) {
     return (

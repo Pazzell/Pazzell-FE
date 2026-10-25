@@ -11,10 +11,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { useGameSettings } from "@/hooks/use-game-settings";
 import { timerLabel } from "@/lib/timer";
-import type { CustomQuiz } from "@/types";
+import { QuizModePicker } from "@/components/quizzes/quiz-mode-picker";
+import type { CustomQuiz, CustomQuizMode } from "@/types";
 
 export interface QuizDetailsValues {
   title: string;
+  mode: CustomQuizMode;
   description: string;
   coverImageUrl: string | null;
   defaultTimerSeconds: number;
@@ -30,6 +32,7 @@ interface QuizDetailsFormProps {
 
 export function QuizDetailsForm({ quiz, submitLabel, pending, onSubmit }: QuizDetailsFormProps) {
   const { settings } = useGameSettings();
+  const [mode, setMode] = useState<CustomQuizMode>(quiz?.mode ?? "broadcast");
   const [title, setTitle] = useState(quiz?.title ?? "");
   const [description, setDescription] = useState(quiz?.description ?? "");
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(quiz?.coverImageUrl ?? null);
@@ -48,6 +51,7 @@ export function QuizDetailsForm({ quiz, submitLabel, pending, onSubmit }: QuizDe
     }
     onSubmit({
       title: title.trim(),
+      mode,
       description: description.trim(),
       coverImageUrl,
       defaultTimerSeconds: timerSeconds,
@@ -56,7 +60,16 @@ export function QuizDetailsForm({ quiz, submitLabel, pending, onSubmit }: QuizDe
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form method="post" onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-2">
+        <span className="text-sm font-medium text-white/80">How will it be played?</span>
+        {/* A live quiz keeps its type: switching would break the link people already have. */}
+        <QuizModePicker value={mode} onChange={setMode} disabled={quiz?.status === "live"} />
+        {quiz?.status === "live" && (
+          <p className="text-white/50 text-xs">Unpublish the quiz to change how it is played.</p>
+        )}
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="quiz-title" className="text-white/80">
           Title
@@ -95,39 +108,47 @@ export function QuizDetailsForm({ quiz, submitLabel, pending, onSubmit }: QuizDe
         />
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-6">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-white/80">Default time per question</Label>
-            <span className="text-white font-fredoka">{timerLabel(timerSeconds)}</span>
+      {mode === "team" ? (
+        <p className="text-white/50 text-sm">
+          You choose the number of teams and the time to answer when you open a game lobby.
+        </p>
+      ) : (
+        <>
+          <div className="grid sm:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-white/80">Default time per question</Label>
+                <span className="text-white font-fredoka">{timerLabel(timerSeconds)}</span>
+              </div>
+              <Slider
+                aria-label="Default time per question"
+                min={settings.timer.minSeconds}
+                max={settings.timer.maxSeconds}
+                step={1}
+                value={[timerSeconds]}
+                onValueChange={([v]) => setTimerSeconds(v)}
+              />
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-white/80">Default number of cards</Label>
+                <span className="text-white font-fredoka">{cardCount}</span>
+              </div>
+              <Slider
+                aria-label="Default number of cards"
+                min={1}
+                max={settings.trivia.maxCards}
+                step={1}
+                value={[cardCount]}
+                onValueChange={([v]) => setCardCount(v)}
+              />
+            </div>
           </div>
-          <Slider
-            aria-label="Default time per question"
-            min={settings.timer.minSeconds}
-            max={settings.timer.maxSeconds}
-            step={1}
-            value={[timerSeconds]}
-            onValueChange={([v]) => setTimerSeconds(v)}
-          />
-        </div>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-white/80">Default number of cards</Label>
-            <span className="text-white font-fredoka">{cardCount}</span>
-          </div>
-          <Slider
-            aria-label="Default number of cards"
-            min={1}
-            max={settings.trivia.maxCards}
-            step={1}
-            value={[cardCount]}
-            onValueChange={([v]) => setCardCount(v)}
-          />
-        </div>
-      </div>
-      <p className="text-white/50 text-xs">
-        Players who open your link start with these defaults and can change them.
-      </p>
+          <p className="text-white/50 text-xs">
+            Players who open your link start with these defaults and can change them.
+          </p>
+        </>
+      )}
 
       <Button
         type="submit"

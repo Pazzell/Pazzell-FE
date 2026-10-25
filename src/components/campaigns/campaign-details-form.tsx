@@ -112,7 +112,7 @@ export function CampaignDetailsForm({
   const inputClass = "bg-white/5 border-white/10 text-white";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form method="post" onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="campaign-title" className="text-white/80">
           Campaign title

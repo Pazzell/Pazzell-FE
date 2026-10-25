@@ -182,7 +182,7 @@ export function TeamGame({ code }: { code: string }) {
         destructive
       />
       <Dialog open={manageOpen} onOpenChange={setManageOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="bg-card border-white/10 text-white max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Manage teams</DialogTitle>
           </DialogHeader>
@@ -338,7 +338,7 @@ function LobbyPanel({
                 <SelectTrigger className="w-32 border-white/10 bg-white/5 text-white" aria-label="Number of teams">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-card border-white/10 text-white">
                   {[2, 3, 4, 5, 6].map((n) => (
                     <SelectItem key={n} value={String(n)}>
                       {n} teams
@@ -357,7 +357,7 @@ function LobbyPanel({
                 <SelectTrigger className="w-32 border-white/10 bg-white/5 text-white" aria-label="Time to answer">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-card border-white/10 text-white">
                   {Array.from(new Set([...TEAM_TIMER_CHOICES, state.timerSeconds]))
                     .sort((a, b) => a - b)
                     .map((s) => (
@@ -385,8 +385,9 @@ function LobbyPanel({
               <p className="text-sm text-white/50">At least 2 teams need players before you can start.</p>
             )}
             <p className="text-xs text-white/40">
-              The first player on each team leads it. Use the crown to change a leader, or the menu to
-              move a player. Empty teams are left out when the game starts.
+              You run the game and don&apos;t play in it. The first player on each team leads it. Use
+              the crown to change a leader, or the menu to move a player. Empty teams are left out
+              when the game starts.
             </p>
           </div>
         ) : (

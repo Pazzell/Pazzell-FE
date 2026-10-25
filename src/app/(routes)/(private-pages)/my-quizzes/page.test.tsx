@@ -21,6 +21,7 @@ import NewQuizPage from "./new/page";
 const quiz = (overrides: object = {}) => ({
   id: "q1",
   title: "Capital cities",
+  mode: "broadcast",
   description: null,
   coverImageUrl: null,
   status: "draft",
@@ -76,6 +77,28 @@ describe("My Quizzes page", () => {
     expect(await screen.findByText("Locked")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Renew Pro" })).toHaveAttribute("href", "/pro");
   });
+
+  it("offers Host game for a live team quiz, and the share link for a broadcast one", async () => {
+    listResponse = {
+      quizzes: [
+        quiz({ id: "q1", mode: "team", status: "live", cardCount: 9 }),
+        quiz({ id: "q2", title: "Rivers", status: "live", shareUrl: "https://pazzell.test/q/abc" }),
+        quiz({ id: "q3", title: "Planets", mode: "team" }),
+      ],
+      plan: "pro",
+      limit: null,
+    };
+    renderWithQuery(<MyQuizzesPage />);
+
+    expect(await screen.findByRole("button", { name: "Host a game of Capital cities" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy share link for Rivers" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Host a game of Rivers" })).not.toBeInTheDocument();
+    // A draft team quiz has to be published first.
+    expect(screen.queryByRole("button", { name: "Host a game of Planets" })).not.toBeInTheDocument();
+    expect(screen.getByText("Publish it to host a game.")).toBeInTheDocument();
+    expect(screen.getAllByText("Team quiz")).toHaveLength(2);
+    expect(screen.getByText("Broadcast quiz")).toBeInTheDocument();
+  });
 });
 
 describe("New Quiz page", () => {
@@ -102,9 +125,23 @@ describe("New Quiz page", () => {
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/my-quizzes/q2/edit"));
     expect(api.post).toHaveBeenCalledWith("/custom-quizzes", {
       title: "Rivers",
+      mode: "broadcast",
       description: "",
       defaultTimerSeconds: 5,
       defaultCardCount: 5,
     });
+  });
+
+  it("creates a team quiz, without the solo-play defaults", async () => {
+    api.post.mockResolvedValue({ data: { quiz: quiz({ id: "q3", mode: "team" }) } });
+    renderWithQuery(<NewQuizPage />);
+
+    await userEvent.click(screen.getByRole("radio", { name: /Team quiz/ }));
+    expect(screen.queryByLabelText("Default time per question")).not.toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("Title"), "Planets");
+    await userEvent.click(screen.getByRole("button", { name: "Create Quiz" }));
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/my-quizzes/q3/edit"));
+    expect(api.post).toHaveBeenCalledWith("/custom-quizzes", expect.objectContaining({ title: "Planets", mode: "team" }));
   });
 });

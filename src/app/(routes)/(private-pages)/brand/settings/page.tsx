@@ -130,7 +130,7 @@ export default function BrandSettingsPage() {
       )}
 
       {profile && (
-        <form
+        <form method="post"
           onSubmit={handleSubmit}
           className="rounded-2xl border border-white/10 bg-card/50 p-6 space-y-6"
         >

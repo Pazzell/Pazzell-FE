@@ -27,7 +27,8 @@ export function TeamRoster({ state, userId, isHost, myTeamId, act, pending = fal
   const inLobby = state.status === "lobby";
   const code = state.code;
   // Once play starts a player's team is fixed, but someone who has no team can still join one.
-  const canJoin = inLobby || (state.status === "playing" && !myTeamId);
+  // The host runs the game and never plays in it.
+  const canJoin = !isHost && (inLobby || (state.status === "playing" && !myTeamId));
 
   const move = (person: TeamGamePerson, value: string) =>
     act(ENDPOINTS.TEAM_GAME_MOVE_PLAYER(code, person.userId), {
@@ -57,7 +58,7 @@ export function TeamRoster({ state, userId, isHost, myTeamId, act, pending = fal
           >
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-card border-white/10 text-white">
             {state.teams.map((team) => (
               <SelectItem key={team.id} value={team.id}>
                 {team.name}

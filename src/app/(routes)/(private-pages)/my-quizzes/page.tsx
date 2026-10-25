@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Copy, Eye, FolderKanban, Layers, Pencil, Plus, Sparkles, Trash2, Users } from "lucide-react";
+import { Copy, Eye, FolderKanban, Layers, Pencil, Play, Plus, Radio, Sparkles, Trash2, Users } from "lucide-react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +13,7 @@ import { PageError } from "@/components/ui/page-error";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { UpgradePrompt } from "@/components/pro/upgrade-prompt";
 import { QuizStatusBadge } from "@/components/quizzes/quiz-status-badge";
+import { quizModeLabel } from "@/components/quizzes/quiz-mode-picker";
 import { HostTeamGameDialog } from "@/components/team-game/host-team-game-dialog";
 import { api, getApiError } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
@@ -75,7 +76,9 @@ export default function MyQuizzesPage() {
               <FolderKanban className="h-7 w-7 text-secondary" />
               My Quizzes
             </h1>
-            <p className="text-white/70">Build your own trivia and share it with a link.</p>
+            <p className="text-white/70">
+              Build your own trivia: share it with a link, or host it as a live team game.
+            </p>
             {data && (
               <p className="text-white/50 text-sm mt-1">
                 {limit === null
@@ -92,7 +95,7 @@ export default function MyQuizzesPage() {
             >
               <Link href={routes.USER.MY_QUIZ_GENERATE}>
                 <Sparkles className="h-4 w-4 mr-2" />
-                From a document
+                Generate with AI
               </Link>
             </Button>
             <Button
@@ -146,10 +149,23 @@ export default function MyQuizzesPage() {
                     </Link>
                     <QuizStatusBadge status={quiz.status} />
                   </div>
-                  <p className="text-white/50 text-sm inline-flex items-center gap-1">
-                    <Layers className="h-3.5 w-3.5" />
-                    {quiz.cardCount} {quiz.cardCount === 1 ? "card" : "cards"}
+                  <p className="text-white/50 text-sm flex items-center gap-3 flex-wrap">
+                    <span className="inline-flex items-center gap-1">
+                      {quiz.mode === "team" ? (
+                        <Users className="h-3.5 w-3.5" />
+                      ) : (
+                        <Radio className="h-3.5 w-3.5" />
+                      )}
+                      {quizModeLabel(quiz.mode)} quiz
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Layers className="h-3.5 w-3.5" />
+                      {quiz.cardCount} {quiz.cardCount === 1 ? "card" : "cards"}
+                    </span>
                   </p>
+                  {quiz.mode === "team" && quiz.status !== "live" && quiz.status !== "locked" && (
+                    <p className="text-white/50 text-xs">Publish it to host a game.</p>
+                  )}
                   {quiz.status === "locked" && (
                     <p className="text-red-300 text-sm">
                       Locked because Pro ended.{" "}
@@ -161,16 +177,15 @@ export default function MyQuizzesPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-1">
-                  {quiz.status !== "locked" && (
+                  {quiz.mode === "team" && quiz.status === "live" && (
                     <Button
-                      size="icon"
-                      variant="ghost"
+                      size="sm"
                       onClick={() => setHosting(quiz)}
-                      aria-label={`Play ${quiz.title} as teams`}
-                      title="Play as teams"
-                      className="text-white/60 hover:text-white"
+                      aria-label={`Host a game of ${quiz.title}`}
+                      className="mr-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka"
                     >
-                      <Users className="h-4 w-4" />
+                      <Play className="h-4 w-4 mr-1.5" />
+                      Host game
                     </Button>
                   )}
                   {quiz.shareUrl && (
@@ -179,6 +194,7 @@ export default function MyQuizzesPage() {
                       variant="ghost"
                       onClick={() => copyLink(quiz.shareUrl as string)}
                       aria-label={`Copy share link for ${quiz.title}`}
+                      title="Copy share link"
                       className="text-white/60 hover:text-white"
                     >
                       <Copy className="h-4 w-4" />
