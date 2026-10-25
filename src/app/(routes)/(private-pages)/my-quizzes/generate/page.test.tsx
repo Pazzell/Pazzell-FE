@@ -24,6 +24,7 @@ const generateInfo = (overrides: object = {}) => ({
   maxFileBytes: 10 * 1024 * 1024,
   minCharacters: 300,
   count: { default: 10, min: 1, max: 30 },
+  prompt: { maxLength: 500, count: { default: 10, min: 1, max: 50 } },
   dailyLimit: 3,
   usedToday: 0,
   remaining: 3,
@@ -44,6 +45,7 @@ const generated = (cards = [draft(1), draft(2)]) => ({
     suggestedTitle: "Accounting basics",
     requested: 10,
     cards,
+    prompt: null,
     document: { name: null, kind: "text", characters: 500, sampled: false },
     usage: { dailyLimit: 3, usedToday: 1, remaining: 2, resetsAt: "2026-10-12T00:00:00.000Z" },
   },
@@ -65,7 +67,12 @@ beforeEach(() => {
   });
 });
 
+async function fromDocument() {
+  await userEvent.click(await screen.findByRole("tab", { name: "From a document" }));
+}
+
 async function writeCards() {
+  await fromDocument();
   // Pasted rather than typed key by key, which is slow when the whole suite runs.
   await userEvent.click(await screen.findByLabelText("Or paste your notes"));
   await userEvent.paste(NOTES);
@@ -83,12 +90,15 @@ describe("Quiz from a document", { timeout: 20000 }, () => {
   it("shows the daily allowance and blocks the button when it is used up", async () => {
     info = generateInfo({ usedToday: 3, remaining: 0 });
     renderWithQuery(<GenerateQuizPage />);
-    expect(await screen.findByText("0 of 3 documents left today")).toBeInTheDocument();
+    expect((await screen.findAllByText("0 of 3 AI generations left today")).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Write my questions" })).toBeDisabled();
+    await fromDocument();
     expect(screen.getByRole("button", { name: "Write my cards" })).toBeDisabled();
   });
 
   it("asks for a document before calling the server", async () => {
     renderWithQuery(<GenerateQuizPage />);
+    await fromDocument();
     await userEvent.click(await screen.findByRole("button", { name: "Write my cards" }));
     expect(api.post).not.toHaveBeenCalled();
   });
@@ -97,6 +107,7 @@ describe("Quiz from a document", { timeout: 20000 }, () => {
     api.post.mockResolvedValue(generated());
     renderWithQuery(<GenerateQuizPage />);
     const file = new File(["notes"], "accounting.pdf", { type: "application/pdf" });
+    await fromDocument();
     await userEvent.upload(await screen.findByLabelText(/^Document/), file);
     expect(screen.getByText("accounting.pdf")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Write my cards" }));
@@ -134,6 +145,7 @@ describe("Quiz from a document", { timeout: 20000 }, () => {
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/my-quizzes/q9/edit"));
     expect(api.post).toHaveBeenCalledWith("/custom-quizzes", {
       title: "Accounting basics",
+      mode: "broadcast",
       description: "",
       defaultTimerSeconds: 5,
       defaultCardCount: 5,
@@ -183,5 +195,73 @@ describe("Quiz from a document", { timeout: 20000 }, () => {
     renderWithQuery(<GenerateQuizPage />);
     await writeCards();
     expect(await screen.findByText("Upgrade to Pro")).toBeInTheDocument();
+  });
+});
+
+describe("Questions from a description", { timeout: 20000 }, () => {
+  const describeQuestions = async (text: string) => {
+    await userEvent.click(await screen.findByLabelText("What should the questions be about?"));
+    await userEvent.paste(text);
+  };
+
+  it("takes the number of questions from the description and sends it", async () => {
+    api.post.mockResolvedValue({
+      data: {
+        ...generated([{ ...draft(1), quote: "" }, { ...draft(2), quote: "" }]).data,
+        suggestedTitle: "The solar system",
+        prompt: "x",
+        document: null,
+      },
+    });
+    renderWithQuery(<GenerateQuizPage />);
+    await describeQuestions("Generate 40 questions about the solar system");
+    expect(screen.getByText("40")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Write my questions" }));
+
+    await screen.findByText("Check your cards (2)");
+    expect(api.post).toHaveBeenCalledWith("/custom-quizzes/generate", {
+      prompt: "Generate 40 questions about the solar system",
+      count: 40,
+    });
+    // Written from the AI's own knowledge, so there is no document sentence to show.
+    expect(screen.queryByText(/From your document/)).not.toBeInTheDocument();
+  });
+
+  it("asks for a description before calling the server", async () => {
+    renderWithQuery(<GenerateQuizPage />);
+    await userEvent.click(await screen.findByRole("button", { name: "Write my questions" }));
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it("tells the AI the subject of the quiz the cards go to", async () => {
+    window.history.replaceState({}, "", "/my-quizzes/generate?quiz=q1");
+    list = { quizzes: [{ id: "q1", title: "Space quiz", mode: "team" }], plan: "pro", limit: null };
+    api.post.mockResolvedValue(generated());
+    renderWithQuery(<GenerateQuizPage />);
+    await describeQuestions("Planets and moons");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Write my questions" })).toBeEnabled());
+    await userEvent.click(screen.getByRole("button", { name: "Write my questions" }));
+    await screen.findByText("Check your cards (2)");
+    expect(api.post).toHaveBeenCalledWith("/custom-quizzes/generate", {
+      prompt: "Planets and moons",
+      count: 10,
+      topic: "Space quiz",
+    });
+  });
+
+  it("creates a team quiz when the creator picks one", async () => {
+    api.post.mockImplementation((url: string) => {
+      if (url === "/custom-quizzes/generate") return Promise.resolve(generated());
+      if (url === "/custom-quizzes") return Promise.resolve({ data: { quiz: { id: "q7" } } });
+      return Promise.resolve({ data: {} });
+    });
+    renderWithQuery(<GenerateQuizPage />);
+    await describeQuestions("Rivers of Africa");
+    await userEvent.click(screen.getByRole("button", { name: "Write my questions" }));
+    await screen.findByText("Check your cards (2)");
+    await userEvent.click(screen.getByRole("radio", { name: /Team quiz/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Save 2 cards" }));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/my-quizzes/q7/edit"));
+    expect(api.post).toHaveBeenCalledWith("/custom-quizzes", expect.objectContaining({ mode: "team" }));
   });
 });

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, MessageSquareText, Sparkles } from "lucide-react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,9 @@ import {
   documentRequestBody,
   type DocumentSource,
 } from "@/components/cards/document-form";
+import { PromptForm, type PromptSource } from "@/components/cards/prompt-form";
+import { QuizModePicker } from "@/components/quizzes/quiz-mode-picker";
+import { cn } from "@/lib/utils";
 import {
   DraftCardList,
   draftCardsPayload,
@@ -30,6 +33,7 @@ import { api, getApiError } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { routes } from "@/app/_utils/routes";
 import type {
+  CustomQuizMode,
   CustomQuizResponse,
   CustomQuizzesResponse,
   GenerateCardsResponse,
@@ -38,13 +42,18 @@ import type {
 
 const NEW_QUIZ = "new";
 
+/** What the cards are written from: the owner's description, or their document. */
+type Request = { kind: "prompt"; source: PromptSource } | { kind: "document"; source: DocumentSource };
+
 export default function GenerateQuizPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { settings } = useGameSettings();
 
   const [cards, setCards] = useState<ReviewCard[] | null>(null);
+  const [from, setFrom] = useState<Request["kind"]>("prompt");
   const [title, setTitle] = useState("");
+  const [mode, setMode] = useState<CustomQuizMode>("broadcast");
   const [destination, setDestination] = useState<string | null>(null);
   // Set once the quiz exists, so a failed card save is retried on the same quiz.
   const [createdQuizId, setCreatedQuizId] = useState<string | null>(null);
@@ -75,26 +84,38 @@ export default function GenerateQuizPage() {
     else setDestination(canCreate || mine.length === 0 ? NEW_QUIZ : mine[0].id);
   }, [destination, quizzes.data, canCreate]);
 
+  // The quiz the cards go to, when it already exists: its title tells the AI the subject.
+  const target = owned.find((quiz) => quiz.id === destination);
+
   const generate = useMutation({
-    mutationFn: (source: DocumentSource) =>
+    mutationFn: (request: Request) =>
       api
-        .post<GenerateCardsResponse>(ENDPOINTS.CUSTOM_QUIZ_GENERATE, documentRequestBody(source))
+        .post<GenerateCardsResponse>(
+          ENDPOINTS.CUSTOM_QUIZ_GENERATE,
+          request.kind === "prompt"
+            ? { ...request.source, ...(target ? { topic: target.title } : {}) }
+            : documentRequestBody(request.source)
+        )
         .then((res) => res.data),
     onSuccess: (data) => {
       setCards(toReviewCards(data.cards));
       setTitle((current) => current || data.suggestedTitle || "");
       queryClient.invalidateQueries({ queryKey: ["custom-quiz-generate"] });
       if (data.cards.length < data.requested) {
-        toast.info(`${data.cards.length} of ${data.requested} cards could be backed by your document.`);
+        toast.info(
+          data.prompt !== null
+            ? `${data.cards.length} of ${data.requested} questions passed the answer check.`
+            : `${data.cards.length} of ${data.requested} cards could be backed by your document.`
+        );
       }
     },
     onError: (error) => {
       const body = getApiError(error);
       if (body?.code === "GENERATION_LIMIT_REACHED" && body.details?.isPro === false) {
-        setUpgradeMessage(`${body.message} Pro players can use more documents each day.`);
+        setUpgradeMessage(`${body.message} Pro players can generate more each day.`);
         return;
       }
-      toast.error(body?.message || "Couldn't read the document. Please try again.");
+      toast.error(body?.message || "Couldn't write the questions. Please try again.");
     },
   });
 
@@ -104,6 +125,7 @@ export default function GenerateQuizPage() {
       if (!quizId) {
         const created = await api.post<CustomQuizResponse>(ENDPOINTS.CUSTOM_QUIZZES, {
           title: title.trim(),
+          mode,
           description: "",
           defaultTimerSeconds: settings.timer.defaultSeconds,
           defaultCardCount: Math.min(
@@ -151,7 +173,27 @@ export default function GenerateQuizPage() {
     save.mutate(kept);
   };
 
-  const outOfDocuments = info.data ? info.data.remaining <= 0 : false;
+  const outOfGenerations = info.data ? info.data.remaining <= 0 : false;
+  const allowanceNote = info.data && (
+    <span className="text-white/50 text-sm">
+      {info.data.remaining} of {info.data.dailyLimit} AI generations left today
+    </span>
+  );
+  const outOfGenerationsNote = outOfGenerations && (
+    <p className="text-yellow-300 text-sm">
+      You have used today&apos;s AI generations. Come back tomorrow
+      {quizzes.data?.limit !== null && (
+        <>
+          , or{" "}
+          <Link href={routes.USER.PRO} className="underline">
+            go Pro
+          </Link>{" "}
+          for more
+        </>
+      )}
+      .
+    </p>
+  );
 
   return (
     <MainLayout maxWidth="3xl">
@@ -166,11 +208,11 @@ export default function GenerateQuizPage() {
         <div>
           <h1 className="text-3xl font-bold text-white font-fredoka flex items-center gap-2">
             <Sparkles className="h-7 w-7 text-secondary" />
-            Quiz from a document
+            Generate with AI
           </h1>
           <p className="text-white/70 mt-1">
-            Upload your study material. We write the questions and answers from it, and you check
-            them before anything is saved.
+            Describe the questions you want, or upload your material. The AI writes the questions
+            and answers, and you check and edit them before anything is saved.
           </p>
         </div>
 
@@ -186,41 +228,64 @@ export default function GenerateQuizPage() {
 
         {info.data && !info.data.enabled && (
           <p className="text-white/70 text-center py-12 rounded-2xl border border-dashed border-white/10">
-            Making a quiz from a document is not available yet. You can still add cards by hand.
+            Generating questions with AI is not available yet. You can still add cards by hand.
           </p>
         )}
 
         {info.data?.enabled && (
-          // Kept mounted during review so "Start over" comes back to the same document.
-          <div hidden={cards !== null}>
-            <DocumentForm
-              count={info.data.count}
-              maxFileBytes={info.data.maxFileBytes}
-              pending={generate.isPending}
-              disabled={outOfDocuments}
-              onSubmit={(source) => generate.mutate(source)}
-              note={
-                <span className="text-white/50 text-sm">
-                  {info.data.remaining} of {info.data.dailyLimit} documents left today
-                </span>
-              }
+          // Kept mounted during review so "Start over" comes back to what was entered.
+          <div hidden={cards !== null} className="space-y-4">
+            <div
+              role="tablist"
+              aria-label="Write the questions from"
+              className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1"
             >
-              {outOfDocuments && (
-                <p className="text-yellow-300 text-sm">
-                  You have used today&apos;s documents. Come back tomorrow
-                  {quizzes.data?.limit !== null && (
-                    <>
-                      , or{" "}
-                      <Link href={routes.USER.PRO} className="underline">
-                        go Pro
-                      </Link>{" "}
-                      for more
-                    </>
+              {(
+                [
+                  { kind: "prompt", label: "Describe it", icon: MessageSquareText },
+                  { kind: "document", label: "From a document", icon: FileText },
+                ] as const
+              ).map(({ kind, label, icon: Icon }) => (
+                <button
+                  key={kind}
+                  type="button"
+                  role="tab"
+                  aria-selected={from === kind}
+                  onClick={() => setFrom(kind)}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+                    from === kind ? "bg-secondary text-secondary-foreground" : "text-white/70 hover:text-white"
                   )}
-                  .
-                </p>
-              )}
-            </DocumentForm>
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div hidden={from !== "prompt"}>
+              <PromptForm
+                maxLength={info.data.prompt.maxLength}
+                count={info.data.prompt.count}
+                pending={generate.isPending}
+                disabled={outOfGenerations}
+                onSubmit={(source) => generate.mutate({ kind: "prompt", source })}
+                note={allowanceNote}
+              >
+                {outOfGenerationsNote}
+              </PromptForm>
+            </div>
+            <div hidden={from !== "document"}>
+              <DocumentForm
+                count={info.data.count}
+                maxFileBytes={info.data.maxFileBytes}
+                pending={generate.isPending}
+                disabled={outOfGenerations}
+                onSubmit={(source) => generate.mutate({ kind: "document", source })}
+                note={allowanceNote}
+              >
+                {outOfGenerationsNote}
+              </DocumentForm>
+            </div>
           </div>
         )}
 
@@ -232,7 +297,8 @@ export default function GenerateQuizPage() {
               </h2>
               <p className="text-white/60 text-sm">
                 Edit anything that looks off, pick the correct option, and remove cards you
-                don&apos;t want. Each card shows the sentence it came from.
+                don&apos;t want. Nothing is saved until you press Save, and you publish the quiz
+                when you&apos;re happy with it.
               </p>
               <div className="space-y-2">
                 <Label htmlFor="destination" className="text-white/80">
@@ -255,18 +321,24 @@ export default function GenerateQuizPage() {
                 </select>
               </div>
               {destination === NEW_QUIZ && (
-                <div className="space-y-2">
-                  <Label htmlFor="quiz-title" className="text-white/80">
-                    Title
-                  </Label>
-                  <Input
-                    id="quiz-title"
-                    value={title}
-                    maxLength={80}
-                    onChange={(event) => setTitle(event.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
-                  />
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="quiz-title" className="text-white/80">
+                      Title
+                    </Label>
+                    <Input
+                      id="quiz-title"
+                      value={title}
+                      maxLength={80}
+                      onChange={(event) => setTitle(event.target.value)}
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium text-white/80">How will it be played?</span>
+                    <QuizModePicker value={mode} onChange={setMode} />
+                  </div>
+                </>
               )}
             </div>
 

@@ -104,7 +104,7 @@ interface CardManagerProps {
   onChanged: () => void;
   /** Shown as "N of M needed" guidance. */
   minCards?: number;
-  /** Where "From a document" leads; omit to hide it (campaigns do not have it). */
+  /** Where "Generate with AI" leads; omit to hide it (campaigns do not have it). */
   generateHref?: string;
 }
 
@@ -162,7 +162,7 @@ export function CardManager({
             >
               <Link href={generateHref}>
                 <Sparkles className="h-4 w-4 mr-2" />
-                From a document
+                Generate with AI
               </Link>
             </Button>
           )}

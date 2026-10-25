@@ -145,7 +145,7 @@ export default function NewAiTriviaPage() {
         )}
 
         {options?.enabled && options.isPro && (
-          <form
+          <form method="post"
             onSubmit={handleSubmit}
             className="bg-card/50 border border-white/10 rounded-2xl p-6 space-y-6"
           >

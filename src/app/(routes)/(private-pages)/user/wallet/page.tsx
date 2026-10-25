@@ -247,7 +247,7 @@ export default function WalletPage() {
               <p className="text-white/50 text-sm">No bank accounts added yet.</p>
             )}
 
-            <form onSubmit={handleAddBankAccount} className="space-y-3 pt-2 border-t border-white/10">
+            <form method="post" onSubmit={handleAddBankAccount} className="space-y-3 pt-2 border-t border-white/10">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <Input
                   placeholder="Account number"

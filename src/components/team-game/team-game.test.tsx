@@ -134,6 +134,11 @@ describe("TeamRoster", () => {
     expect(act).toHaveBeenCalledWith("/team-games/abcdefgh12/join", { teamId: "t2" });
   });
 
+  it("never offers the host a team to join", () => {
+    render(<TeamRoster state={state} userId="host" isHost myTeamId={null} act={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: /^Join / })).not.toBeInTheDocument();
+  });
+
   it("lets the host hand over the lead", async () => {
     const act = vi.fn().mockResolvedValue(true);
     render(<TeamRoster state={state} userId="host" isHost myTeamId={null} act={act} />);

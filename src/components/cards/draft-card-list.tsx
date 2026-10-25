@@ -98,9 +98,11 @@ export function DraftCardList({ cards, onChange }: DraftCardListProps) {
               </label>
             ))}
           </fieldset>
-          <p className="pl-9 text-white/50 text-xs break-words">
-            From your document: &ldquo;{card.quote}&rdquo;
-          </p>
+          {card.quote && (
+            <p className="pl-9 text-white/50 text-xs break-words">
+              From your document: &ldquo;{card.quote}&rdquo;
+            </p>
+          )}
         </li>
       ))}
     </ol>

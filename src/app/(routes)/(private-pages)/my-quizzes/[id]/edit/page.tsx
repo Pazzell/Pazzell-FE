@@ -12,6 +12,7 @@ import {
   Eye,
   Link2Off,
   Loader2,
+  Play,
   RefreshCw,
   Share2,
   Trash2,
@@ -26,6 +27,7 @@ import { CardManager } from "@/components/cards/card-manager";
 import { UpgradePrompt } from "@/components/pro/upgrade-prompt";
 import { QuizDetailsForm, type QuizDetailsValues } from "@/components/quizzes/quiz-details-form";
 import { QuizStatusBadge } from "@/components/quizzes/quiz-status-badge";
+import { HostTeamGameDialog } from "@/components/team-game/host-team-game-dialog";
 import { api, getApiError } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { routes } from "@/app/_utils/routes";
@@ -41,6 +43,7 @@ export default function EditQuizPage() {
   const { settings } = useGameSettings();
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [upgradeMessage, setUpgradeMessage] = useState<string | null>(null);
+  const [hosting, setHosting] = useState(false);
 
   const quizKey = ["custom-quiz", id];
   const { data, isLoading, error } = useQuery({
@@ -105,10 +108,11 @@ export default function EditQuizPage() {
     },
     onSuccess: (_res, action) => {
       setConfirm(null);
+      const team = data?.quiz.mode === "team";
       toast.success(
         {
-          publish: "Your quiz is live. Share the link!",
-          unpublish: "Quiz unpublished. The link no longer works.",
+          publish: team ? "Your team quiz is live. Host a game to get a join link." : "Your quiz is live. Share the link!",
+          unpublish: team ? "Quiz unpublished." : "Quiz unpublished. The link no longer works.",
           regenerate: "New link created. The old one no longer works.",
           revoke: "Link revoked. The quiz is unpublished.",
         }[action]
@@ -146,6 +150,7 @@ export default function EditQuizPage() {
   const cards = data.cards ?? [];
   const minCards = data.minCardsToPublish ?? settings.customQuiz.minCardsToPublish;
   const shareUrl = quiz.shareUrl;
+  const isTeam = quiz.mode === "team";
 
   const copyLink = async () => {
     if (!shareUrl) return;
@@ -232,7 +237,9 @@ export default function EditQuizPage() {
 
         {quiz.status !== "live" && quiz.status !== "locked" && cards.length < minCards && (
           <p className="text-white/60 text-sm">
-            A quiz needs at least {minCards} cards before it can be published.
+            {isTeam
+              ? `A team quiz needs at least ${minCards} cards, one for each cell of the board, before it can be published.`
+              : `A quiz needs at least ${minCards} cards before it can be published.`}
           </p>
         )}
 
@@ -286,7 +293,23 @@ export default function EditQuizPage() {
           </section>
         )}
 
-        {stats && (
+        {isTeam && quiz.status === "live" && (
+          <section className="rounded-2xl border border-secondary/30 bg-card/50 p-5 space-y-3">
+            <h2 className="text-white font-semibold">Host a team game</h2>
+            <p className="text-white/60 text-sm">
+              Open a lobby and share its join link. Players pick a team there; you run the game.
+            </p>
+            <Button
+              onClick={() => setHosting(true)}
+              className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-fredoka"
+            >
+              <Play className="h-4 w-4 mr-2" />
+              Host game
+            </Button>
+          </section>
+        )}
+
+        {stats && !isTeam && (
           <section className="grid grid-cols-2 gap-4">
             <div className="rounded-2xl border border-white/10 bg-card/50 p-5">
               <p className="text-white/60 text-sm flex items-center gap-2">
@@ -370,6 +393,7 @@ export default function EditQuizPage() {
         pending={remove.isPending}
         onConfirm={() => remove.mutate()}
       />
+      <HostTeamGameDialog quiz={hosting ? quiz : null} onOpenChange={setHosting} />
       <UpgradePrompt
         open={upgradeMessage !== null}
         onOpenChange={(open) => !open && setUpgradeMessage(null)}

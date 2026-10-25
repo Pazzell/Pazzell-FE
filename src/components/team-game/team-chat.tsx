@@ -81,7 +81,7 @@ export function TeamChat({ team, messages, userId, onSend, disabled = false }: T
         })}
       </div>
 
-      <form onSubmit={submit} className="flex gap-2 border-t border-white/10 p-3">
+      <form method="post" onSubmit={submit} className="flex gap-2 border-t border-white/10 p-3">
         <Input
           value={text}
           onChange={(e) => setText(e.target.value.slice(0, MESSAGE_MAX))}

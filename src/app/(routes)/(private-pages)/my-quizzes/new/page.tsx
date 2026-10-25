@@ -29,7 +29,11 @@ export default function NewQuizPage() {
         .then((res) => res.data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["custom-quizzes"] });
-      toast.success("Quiz created. Now add some cards.");
+      toast.success(
+        data.quiz.mode === "team"
+          ? "Team quiz created. Add at least 9 cards, one for each cell of the board."
+          : "Quiz created. Now add some cards."
+      );
       router.replace(routes.USER.MY_QUIZ_EDIT(data.quiz.id));
     },
     onError: (error) => {
