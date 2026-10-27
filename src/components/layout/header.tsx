@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/ui/logo-icon";
-import { User, Menu, LogOut, X, Settings, Wallet, Sparkles, FolderKanban } from "lucide-react";
+import { User, Menu, LogOut, X, Settings, Sparkles, FolderKanban } from "lucide-react";
 import { routes } from "@/app/_utils/routes";
 import { useAtomValue, useSetAtom } from "jotai/react";
 import { userAtom } from "@/atom/user";
@@ -69,11 +69,6 @@ export function Header() {
                   href={routes.USER.MY_QUIZZES}
                   className="text-white hover:text-secondary font-medium transition-colors">
                   My Quizzes
-                </Link>
-                <Link
-                  href={routes.USER.WALLET}
-                  className="text-white hover:text-secondary font-medium transition-colors">
-                  Wallet
                 </Link>
               </>
             ) : (
@@ -151,12 +146,6 @@ export function Header() {
                           <Link href={routes.USER.PROFILE}>Profile</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={routes.USER.WALLET}>
-                            <Wallet className="h-4 w-4 mr-2" />
-                            Wallet
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
                           <Link href={routes.USER.SETTINGS}>
                             <Settings className="h-4 w-4 mr-2" />
                             Settings
@@ -229,12 +218,6 @@ export function Header() {
                     className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
                     onClick={closeMobileMenu}>
                     My Quizzes
-                  </Link>
-                  <Link
-                    href={routes.USER.WALLET}
-                    className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
-                    onClick={closeMobileMenu}>
-                    Wallet
                   </Link>
                   <Link
                     href={routes.USER.PRO}

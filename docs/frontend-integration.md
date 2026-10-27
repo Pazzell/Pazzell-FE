@@ -1,7 +1,7 @@
 # Pazzell API — frontend integration guide
 
 Everything the frontend needs to build trivia (image and short-definition questions across
-topics), custom trivia, brand campaigns, Pro and the wallet screens. This document describes the API as implemented on the
+topics), custom trivia, brand campaigns and Pro. This document describes the API as implemented on the
 `pazzell-brain-training` branch.
 
 - [1. Conventions](#1-conventions)
@@ -14,7 +14,7 @@ topics), custom trivia, brand campaigns, Pro and the wallet screens. This docume
 - [8. Brand campaigns](#8-brand-campaigns)
 - [9. Admin](#9-admin)
 - [10. Uploads](#10-uploads)
-- [11. Wallet](#11-wallet)
+- [11. Wallet (removed)](#11-wallet-removed)
 - [12. Error codes](#12-error-codes)
 - [13. Rate limits](#13-rate-limits)
 - [14. Environment variables](#14-environment-variables)
@@ -160,8 +160,7 @@ Presence endpoints (optional): `POST /analytics/user/online`, `POST /analytics/u
   `proUntil`; renewing after expiry starts from the new payment time.
 - Pro benefits: never interrupted by campaign trivia, unlimited custom trivias, and AI
   generated trivia (section 7.5).
-- Payment is made **only** through the payment gateway (Paystack). The wallet is never used to
-  pay for anything.
+- Payment is made **only** through the payment gateway (Paystack).
 
 ### `GET /plan/me` — Auth
 
@@ -547,10 +546,10 @@ Invalid cards return `400 INVALID_CARD`; in bulk the message names the row (`Car
 A player either describes the questions they want ("50 questions about the solar system") or
 uploads their study material, and gets draft cards to review.
 
-- **From a description**, Claude writes the cards from its own knowledge. With no document to
+- **From a description**, the AI writes the cards from its own knowledge. With no document to
   check them against, a second request answers each card blind, and only the cards it agrees on
   come back (the same check as 7.5).
-- **From a document**, the server reads the text, asks Claude to write definition cards from it,
+- **From a document**, the server reads the text, asks the AI to write definition cards from it,
   and keeps only the cards whose supporting sentence really appears in the document.
 
 **Nothing is saved by this endpoint.** The drafts come back in the
@@ -603,7 +602,7 @@ It can take a minute or two, so show progress and do not retry automatically.
 - `cards` may hold fewer than `requested`: a card the document does not support, or that fails
   the blind check, is dropped.
 - From a description, `prompt` echoes it, `document` is `null` and every `quote` is `""`. A
-  description Claude will not write trivia for returns `422 PROMPT_REJECTED` with a message saying
+  description the AI will not write trivia for returns `422 PROMPT_REJECTED` with a message saying
   what to change.
 - `quote` is the sentence from the document that proves the answer. Show it on the review
   screen so the player can check each card; it is not part of a saved card.
@@ -632,7 +631,7 @@ use up the allowance. Over the limit returns `429 GENERATION_LIMIT_REACHED` with
 The second kind of trivia a player sees next to **General Trivia** (section 6). In General
 Trivia the questions are ours; here a Pro player gets questions on exactly the topic they want.
 They select one of our topics or type their own, describe the questions they want, and the
-server has Claude write them. The set is stored and is theirs to play as often as they like.
+server has the AI write them. The set is stored and is theirs to play as often as they like.
 
 - **Pro only to create.** A freemium player gets `403 UPGRADE_REQUIRED` with
   `details: { feature: "ai_trivia", pro: { amount, currency, durationDays } }`.
@@ -1157,31 +1156,11 @@ File fields on other endpoints: `image` (cards, quiz cover, topic cover), `logo`
 
 ---
 
-## 11. Wallet
+## 11. Wallet (removed)
 
-The wallet is **withdraw-only**. It holds rewards a player has earned and lets them withdraw to
-their bank account. There is no top-up or deposit, and it is never used to pay for Pro or
-campaigns. No gameplay credits the wallet yet, so balances stay at their current values until a
-reward feature is added. Amounts are in NGN.
-
-| Method | Path | Auth | Purpose |
-| --- | --- | --- | --- |
-| GET | `/wallet/balance` | Auth | `{ balance, currency: "NGN" }` |
-| GET | `/wallet/transactions?limit=50` | Auth | Ledger, newest first |
-| POST | `/wallet/bank-accounts` | Auth | `{ accountNumber, bankCode, bankName }` — the account name is resolved by the bank |
-| GET | `/wallet/bank-accounts` | Auth | Saved accounts |
-| DELETE | `/wallet/bank-accounts/:id` | Auth | Remove an account |
-| POST | `/wallet/withdrawals` | Auth | `{ bankAccountId, amount, idempotencyKey }` |
-| GET | `/wallet/withdrawals` | Auth | Withdrawal history |
-| GET | `/wallet/withdrawals/:id` | Auth | One withdrawal |
-
-Ledger entry: `{ type: "credit" | "debit", amount, balanceAfter, reason, referenceId, status, createdAt }`
-where `reason` is `reward`, `withdrawal`, `withdrawal_reversal`, `admin_adjustment` or
-(historical rows) `weekly_payout`.
-
-Withdrawal `status`: `pending` → `processing` → `paid`, or `failed` (the amount is returned to
-the wallet). Always send a fresh `idempotencyKey` (a UUID) per withdrawal; re-sending the same key
-returns the original withdrawal and never withdraws twice. Insufficient balance → `400`.
+The wallet no longer exists: there is no balance, ledger, bank account or withdrawal. Every
+`/wallet/*` route returns `404`, as does the transfer webhook
+`/payments/webhook/paystack-transfer`. Remove the wallet screen and its menu link.
 
 ---
 
@@ -1213,7 +1192,7 @@ returns the original withdrawal and never withdraws twice. Insufficient balance 
 | `QUIZ_NOT_LIVE` | 409 | regenerate link | Publish first |
 | `INVALID_CARD` | 400 | cards | See 7.3; `details.index` in bulk |
 | `CARD_NOT_FOUND` | 404 | cards | |
-| `AI_NOT_CONFIGURED` | 503 | generate from a document | The server has no Claude API key. Hide the feature |
+| `AI_NOT_CONFIGURED` | 503 | generate from a document | The server has no AI provider key, or the provider rejected it. Hide the feature |
 | `AI_UNAVAILABLE` | 502 | generate from a document | The AI request failed. Let the player retry |
 | `DOCUMENT_REQUIRED` / `DOCUMENT_TOO_LARGE` / `INVALID_DOCUMENT_TYPE` | 400 | generate from a document | No file or text; over 10MB; not a PDF, .docx or text file |
 | `DOCUMENT_UNREADABLE` | 400 | generate from a document | Scanned, password-protected or damaged PDF. Show the message |
@@ -1292,12 +1271,15 @@ Per user (per IP when logged out). Exceeding one returns `429 RATE_LIMITED`.
 | `PORT`, `NODE_ENV`, `TRUST_PROXY` | Server |
 | `DB_URI`, `REDIS_URL` | MongoDB and Redis |
 | `ACCESS_TOKEN`, `REFRESH_TOKEN`, `ACCESS_TOKEN_EXPIRE`, `REFRESH_TOKEN_EXPIRE`, `ACTIVATION_SECRET` | JWT secrets and lifetimes |
-| `PAYSTACK_SECRET_KEY`, `TRANSFER_PROVIDER` | Payment gateway and withdrawals |
+| `PAYSTACK_SECRET_KEY` | Payment gateway |
 | `PAYMENT_CURRENCY`, `PRO_PRICE_AMOUNT`, `PRO_DURATION_DAYS`, `CAMPAIGN_PRICE_AMOUNT`, `CAMPAIGN_DURATION_DAYS`, `CAMPAIGN_INTERRUPTION_THRESHOLD`, `GAME_SUBMIT_GRACE_MS`, `TRIVIA_IMAGE_PERCENT` | Defaults for the settings in section 9 (an admin override wins) |
 | `WIKIMEDIA_CONTACT` | Contact email or URL sent to Wikimedia with image-import requests |
-| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Claude API key for trivia from a document (without it the feature answers `503 AI_NOT_CONFIGURED`), and the model that writes the cards (default `claude-haiku-4-5-20251001`) |
+| `AI_PROVIDER` (`claude` \| `openai` \| `gemini`) | Which AI writes and checks the cards for every AI feature. Empty: the first of those whose key is set. With no key the AI features answer `503 AI_NOT_CONFIGURED` |
+| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `ANTHROPIC_TOPIC_MODEL` | Claude key; fast model (cards from a document, default `claude-haiku-4-5-20251001`) and strong model (cards from a topic or description and their check, default `claude-opus-5-5`) |
+| `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_TOPIC_MODEL` | OpenAI key; fast model (default `gpt-5-mini`) and strong model (default `gpt-5`) |
+| `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_TOPIC_MODEL` | Google Gemini key; fast model (default `gemini-2.5-flash`) and strong model (default `gemini-2.5-pro`) |
 | `QUIZ_GENERATE_DAILY_LIMIT_FREE`, `QUIZ_GENERATE_DAILY_LIMIT_PRO` | Defaults for the daily document allowance (an admin override wins) |
-| `ANTHROPIC_TOPIC_MODEL`, `AI_TRIVIA_DAILY_LIMIT` | The model that writes and checks AI generated trivia (default `claude-opus-5-5`), and the default daily allowance per Pro player (an admin override wins) |
+| `AI_TRIVIA_DAILY_LIMIT` | The default daily allowance of AI generated trivia per Pro player (an admin override wins) |
 | `STORAGE_PROVIDER` (`firebase` \| `aws` \| `memory`), `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET_NAME`, `AWS_S3_PUBLIC_BASE_URL`, `FIREBASE_STORAGE_BUCKET` | Image storage |
 | `GOOGLE_CLIENT_ID` | Google OAuth web client id(s), comma separated, whose tokens `/auth/google` accepts: the same id as the frontend's `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (which is also read as a fallback) |
 | `TYPE`, `PROJECT_ID`, `PRIVATE_KEY_ID`, `PRIVATE_KEY`, `CLIENT_EMAIL`, `CLIENT_ID`, `AUTH_URI`, `TOKEN_URI`, `AUTH_PROVIDER_CERT_URL`, `CLIENT_CERT_URL`, `UNIVERSE_DOMAIN` | Firebase service account (Firebase `idToken` sign-in, Firebase storage) |
@@ -1316,10 +1298,10 @@ There is no Match game and no study step. These routes no longer exist and retur
 `LEVEL_LOCKED`, `LEVEL_NOT_FOUND`, `ARTIFACT_NOT_FOUND`, `TIMER_NOT_IN_LEVEL_CONFIG` and every
 `ATTEMPT_*` code are gone with them.
 
-There are no points, leaderboards, rankings, ads, spin wheel, reward codes, prize draws or
+There is no wallet, and no points, leaderboards, rankings, ads, spin wheel, reward codes, prize draws or
 referral rewards. These routes no longer exist and return `404`:
 
-`/leaderboards/*`, `/referrals/*`, `/raffles/*`, `/sessions/*`, `/packages*`, `/payouts/*`,
+`/wallet/*`, `/payments/webhook/paystack-transfer`, `/leaderboards/*`, `/referrals/*`, `/raffles/*`, `/sessions/*`, `/packages*`, `/payouts/*`,
 `/prize-pools/*`, `/platform/earnings`, `/gamers`, `/profile/privacy`, `/admin/clear-all-data`,
 `/forum/winner-submissions*`, the old `/campaigns*` and `/brands*` routes, and
 `/payments/initialize`, `/payments/transactions`, `/payments/calculate-weekly-price`.

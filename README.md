@@ -16,7 +16,7 @@ There are no points, leaderboards, rankings, ads or prize draws.
 
 | Role | Home | What they do |
 | --- | --- | --- |
-| Player (`gamer`) | `/user/dashboard` | Play trivia, build custom trivias, upgrade to Pro, withdraw from the wallet |
+| Player (`gamer`) | `/user/dashboard` | Play trivia, build custom trivias, upgrade to Pro |
 | Brand | `/brand/dashboard` | Set up a brand profile, build and pay for campaigns, read campaign results |
 | Admin | `/admin` | Manage topics, cards and global settings; moderate campaigns; view revenue |
 
@@ -82,7 +82,7 @@ src/
 │   │   │   ├── play/[sessionId]/   # Quiz → result, for every kind of trivia
 │   │   │   ├── my-quizzes/         # Custom trivia list, builder and preview
 │   │   │   ├── pro/                # Plan and Pro checkout
-│   │   │   ├── user/               # Player home, profile, settings, wallet
+│   │   │   ├── user/               # Player home, profile, settings
 │   │   │   ├── brand/              # Brand home, campaigns, profile
 │   │   │   └── admin/              # Admin pages
 │   │   └── (public-pages)/         # Login, register, /q/[slug], /payment/verify, ...
@@ -118,7 +118,7 @@ A few rules shape most of the code:
 
 ## Testing
 
-`npm run test` covers the trivia quiz (practice pointer, timeout, forward only, resume), the campaign gate, the upgrade prompts, the wallet, and the small validation helpers.
+`npm run test` covers the trivia quiz (practice pointer, timeout, forward only, resume), the campaign gate, the upgrade prompts and the small validation helpers.
 Tests mock `@/lib/api` and render pages with a fresh query client (see `src/test-utils.tsx`).
 
 Before a release, walk through [`docs/qa-checklist.md`](docs/qa-checklist.md) against a real
