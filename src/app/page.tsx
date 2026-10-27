@@ -106,8 +106,8 @@ export default function Home() {
 
       {/* Hero */}
       <section className="min-h-screen flex items-center justify-center px-[5%] pt-32 pb-12 relative z-10">
-        <div className="max-w-[75rem] w-full grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          <div className="text-center lg:text-left">
+        <div className="max-w-[75rem] w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="min-w-0 text-center lg:text-left">
             <p className="inline-flex items-center gap-2 rounded-full border border-secondary/40 bg-secondary/10 px-4 py-1.5 text-sm text-secondary font-medium mb-6">
               <Brain className="h-4 w-4" />
               Test knowledge, one card at a time

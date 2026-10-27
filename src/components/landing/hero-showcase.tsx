@@ -120,14 +120,14 @@ function QuestionScene({
               key={option}
               style={{ animationDelay: `${i * 120}ms` }}
               className={cn(
-                "relative flex items-center justify-between gap-2 rounded-xl border-2 px-4 py-3 text-white transition-colors duration-300",
+                "relative flex min-w-0 items-center justify-between gap-1.5 rounded-xl border-2 px-3 py-3 text-sm text-white transition-colors duration-300 sm:gap-2 sm:px-4 sm:text-base",
                 appear,
                 answered && i === correct
                   ? "border-green-400 bg-green-500/10 font-bold"
                   : "border-white/10 bg-white/5"
               )}>
               {option}
-              {answered && i === correct && <Check className="h-5 w-5 text-green-400 shrink-0" />}
+              {answered && i === correct && <Check className="h-4 w-4 text-green-400 shrink-0 sm:h-5 sm:w-5" />}
               {t >= 6 && t < 9 && i === correct && <Tap />}
             </div>
           ))}
@@ -417,7 +417,7 @@ export function HeroShowcase() {
 
   return (
     <div
-      className="relative w-full max-w-md mx-auto"
+      className="relative w-full min-w-0 max-w-md mx-auto"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
