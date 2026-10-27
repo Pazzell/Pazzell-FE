@@ -140,13 +140,4 @@ export const ENDPOINTS = {
   ANALYTICS_USER_OFFLINE: "/analytics/user/offline",
   ANALYTICS_GAME_START: "/analytics/game/start",
   ANALYTICS_GAME_STOP: "/analytics/game/stop",
-
-  // Wallet & withdrawals (unchanged)
-  WALLET_BALANCE: "/wallet/balance",
-  WALLET_TRANSACTIONS: (limit: number = 50) =>
-    `/wallet/transactions?limit=${limit}`,
-  WALLET_BANK_ACCOUNTS: "/wallet/bank-accounts",
-  WALLET_BANK_ACCOUNT_DELETE: (id: string) => `/wallet/bank-accounts/${id}`,
-  WALLET_WITHDRAWALS: "/wallet/withdrawals",
-  WALLET_WITHDRAWAL_DETAILS: (id: string) => `/wallet/withdrawals/${id}`,
 };

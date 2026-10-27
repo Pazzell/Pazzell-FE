@@ -20,7 +20,6 @@ export const routes = {
     HOME: "/user/dashboard",
     PROFILE: "/user/profile",
     SETTINGS: "/user/settings",
-    WALLET: "/user/wallet",
     PRO: "/pro",
     TRIVIA: "/trivia",
     TRIVIA_TOPIC: (id: string) => `/trivia/${id}`,

@@ -112,10 +112,6 @@ browser and once on a phone-sized screen (360px wide).
 - [ ] Campaigns: pause a live campaign with a reason (players stop seeing it, the brand sees
       the reason), resume it, then take one down.
 
-## Wallet
-
-- [ ] Balance and history load; add a bank account; request a withdrawal.
-
 ## Everywhere
 
 - [ ] At 360px wide: no sideways scrolling on any page (tables scroll inside their own box).
