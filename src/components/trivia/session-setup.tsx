@@ -21,6 +21,8 @@ interface SessionSetupProps {
   bounds: { min: number; max: number };
   /** Preferred starting values (e.g. a quiz creator's defaults); clamped to the allowed range. */
   defaultTimerSeconds?: number;
+  /** A time per question the player can't change (a campaign's, set by its brand). */
+  fixedTimerSeconds?: number;
   defaultCardCount?: number;
   /** The source's pictures and definitions; the mix picker shows only when it has both. */
   cardMix?: CardMix;
@@ -44,6 +46,7 @@ export interface SessionChoice {
 export function SessionSetup({
   bounds,
   defaultTimerSeconds,
+  fixedTimerSeconds,
   defaultCardCount,
   cardMix,
   startLabel = "Start Quiz",
@@ -55,9 +58,10 @@ export function SessionSetup({
 
   const [timerSeconds, setTimerSeconds] = useState(defaultTimerSeconds ?? defaultSeconds);
   useEffect(() => {
+    if (fixedTimerSeconds !== undefined) return setTimerSeconds(fixedTimerSeconds);
     const preferred = defaultTimerSeconds ?? storedTimerSeconds() ?? defaultSeconds;
     setTimerSeconds(Math.min(maxSeconds, Math.max(minSeconds, preferred)));
-  }, [defaultTimerSeconds, defaultSeconds, minSeconds, maxSeconds]);
+  }, [fixedTimerSeconds, defaultTimerSeconds, defaultSeconds, minSeconds, maxSeconds]);
 
   const [cardCount, setCardCount] = useState(defaultCardCount ?? DEFAULT_CARD_COUNT);
   useEffect(() => {
@@ -82,7 +86,10 @@ export function SessionSetup({
   }, []);
 
   const handleStart = () => {
-    localStorage.setItem(TRIVIA_TIMER_STORAGE_KEY, String(timerSeconds));
+    // A fixed timer is not the player's choice, so it is not remembered as one.
+    if (fixedTimerSeconds === undefined) {
+      localStorage.setItem(TRIVIA_TIMER_STORAGE_KEY, String(timerSeconds));
+    }
     localStorage.setItem(TRIVIA_PRACTICE_STORAGE_KEY, practice ? "on" : "off");
     if (canMix && mixChanged) {
       localStorage.setItem(TRIVIA_IMAGE_PERCENT_STORAGE_KEY, String(imagePercent));
@@ -100,18 +107,24 @@ export function SessionSetup({
           </span>
           <span className="text-white font-fredoka text-xl">{timerLabel(timerSeconds)}</span>
         </div>
-        <Slider
-          aria-label="Time per question"
-          min={minSeconds}
-          max={maxSeconds}
-          step={1}
-          value={[timerSeconds]}
-          onValueChange={([v]) => setTimerSeconds(v)}
-        />
-        <div className="flex justify-between text-xs text-white/40">
-          <span>{minSeconds === 0 ? "No timer" : `${minSeconds}s`}</span>
-          <span>{maxSeconds}s</span>
-        </div>
+        {fixedTimerSeconds === undefined ? (
+          <>
+            <Slider
+              aria-label="Time per question"
+              min={minSeconds}
+              max={maxSeconds}
+              step={1}
+              value={[timerSeconds]}
+              onValueChange={([v]) => setTimerSeconds(v)}
+            />
+            <div className="flex justify-between text-xs text-white/40">
+              <span>{minSeconds === 0 ? "No timer" : `${minSeconds}s`}</span>
+              <span>{maxSeconds}s</span>
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-white/50">Set for this campaign.</p>
+        )}
         {timerSeconds === 0 && (
           <p className="text-xs text-white/50">No countdown: press Next to move on after each answer.</p>
         )}

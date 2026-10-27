@@ -2,6 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { BASE_URL } from "@/app/_utils/constants";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import type { ApiErrorBody, UserData } from "@/types";
+import { setReturnPath } from "@/lib/return-path";
 
 const USER_STORAGE_KEY = "user";
 
@@ -80,6 +81,9 @@ async function refreshAccessToken(): Promise<string | null> {
 function redirectToLogin() {
   writeStoredUser(null);
   if (typeof window !== "undefined") {
+    // An expired session on a shared quiz or team game link: come back to it after login.
+    // setReturnPath stores it, and getReturnPath only ever hands back /q/… or /team/… links.
+    setReturnPath(window.location.pathname);
     window.location.href = "/login";
   }
 }

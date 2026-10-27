@@ -201,6 +201,8 @@ export interface CampaignBrand {
   logoUrl?: string | null;
   websiteUrl?: string | null;
   ctaText?: string | null;
+  /** Seconds per question for this campaign, set by the brand; 0 means no countdown. */
+  timerSeconds?: number;
   endsAt: string;
 }
 
@@ -213,6 +215,8 @@ export interface CampaignGateDetails {
   logoUrl?: string | null;
   websiteUrl?: string | null;
   ctaText?: string | null;
+  /** Seconds per question for this campaign, set by the brand; 0 means no countdown. */
+  timerSeconds?: number;
   endsAt: string;
 }
 
@@ -562,6 +566,8 @@ export interface BrandCampaign {
   description: string | null;
   coverImageUrl: string | null;
   tags: string[];
+  /** Seconds per question for every player, 0 to 15; 0 means no countdown. */
+  timerSeconds: number;
   status: CampaignStatus;
   startsAt: string | null;
   endsAt: string | null;
