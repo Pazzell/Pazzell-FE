@@ -4,16 +4,22 @@ import Link from "next/link";
 import {
   BarChart3,
   Brain,
+  Crown,
   FileText,
+  Grid3x3,
   Image as ImageIcon,
   Link2,
   Megaphone,
+  MessagesSquare,
   MousePointerClick,
   PencilLine,
   Pointer,
+  Radio,
   Search,
   Share2,
+  Sparkles,
   Timer,
+  Trophy,
   Type,
   Upload,
   Users,
@@ -126,8 +132,8 @@ export default function Home() {
             <p className="text-lg sm:text-xl text-white/70 mb-8 leading-relaxed">
               Pazzell is a quick trivia that trains recognition and recall. See
               a picture or a short definition and choose between two options.
-              Or make your own trivia, share the link, and see how everyone
-              did.
+              Or make your own trivia: share the link for everyone to play,
+              or host it as a team game on a tic-tac-toe board.
             </p>
             <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
               <Link href={`${routes.REGISTER}?type=user`}>
@@ -188,11 +194,11 @@ export default function Home() {
       <section className="py-20 px-[5%] relative z-10" id="features">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl sm:text-[2.5rem] font-bold text-center mb-4 font-fredoka">
-            Four ways to use <span className="text-secondary">Pazzell</span>
+            Five ways to use <span className="text-secondary">Pazzell</span>
           </h2>
           <p className="text-white/60 text-center max-w-2xl mx-auto mb-12">
-            Train yourself, test your friends, reach an audience, or turn your
-            own material into questions.
+            Train yourself, test your friends, play in teams, reach an audience,
+            or turn your own material into questions.
           </p>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -208,10 +214,18 @@ export default function Home() {
               {
                 icon: Share2,
                 color: "#00E676",
-                title: "Create and share a trivia",
-                text: "Build your own trivia from pictures and definitions, publish it, and send the link to anyone you want to take it.",
+                title: "Broadcast a trivia",
+                text: "Build your own trivia from pictures and definitions, publish it, and send the link. Everyone plays on their own and you see how they all did.",
                 href: "#create",
-                cta: "How sharing works",
+                cta: "How broadcasting works",
+              },
+              {
+                icon: Grid3x3,
+                color: "#A29BFE",
+                title: "Host a team quiz",
+                text: "Split a room into teams and play your trivia on a tic-tac-toe board. Each team talks it over in its own chat, and three in a row wins.",
+                href: "#teams",
+                cta: "How team quizzes work",
               },
               {
                 icon: Megaphone,
@@ -225,31 +239,26 @@ export default function Home() {
                 icon: FileText,
                 color: "#FFEAA7",
                 title: "Upload a document, get a trivia",
-                text: "Hand over your notes or a handout and get a ready-made trivia from it.",
+                text: "Hand over your notes or a handout, or just describe the questions you want, and AI drafts the cards for you to review.",
                 href: "#documents",
-                cta: "What's planned",
-                soon: true,
+                cta: "How it works",
+                wide: true,
               },
             ].map((feature) => (
               <a
                 key={feature.title}
                 href={feature.href}
-                className="group bg-white/5 border border-white/10 rounded-3xl p-7 flex gap-5 items-start transition-all duration-300 hover:-translate-y-1 hover:border-secondary/60">
+                className={`group bg-white/5 border border-white/10 rounded-3xl p-7 flex gap-5 items-start transition-all duration-300 hover:-translate-y-1 hover:border-secondary/60${
+                  feature.wide ? " md:col-span-2" : ""
+                }`}>
                 <span
                   className="h-12 w-12 shrink-0 rounded-xl flex items-center justify-center"
                   style={{ backgroundColor: feature.color }}>
                   <feature.icon className="h-6 w-6 text-[#1A1A2E]" />
                 </span>
                 <span className="block">
-                  <span className="flex items-center gap-2 flex-wrap mb-2">
-                    <span className="text-xl font-bold font-fredoka">
-                      {feature.title}
-                    </span>
-                    {feature.soon && (
-                      <span className="rounded-full border border-[#FFEAA7]/60 bg-[#FFEAA7]/10 px-2 py-0.5 text-xs font-semibold text-[#FFEAA7]">
-                        Coming soon
-                      </span>
-                    )}
+                  <span className="block text-xl font-bold font-fredoka mb-2">
+                    {feature.title}
                   </span>
                   <span className="block text-white/60 text-sm leading-relaxed mb-3">
                     {feature.text}
@@ -378,7 +387,7 @@ export default function Home() {
           </div>
           <div className="order-1 lg:order-2">
             <p className="text-[#00E676] font-semibold mb-2 flex items-center gap-2">
-              <Share2 className="h-5 w-5" /> For teachers, teams and friends
+              <Radio className="h-5 w-5" /> Broadcast quiz
             </p>
             <h2 className="text-3xl sm:text-[2.5rem] font-bold mb-4 font-fredoka leading-tight">
               Make your own trivia.{" "}
@@ -386,8 +395,10 @@ export default function Home() {
             </h2>
             <p className="text-white/70 mb-6 leading-relaxed">
               Quiz a class on this week&apos;s topic, onboard a new teammate, or
-              challenge your friends. You write the cards; Pazzell handles the
-              timer, the shuffling and the score.
+              challenge your friends. A broadcast quiz goes out on one link:
+              everyone plays it on their own, whenever suits them, and gets
+              their own score. You write the cards; Pazzell handles the timer,
+              the shuffling and the score.
             </p>
             <p className="text-white/60 text-sm mb-8">
               The free plan includes {freeQuizzes}. Pro makes it unlimited.
@@ -399,6 +410,96 @@ export default function Home() {
                 Create a Trivia
               </GradientButton>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Team quiz */}
+      <section className="py-20 px-[5%] relative z-10 scroll-mt-24" id="teams">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <p className="text-[#A29BFE] font-semibold mb-2 flex items-center gap-2">
+              <Grid3x3 className="h-5 w-5" /> Team quiz
+            </p>
+            <h2 className="text-3xl sm:text-[2.5rem] font-bold mb-4 font-fredoka leading-tight">
+              Tic-tac-toe, but every square is{" "}
+              <span className="text-[#A29BFE]">a question.</span>
+            </h2>
+            <p className="text-white/70 mb-8 leading-relaxed">
+              Made for classrooms, youth groups, offices and parties. You host
+              one of your own trivias as a game between 2 to 6 teams, and
+              everyone watches the same board update live.
+            </p>
+            <ol className="space-y-5">
+              <Step num={1} title="Share the join link">
+                Players open it and pick a team, up to 20 on each. As the host
+                you run the game and move players around, but you don&apos;t
+                play.
+              </Step>
+              <Step num={2} title="Pick a square">
+                Teams take turns. The team leader picks an open square and a
+                question appears with the clock running.
+              </Step>
+              <Step num={3} title="Talk it over, then answer">
+                Each team has its own private chat to agree on the answer. The
+                leader taps it in. Get it right and the square is yours.
+              </Step>
+              <Step num={4} title="Get a line">
+                Three in a row wins. With more teams the board grows, up to 5×5
+                with four in a row. A full board goes to the highest score.
+              </Step>
+            </ol>
+          </div>
+          <div className="grid gap-5">
+            <div
+              className="mx-auto grid grid-cols-3 gap-2 rounded-3xl border border-white/10 bg-white/5 p-4"
+              aria-label="A tic-tac-toe board where Team A has taken the diagonal"
+              role="img">
+              {[
+                "a", "b", "",
+                "b", "a", "",
+                "", "b", "a",
+              ].map((owner, i) => (
+                <span
+                  key={i}
+                  className={`h-16 w-16 sm:h-20 sm:w-20 rounded-xl border-2 flex items-center justify-center font-fredoka text-lg font-bold ${
+                    owner === "a"
+                      ? "border-[#00D9FF] bg-[#00D9FF] text-[#1A1A2E]"
+                      : owner === "b"
+                        ? "border-[#FF6B9D] bg-[#FF6B9D] text-[#1A1A2E]"
+                        : "border-white/15 text-white/40"
+                  }`}>
+                  {i + 1}
+                </span>
+              ))}
+            </div>
+            <div className="grid sm:grid-cols-3 gap-4">
+              {[
+                {
+                  icon: MessagesSquare,
+                  title: "Team chat",
+                  text: "Every team talks in its own room. Other teams can't see it.",
+                },
+                {
+                  icon: Crown,
+                  title: "A leader per team",
+                  text: "The leader picks squares and answers. The host can change leaders.",
+                },
+                {
+                  icon: Trophy,
+                  title: "Result card",
+                  text: "The game ends with a result card you can share.",
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                  <item.icon className="h-6 w-6 text-[#A29BFE] mb-2" />
+                  <h3 className="font-bold font-fredoka mb-1">{item.title}</h3>
+                  <p className="text-white/60 text-sm">{item.text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -475,38 +576,41 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Documents (planned) */}
+      {/* Documents and descriptions, written with AI */}
       <section
         className="py-20 px-[5%] relative z-10 scroll-mt-24"
         id="documents">
         <div className="max-w-4xl mx-auto rounded-[30px] border border-[#FFEAA7]/30 bg-gradient-to-r from-[#FFEAA7]/10 to-[#FF9F43]/10 p-8 sm:p-12">
-          <span className="inline-block rounded-full border border-[#FFEAA7]/60 bg-[#FFEAA7]/10 px-3 py-1 text-xs font-semibold text-[#FFEAA7] mb-4">
-            Coming soon
-          </span>
+          <p className="text-[#FFEAA7] font-semibold mb-2 flex items-center gap-2">
+            <Sparkles className="h-5 w-5" /> Written with AI
+          </p>
           <h2 className="text-3xl sm:text-[2.5rem] font-bold mb-4 font-fredoka leading-tight">
             Upload a document.{" "}
             <span className="text-[#FFEAA7]">Get a trivia.</span>
           </h2>
           <p className="text-white/70 leading-relaxed mb-8 max-w-2xl">
-            Lecture notes, a training handout, a product guide: upload it and
-            Pazzell will draft the cards for you to review, edit and share.
+            Lecture notes, a training handout, a product guide: upload it as a
+            PDF, Word or text file and Pazzell drafts the cards for you to
+            review, edit and share. No document? Describe the questions you
+            want, like &ldquo;20 questions about the solar system&rdquo;, and
+            get a draft from that instead.
           </p>
           <div className="grid sm:grid-cols-3 gap-5">
             {[
               {
                 icon: Upload,
-                title: "Upload",
-                text: "Hand over the document you already have.",
+                title: "Upload or describe",
+                text: "Hand over the document you already have, or say what the questions should cover.",
               },
               {
                 icon: Wand2,
-                title: "Generate",
-                text: "Get definition cards drafted from its key points.",
+                title: "Get checked drafts",
+                text: "Every card from a document comes with the sentence that proves its answer. Cards that can't be backed up are left out.",
               },
               {
                 icon: Share2,
                 title: "Review and share",
-                text: "Fix anything you like, then publish the link.",
+                text: "Fix anything you like, then broadcast it or host it as a team quiz.",
               },
             ].map((item) => (
               <div
@@ -519,8 +623,7 @@ export default function Home() {
             ))}
           </div>
           <p className="text-white/50 text-sm mt-6">
-            Until then, you can build a trivia by hand or paste many cards in at
-            once.
+            The free plan includes a few drafts a day, and Pro gives you more.
           </p>
         </div>
       </section>
