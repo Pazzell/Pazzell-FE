@@ -8,7 +8,10 @@ vi.mock("@/hooks/use-game-settings", () => ({
 }));
 
 import { SessionSetup } from "./session-setup";
-import { TRIVIA_IMAGE_PERCENT_STORAGE_KEY } from "@/hooks/use-start-trivia-session";
+import {
+  TRIVIA_IMAGE_PERCENT_STORAGE_KEY,
+  TRIVIA_TIMER_STORAGE_KEY,
+} from "@/hooks/use-start-trivia-session";
 
 const bounds = { min: 5, max: 20 };
 const mixed = { imageCards: 20, definitionCards: 44, defaultImagePercent: 70 };
@@ -66,5 +69,19 @@ describe("SessionSetup picture share", () => {
     expect(screen.queryByText("Picture questions")).not.toBeInTheDocument();
     await start();
     expect(onStart.mock.calls[0][0]).not.toHaveProperty("imagePercent");
+  });
+});
+
+describe("SessionSetup fixed timer", () => {
+  it("shows a campaign's timer without a slider and sends it", async () => {
+    const onStart = vi.fn();
+    render(<SessionSetup bounds={bounds} fixedTimerSeconds={0} isStarting={false} onStart={onStart} />);
+    expect(screen.getByText("No timer")).toBeInTheDocument();
+    expect(screen.getByText("Set for this campaign.")).toBeInTheDocument();
+    expect(screen.queryByRole("slider", { name: "Time per question" })).toBeNull();
+    await start();
+    expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ timerSeconds: 0 }));
+    // Not the player's own choice, so it is not remembered for other trivias.
+    expect(localStorage.getItem(TRIVIA_TIMER_STORAGE_KEY)).toBeNull();
   });
 });

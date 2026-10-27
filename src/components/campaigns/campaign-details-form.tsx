@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Clock3, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { Slider } from "@/components/ui/slider";
+import { useGameSettings } from "@/hooks/use-game-settings";
+import { timerLabel } from "@/lib/timer";
 import type { BrandCampaign } from "@/types";
 
 const TITLE_MAX = 80;
@@ -16,6 +19,8 @@ const DESCRIPTION_MAX = 300;
 const CTA_TEXT_MAX = 40;
 const MAX_TAGS = 8;
 const TAG_MAX = 24;
+// A new campaign gives players the most time per question.
+export const CAMPAIGN_DEFAULT_TIMER_SECONDS = 15;
 
 export interface CampaignDetailsPayload {
   title: string;
@@ -24,6 +29,7 @@ export interface CampaignDetailsPayload {
   ctaText: string;
   description: string;
   tags: string[];
+  timerSeconds: number;
   logoUrl?: string;
   coverImageUrl?: string;
 }
@@ -70,6 +76,11 @@ export function CampaignDetailsForm({
   const [ctaText, setCtaText] = useState(campaign?.ctaText ?? "");
   const [description, setDescription] = useState(campaign?.description ?? "");
   const [tags, setTags] = useState(campaign?.tags.join(", ") ?? "");
+  const { settings } = useGameSettings();
+  const { minSeconds, maxSeconds } = settings.timer;
+  const [timerSeconds, setTimerSeconds] = useState(
+    campaign?.timerSeconds ?? CAMPAIGN_DEFAULT_TIMER_SECONDS
+  );
   const [logoUrl, setLogoUrl] = useState<string | null>(savedLogo);
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(savedCover);
 
@@ -104,6 +115,7 @@ export function CampaignDetailsForm({
       ctaText: ctaText.trim(),
       description: description.trim(),
       tags: tagList,
+      timerSeconds,
       ...(logoUrl !== savedLogo ? { logoUrl } : {}),
       ...(coverImageUrl && coverImageUrl !== savedCover ? { coverImageUrl } : {}),
     });
@@ -191,6 +203,34 @@ export function CampaignDetailsForm({
             className={inputClass}
           />
         </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="campaign-timer" className="text-white/80 flex items-center gap-2">
+            <Clock3 className="h-4 w-4" />
+            Time per question
+          </Label>
+          <span className="text-white font-fredoka text-lg">{timerLabel(timerSeconds)}</span>
+        </div>
+        <Slider
+          id="campaign-timer"
+          aria-label="Time per question"
+          min={minSeconds}
+          max={maxSeconds}
+          step={1}
+          value={[timerSeconds]}
+          onValueChange={([value]) => setTimerSeconds(value)}
+        />
+        <div className="flex justify-between text-xs text-white/40">
+          <span>{minSeconds === 0 ? "No timer" : `${minSeconds}s`}</span>
+          <span>{maxSeconds}s</span>
+        </div>
+        <p className="text-white/50 text-xs">
+          {timerSeconds === 0
+            ? "No countdown: players press Next to see the next question."
+            : "Every player gets this much time for each question."}
+        </p>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-6">

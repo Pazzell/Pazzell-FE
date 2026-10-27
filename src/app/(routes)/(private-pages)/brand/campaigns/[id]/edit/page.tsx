@@ -23,6 +23,7 @@ import { routes } from "@/app/_utils/routes";
 import { useGameSettings } from "@/hooks/use-game-settings";
 import { useStartTriviaSession } from "@/hooks/use-start-trivia-session";
 import { cn, formatPrice } from "@/lib/utils";
+import { timerLabel } from "@/lib/timer";
 import type {
   BrandCampaignPricingResponse,
   BrandCampaignResponse,
@@ -170,6 +171,7 @@ function CampaignBuilder() {
       </p>
       <SessionSetup
         bounds={data.cardCountBounds ?? { min: Math.min(settings.trivia.minCards, max), max }}
+        fixedTimerSeconds={campaign.timerSeconds}
         startLabel="Start Test Play"
         isStarting={isStarting}
         onStart={(picked) => start({ sourceType: "campaign", sourceId: campaign.id, ...picked })}
@@ -341,6 +343,10 @@ function CampaignBuilder() {
                 <dd className="text-white font-semibold break-words">
                   {campaign.websiteUrl ? campaign.ctaText ?? "Visit our site" : "No link set"}
                 </dd>
+              </div>
+              <div>
+                <dt className="text-white/60">Time per question</dt>
+                <dd className="text-white font-semibold">{timerLabel(campaign.timerSeconds)}</dd>
               </div>
               <div>
                 <dt className="text-white/60">Price</dt>
