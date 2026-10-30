@@ -106,6 +106,8 @@ interface CardManagerProps {
   minCards?: number;
   /** Where "Generate with AI" leads; omit to hide it (campaigns do not have it). */
   generateHref?: string;
+  /** Options each new card has: 2 (topics, campaigns, the default) or 4 (custom quizzes). */
+  optionCount?: number;
 }
 
 /**
@@ -118,6 +120,7 @@ export function CardManager({
   onChanged,
   minCards,
   generateHref,
+  optionCount,
 }: CardManagerProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -200,12 +203,14 @@ export function CardManager({
         card={editing}
         endpoints={endpoints}
         onSaved={onChanged}
+        optionCount={optionCount}
       />
       <BulkAddDialog
         open={bulkOpen}
         onOpenChange={setBulkOpen}
         endpoint={endpoints.bulk}
         onSaved={onChanged}
+        optionCount={optionCount}
       />
       <ConfirmDialog
         open={deleting !== null}

@@ -32,6 +32,7 @@ import { api, getApiError } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { routes } from "@/app/_utils/routes";
 import { useGameSettings } from "@/hooks/use-game-settings";
+import { QUIZ_CARD_OPTIONS, TOPIC_CARD_OPTIONS } from "@/components/cards/card-form-dialog";
 import type { CustomQuizResponse, CustomQuizStatsResponse } from "@/types";
 
 type Confirm = "regenerate" | "revoke" | "delete" | null;
@@ -345,6 +346,7 @@ export default function EditQuizPage() {
           minCards={minCards}
           onChanged={refresh}
           generateHref={routes.USER.MY_QUIZ_GENERATE_FOR(id)}
+          optionCount={quiz.origin === "ai" ? TOPIC_CARD_OPTIONS : QUIZ_CARD_OPTIONS}
           endpoints={{
             create: ENDPOINTS.CUSTOM_QUIZ_CARDS(id),
             bulk: ENDPOINTS.CUSTOM_QUIZ_CARDS_BULK(id),

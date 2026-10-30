@@ -1,6 +1,7 @@
 const RETURN_PATH_KEY = "pazzell_return_to";
 const QUIZ_SLUG_KEY_PREFIX = "pazzell_quiz_slug_";
 const AI_TRIVIA_KEY_PREFIX = "pazzell_ai_trivia_";
+const PERSONAL_TRIVIA_KEY_PREFIX = "pazzell_personal_trivia_";
 
 /**
  * Where to send a visitor after they log in or sign up, e.g. back to the
@@ -46,6 +47,21 @@ export function rememberAiTrivia(triviaId: string) {
   try {
     sessionStorage.setItem(AI_TRIVIA_KEY_PREFIX + triviaId, "1");
   } catch {}
+}
+
+/** Like rememberAiTrivia, for trivia the player wrote by hand. */
+export function rememberPersonalTrivia(triviaId: string) {
+  try {
+    sessionStorage.setItem(PERSONAL_TRIVIA_KEY_PREFIX + triviaId, "1");
+  } catch {}
+}
+
+export function isPersonalTrivia(triviaId: string): boolean {
+  try {
+    return sessionStorage.getItem(PERSONAL_TRIVIA_KEY_PREFIX + triviaId) !== null;
+  } catch {
+    return false;
+  }
 }
 
 export function isAiTrivia(triviaId: string): boolean {

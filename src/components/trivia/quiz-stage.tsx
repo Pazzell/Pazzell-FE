@@ -19,6 +19,7 @@ import { isSoundMuted, setSoundMuted, playSuccessSound, playWrongSound } from "@
 import { sessionExit } from "@/lib/session-exit";
 import { BrandCta } from "@/components/trivia/brand-cta";
 import { cn } from "@/lib/utils";
+import { OptionLetter } from "@/components/trivia/option-letter";
 import type {
   AnswerOutcome,
   ApiErrorBody,
@@ -321,7 +322,7 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto">
-        {question.options.map((option) => {
+        {question.options.map((option, position) => {
           const isCorrect = feedback?.correctIndex === option.index;
           const isWrongPick = feedback && !isCorrect && feedback.selectedIndex === option.index;
           return (
@@ -356,6 +357,7 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
                     <span className="sr-only">Correct answer: </span>
                   </>
                 )}
+                {question.options.length > 2 && <OptionLetter index={position} />}
                 {option.text}
               </span>
               {isCorrect && <Check className="h-5 w-5 shrink-0 text-green-400" />}

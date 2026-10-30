@@ -23,6 +23,10 @@ import type { TriviaCard, TriviaCardInput } from "@/types";
 
 export const CARD_TEXT_MAX = 300;
 export const CARD_OPTION_MAX = 80;
+// Options on a card: General Trivia topics and campaigns have two, custom quizzes
+// (broadcast, team and personal) have four.
+export const TOPIC_CARD_OPTIONS = 2;
+export const QUIZ_CARD_OPTIONS = 4;
 
 export interface CardEndpoints {
   create: string;
@@ -33,17 +37,27 @@ export interface CardEndpoints {
 /** Returns a message when the card breaks the card format rules, otherwise null. */
 export function validateCard(card: TriviaCardInput): string | null {
   const text = card.text?.trim() ?? "";
-  const [a, b] = card.options.map((option) => option.trim());
+  const options = card.options.map((option) => option.trim());
   if (card.type === "definition" && !text) return "Add the question or definition text.";
   if (card.type === "image" && !card.imageUrl) return "Add an image for this card.";
   if (text.length > CARD_TEXT_MAX) return `Text can be at most ${CARD_TEXT_MAX} characters.`;
-  if (!a || !b) return "Fill in both options.";
-  if (a.toLowerCase() === b.toLowerCase()) return "The two options must be different.";
-  if (a.length > CARD_OPTION_MAX || b.length > CARD_OPTION_MAX) {
+  if (options.some((option) => !option)) {
+    return options.length === 2 ? "Fill in both options." : `Fill in all ${options.length} options.`;
+  }
+  if (new Set(options.map((option) => option.toLowerCase())).size !== options.length) {
+    return options.length === 2
+      ? "The two options must be different."
+      : "The options must all be different.";
+  }
+  if (options.some((option) => option.length > CARD_OPTION_MAX)) {
     return `Options can be at most ${CARD_OPTION_MAX} characters.`;
   }
   return null;
 }
+
+/** A card's options padded with empty ones (an older 2-option quiz card) up to `count`. */
+const optionsFor = (card: TriviaCard | null | undefined, count: number): string[] =>
+  Array.from({ length: count }, (_, i) => card?.options[i] ?? "");
 
 interface CardFormDialogProps {
   open: boolean;
@@ -52,23 +66,32 @@ interface CardFormDialogProps {
   card?: TriviaCard | null;
   endpoints: CardEndpoints;
   onSaved: () => void;
+  /** Options each card has: 2 (topics, campaigns) or 4 (custom quizzes). */
+  optionCount?: number;
 }
 
-export function CardFormDialog({ open, onOpenChange, card, endpoints, onSaved }: CardFormDialogProps) {
+export function CardFormDialog({
+  open,
+  onOpenChange,
+  card,
+  endpoints,
+  onSaved,
+  optionCount = TOPIC_CARD_OPTIONS,
+}: CardFormDialogProps) {
   const [type, setType] = useState<TriviaCardInput["type"]>("definition");
   const [text, setText] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [options, setOptions] = useState<[string, string]>(["", ""]);
-  const [correct, setCorrect] = useState<0 | 1>(0);
+  const [options, setOptions] = useState<string[]>(() => optionsFor(null, optionCount));
+  const [correct, setCorrect] = useState(0);
 
   useEffect(() => {
     if (!open) return;
     setType(card?.type ?? "definition");
     setText(card?.text ?? "");
     setImageUrl(card?.imageUrl ?? null);
-    setOptions(card ? [card.options[0], card.options[1]] : ["", ""]);
+    setOptions(optionsFor(card, optionCount));
     setCorrect(card?.correctOptionIndex ?? 0);
-  }, [open, card]);
+  }, [open, card, optionCount]);
 
   const save = useMutation({
     mutationFn: (input: TriviaCardInput) =>
@@ -87,7 +110,7 @@ export function CardFormDialog({ open, onOpenChange, card, endpoints, onSaved }:
     const input: TriviaCardInput = {
       type,
       text: text.trim(),
-      options: [options[0].trim(), options[1].trim()],
+      options: options.map((option) => option.trim()),
       correctOptionIndex: correct,
       ...(type === "image" && imageUrl ? { imageUrl } : {}),
     };
@@ -102,8 +125,8 @@ export function CardFormDialog({ open, onOpenChange, card, endpoints, onSaved }:
     save.mutate(input);
   };
 
-  const setOption = (index: 0 | 1, value: string) => {
-    setOptions(index === 0 ? [value, options[1]] : [options[0], value]);
+  const setOption = (index: number, value: string) => {
+    setOptions(options.map((option, i) => (i === index ? value : option)));
   };
 
   return (
@@ -114,7 +137,8 @@ export function CardFormDialog({ open, onOpenChange, card, endpoints, onSaved }:
             {card ? "Edit card" : "Add a card"}
           </DialogTitle>
           <DialogDescription className="text-white/70">
-            A card is a question with two options, one of them correct.
+            A card is a question with {optionCount === 2 ? "two" : optionCount} options, one of
+            them correct.
           </DialogDescription>
         </DialogHeader>
 
@@ -165,7 +189,7 @@ export function CardFormDialog({ open, onOpenChange, card, endpoints, onSaved }:
 
           <div className="space-y-2">
             <Label className="text-white/80">Options — tick the correct one</Label>
-            {([0, 1] as const).map((index) => (
+            {options.map((_, index) => (
               <div key={index} className="flex items-center gap-2">
                 <button
                   type="button"

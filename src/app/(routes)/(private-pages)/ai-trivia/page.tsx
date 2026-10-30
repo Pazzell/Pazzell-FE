@@ -66,7 +66,7 @@ export default function AiTriviaPage() {
   return (
     <MainLayout maxWidth="5xl">
       <div className="space-y-8">
-        <TriviaKindTabs active="ai" />
+        <TriviaKindTabs active="create" />
 
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>

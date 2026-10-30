@@ -1,5 +1,5 @@
 import { routes } from "@/app/_utils/routes";
-import { isAiTrivia } from "@/lib/return-path";
+import { isAiTrivia, isPersonalTrivia } from "@/lib/return-path";
 import type { TriviaSourceType } from "@/types";
 
 /**
@@ -18,6 +18,9 @@ export function sessionExit(
   }
   if (source.type === "custom" && isAiTrivia(source.id)) {
     return { href: routes.USER.AI_TRIVIA, label: "Back to AI Trivia" };
+  }
+  if (source.type === "custom" && isPersonalTrivia(source.id)) {
+    return { href: routes.USER.MY_TRIVIA, label: "Back to My Trivia" };
   }
   return { href: routes.USER.TRIVIA, label: "Pick Another Topic" };
 }

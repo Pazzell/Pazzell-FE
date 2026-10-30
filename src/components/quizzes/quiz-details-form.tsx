@@ -28,9 +28,17 @@ interface QuizDetailsFormProps {
   submitLabel: string;
   pending: boolean;
   onSubmit: (values: QuizDetailsValues) => void;
+  /** Personal trivia: played alone by its owner, so there is no broadcast/team choice. */
+  personal?: boolean;
 }
 
-export function QuizDetailsForm({ quiz, submitLabel, pending, onSubmit }: QuizDetailsFormProps) {
+export function QuizDetailsForm({
+  quiz,
+  submitLabel,
+  pending,
+  onSubmit,
+  personal = false,
+}: QuizDetailsFormProps) {
   const { settings } = useGameSettings();
   const [mode, setMode] = useState<CustomQuizMode>(quiz?.mode ?? "broadcast");
   const [title, setTitle] = useState(quiz?.title ?? "");
@@ -46,7 +54,7 @@ export function QuizDetailsForm({ quiz, submitLabel, pending, onSubmit }: QuizDe
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (!title.trim()) {
-      toast.error("Give your quiz a title.");
+      toast.error(personal ? "Give your trivia a title." : "Give your quiz a title.");
       return;
     }
     onSubmit({
@@ -61,14 +69,16 @@ export function QuizDetailsForm({ quiz, submitLabel, pending, onSubmit }: QuizDe
 
   return (
     <form method="post" onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <span className="text-sm font-medium text-white/80">How will it be played?</span>
-        {/* A live quiz keeps its type: switching would break the link people already have. */}
-        <QuizModePicker value={mode} onChange={setMode} disabled={quiz?.status === "live"} />
-        {quiz?.status === "live" && (
-          <p className="text-white/50 text-xs">Unpublish the quiz to change how it is played.</p>
-        )}
-      </div>
+      {!personal && (
+        <div className="space-y-2">
+          <span className="text-sm font-medium text-white/80">How will it be played?</span>
+          {/* A live quiz keeps its type: switching would break the link people already have. */}
+          <QuizModePicker value={mode} onChange={setMode} disabled={quiz?.status === "live"} />
+          {quiz?.status === "live" && (
+            <p className="text-white/50 text-xs">Unpublish the quiz to change how it is played.</p>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="quiz-title" className="text-white/80">
@@ -145,7 +155,9 @@ export function QuizDetailsForm({ quiz, submitLabel, pending, onSubmit }: QuizDe
             </div>
           </div>
           <p className="text-white/50 text-xs">
-            Players who open your link start with these defaults and can change them.
+            {personal
+              ? "Each time you play, you start with these and can change them."
+              : "Players who open your link start with these defaults and can change them."}
           </p>
         </>
       )}
