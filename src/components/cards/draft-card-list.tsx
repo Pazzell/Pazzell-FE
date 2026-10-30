@@ -20,7 +20,7 @@ export const draftCardsPayload = (kept: ReviewCard[]) =>
   kept.map(({ type, text, options, correctOptionIndex }) => ({
     type,
     text: text.trim(),
-    options: [options[0].trim(), options[1].trim()],
+    options: options.map((option) => option.trim()),
     correctOptionIndex,
   }));
 
@@ -70,7 +70,7 @@ export function DraftCardList({ cards, onChange }: DraftCardListProps) {
           </div>
           <fieldset className="pl-9 space-y-2">
             <legend className="sr-only">Options for card {index + 1}</legend>
-            {([0, 1] as const).map((optionIndex) => (
+            {card.options.map((_, optionIndex) => (
               <label key={optionIndex} className="flex items-center gap-2">
                 <input
                   type="radio"
@@ -85,8 +85,9 @@ export function DraftCardList({ cards, onChange }: DraftCardListProps) {
                   value={card.options[optionIndex]}
                   maxLength={80}
                   onChange={(event) => {
-                    const options: [string, string] = [...card.options];
-                    options[optionIndex] = event.target.value;
+                    const options = card.options.map((option, i) =>
+                      i === optionIndex ? event.target.value : option
+                    );
                     updateCard(card.key, { options });
                   }}
                   className={

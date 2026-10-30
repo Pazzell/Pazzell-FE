@@ -3,6 +3,8 @@
 import { AlertTriangle, Check, Crown, X } from "lucide-react";
 import { CountdownBar } from "@/components/ui/countdown-bar";
 import { cn } from "@/lib/utils";
+import { OptionLetter } from "@/components/trivia/option-letter";
+import { questionPrompt } from "@/lib/question-prompt";
 import type { TeamGameState, TeamPlayOutcome } from "@/types";
 
 type OpenQuestion = NonNullable<TeamGameState["current"]>;
@@ -99,9 +101,9 @@ export function TeamQuestion({
             {question.attribution}
           </p>
         )}
-        {question.text && (
+        {questionPrompt(question) && (
           <p className="text-white text-lg sm:text-xl text-center font-medium max-w-md">
-            {question.text}
+            {questionPrompt(question)}
           </p>
         )}
       </div>
@@ -131,7 +133,7 @@ export function TeamQuestion({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto">
-        {question.options.map((option) => {
+        {question.options.map((option, position) => {
           const isCorrect = reveal?.correctOptionIndex === option.index;
           const isWrongPick = reveal && !isCorrect && reveal.optionIndex === option.index;
           return (
@@ -150,7 +152,10 @@ export function TeamQuestion({
                 !locked ? "cursor-pointer hover:border-secondary active:scale-[0.98]" : "cursor-default"
               )}
             >
-              {option.text}
+              <span className="flex items-center gap-2">
+                {question.options.length > 2 && <OptionLetter index={position} />}
+                {option.text}
+              </span>
               {isCorrect && <Check className="h-5 w-5 shrink-0 text-green-400" />}
               {isWrongPick && <X className="h-5 w-5 shrink-0 text-red-400" />}
             </button>

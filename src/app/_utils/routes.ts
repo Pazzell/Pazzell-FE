@@ -24,6 +24,12 @@ export const routes = {
     TRIVIA: "/trivia",
     TRIVIA_TOPIC: (id: string) => `/trivia/${id}`,
     SESSION_PLAY: (sessionId: string) => `/play/${sessionId}`,
+    // Create Trivia: AI generated (Pro) or written by hand (personal trivia).
+    CREATE_TRIVIA: "/create-trivia",
+    MY_TRIVIA: "/create-trivia/manual",
+    MY_TRIVIA_NEW: "/create-trivia/manual/new",
+    MY_TRIVIA_EDIT: (id: string) => `/create-trivia/manual/${id}/edit`,
+    MY_TRIVIA_PLAY: (id: string) => `/create-trivia/manual/${id}`,
     AI_TRIVIA: "/ai-trivia",
     AI_TRIVIA_NEW: "/ai-trivia/new",
     AI_TRIVIA_PLAY: (id: string) => `/ai-trivia/${id}`,

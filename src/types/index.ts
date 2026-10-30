@@ -322,8 +322,9 @@ export interface TriviaCard {
   type: "image" | "definition";
   imageUrl: string | null;
   text: string | null;
-  options: [string, string];
-  correctOptionIndex: 0 | 1;
+  /** 2 options (General Trivia, campaigns) or 4 (custom quizzes). */
+  options: string[];
+  correctOptionIndex: number;
   attribution?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -333,8 +334,9 @@ export interface TriviaCardInput {
   type: "image" | "definition";
   text?: string;
   imageUrl?: string;
-  options: [string, string];
-  correctOptionIndex: 0 | 1;
+  /** 2 options (General Trivia, campaigns) or 4 (custom quizzes). */
+  options: string[];
+  correctOptionIndex: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -346,10 +348,14 @@ export type CustomQuizStatus = "draft" | "live" | "unpublished" | "locked";
 /** "broadcast": shared with a link and played alone. "team": hosted as a team game. */
 export type CustomQuizMode = "broadcast" | "team";
 
+/** manual: a quiz for others (broadcast or team). ai: AI generated trivia. personal: the owner's own. */
+export type CustomQuizOrigin = "manual" | "ai" | "personal";
+
 export interface CustomQuiz {
   id: string;
   title: string;
   mode: CustomQuizMode;
+  origin: CustomQuizOrigin;
   description: string | null;
   coverImageUrl: string | null;
   status: CustomQuizStatus;
@@ -383,8 +389,9 @@ export interface CustomQuizResponse {
 export interface DraftTriviaCard {
   type: "definition";
   text: string;
-  options: [string, string];
-  correctOptionIndex: 0 | 1;
+  /** 2 options (General Trivia, campaigns) or 4 (custom quizzes). */
+  options: string[];
+  correctOptionIndex: number;
   /** The sentence in the document that supports the answer. Not saved with the card. */
   quote: string;
 }

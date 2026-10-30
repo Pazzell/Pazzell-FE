@@ -1,16 +1,16 @@
 import Link from "next/link";
-import { Brain, Sparkles } from "lucide-react";
+import { Brain, PencilLine } from "lucide-react";
 import { routes } from "@/app/_utils/routes";
 import { cn } from "@/lib/utils";
 
 const KINDS = [
   { key: "general", label: "General Trivia", href: routes.USER.TRIVIA, icon: Brain },
-  { key: "ai", label: "AI Generated Trivia", href: routes.USER.AI_TRIVIA, icon: Sparkles },
+  { key: "create", label: "Create Trivia", href: routes.USER.CREATE_TRIVIA, icon: PencilLine },
 ] as const;
 
 export type TriviaKind = (typeof KINDS)[number]["key"];
 
-/** Switches between the two kinds of trivia a player can play. */
+/** Switches between our General Trivia and the trivia a player creates (AI or by hand). */
 export function TriviaKindTabs({ active }: { active: TriviaKind }) {
   return (
     <nav aria-label="Kind of trivia" className="flex gap-2 flex-wrap">
