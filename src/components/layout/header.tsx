@@ -8,7 +8,8 @@ import { User, Menu, LogOut, X, Settings, Sparkles, FolderKanban } from "lucide-
 import { routes } from "@/app/_utils/routes";
 import { useAtomValue, useSetAtom } from "jotai/react";
 import { userAtom } from "@/atom/user";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { usePlan } from "@/hooks/use-plan";
 import { logoutFromServer } from "@/lib/api";
 import {
@@ -20,7 +21,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Which top-menu item a page belongs to: Trivia covers General Trivia and everything under
+// Create Trivia (AI generated and written by hand).
+const TRIVIA_AREAS = ["/trivia", "/create-trivia", "/ai-trivia"];
+const inArea = (pathname: string, prefixes: string[]) =>
+  prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+
 export function Header() {
+  const pathname = usePathname() ?? "";
+  const triviaActive = inArea(pathname, TRIVIA_AREAS);
+  const quizzesActive = inArea(pathname, ["/my-quizzes"]);
   const user = useAtomValue(userAtom);
   const setUser = useSetAtom(userAtom);
   const router = useRouter();
@@ -62,12 +72,20 @@ export function Header() {
               <>
                 <Link
                   href={routes.USER.TRIVIA}
-                  className="text-white hover:text-secondary font-medium transition-colors">
+                  aria-current={triviaActive ? "page" : undefined}
+                  className={cn(
+                    "hover:text-secondary font-medium transition-colors",
+                    triviaActive ? "text-secondary" : "text-white"
+                  )}>
                   Trivia
                 </Link>
                 <Link
                   href={routes.USER.MY_QUIZZES}
-                  className="text-white hover:text-secondary font-medium transition-colors">
+                  aria-current={quizzesActive ? "page" : undefined}
+                  className={cn(
+                    "hover:text-secondary font-medium transition-colors",
+                    quizzesActive ? "text-secondary" : "text-white"
+                  )}>
                   My Quizzes
                 </Link>
               </>
@@ -209,13 +227,21 @@ export function Header() {
                 <>
                   <Link
                     href={routes.USER.TRIVIA}
-                    className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
+                    aria-current={triviaActive ? "page" : undefined}
+                    className={cn(
+                      "block hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors",
+                      triviaActive ? "text-secondary bg-white/5" : "text-white"
+                    )}
                     onClick={closeMobileMenu}>
                     Trivia
                   </Link>
                   <Link
                     href={routes.USER.MY_QUIZZES}
-                    className="block text-white hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors"
+                    aria-current={quizzesActive ? "page" : undefined}
+                    className={cn(
+                      "block hover:text-secondary hover:bg-white/5 py-3 px-2 rounded-md transition-colors",
+                      quizzesActive ? "text-secondary bg-white/5" : "text-white"
+                    )}
                     onClick={closeMobileMenu}>
                     My Quizzes
                   </Link>

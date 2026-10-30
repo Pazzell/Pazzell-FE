@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, Sparkles, FolderKanban, ArrowRight } from "lucide-react";
+import { Brain, Sparkles, FolderKanban, ArrowRight, PencilLine } from "lucide-react";
 import Link from "next/link";
 import { routes } from "@/app/_utils/routes";
 import { useAtomValue } from "jotai";
@@ -62,11 +62,11 @@ export default function UserDashboardPage() {
               </CardContent>
             </Card>
           </Link>
-          <Link href={routes.USER.TRIVIA}>
+          <Link href={routes.USER.CREATE_TRIVIA}>
             <Card className="bg-card/50 backdrop-blur-sm border-white/10 hover:border-secondary/40 transition-colors">
               <CardContent className="pt-6 flex items-center gap-3">
-                <Brain className="h-5 w-5 text-secondary" />
-                <span className="text-white font-medium">Trivia</span>
+                <PencilLine className="h-5 w-5 text-secondary" />
+                <span className="text-white font-medium">Create Trivia</span>
               </CardContent>
             </Card>
           </Link>

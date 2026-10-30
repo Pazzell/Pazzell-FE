@@ -17,4 +17,5 @@ export function cardsNeeded(teamCount: number) {
   return size * size;
 }
 
-export const TEAM_TIMER_CHOICES = [15, 20, 30, 45, 60, 90, 120];
+// Seconds to answer in a team game; the server accepts exactly these.
+export const TEAM_TIMER_CHOICES = [5, 10, 15, 20, 25, 30];

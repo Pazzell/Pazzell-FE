@@ -4,6 +4,7 @@ import { AlertTriangle, Check, Crown, X } from "lucide-react";
 import { CountdownBar } from "@/components/ui/countdown-bar";
 import { cn } from "@/lib/utils";
 import { OptionLetter } from "@/components/trivia/option-letter";
+import { questionPrompt } from "@/lib/question-prompt";
 import type { TeamGameState, TeamPlayOutcome } from "@/types";
 
 type OpenQuestion = NonNullable<TeamGameState["current"]>;
@@ -100,9 +101,9 @@ export function TeamQuestion({
             {question.attribution}
           </p>
         )}
-        {question.text && (
+        {questionPrompt(question) && (
           <p className="text-white text-lg sm:text-xl text-center font-medium max-w-md">
-            {question.text}
+            {questionPrompt(question)}
           </p>
         )}
       </div>

@@ -20,6 +20,7 @@ import { sessionExit } from "@/lib/session-exit";
 import { BrandCta } from "@/components/trivia/brand-cta";
 import { cn } from "@/lib/utils";
 import { OptionLetter } from "@/components/trivia/option-letter";
+import { questionPrompt } from "@/lib/question-prompt";
 import type {
   AnswerOutcome,
   ApiErrorBody,
@@ -292,9 +293,9 @@ export function QuizStage({ session, onCompleted }: QuizStageProps) {
             {question.attribution}
           </p>
         )}
-        {question.text && (
+        {questionPrompt(question) && (
           <p className="text-white text-lg sm:text-xl text-center font-medium max-w-md">
-            {question.text}
+            {questionPrompt(question)}
           </p>
         )}
       </div>
