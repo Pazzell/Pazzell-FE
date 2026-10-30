@@ -97,6 +97,8 @@ export function TeamGame({ code }: { code: string }) {
   }
 
   const isHost = state.host.userId === userId;
+  // In a topic game whoever started it is also a player; a quiz host only runs the game.
+  const isTopic = state.kind === "topic";
   const myTeam = teamById(state, myTeamId);
   const inGame = Boolean(myTeamId) || state.unassigned.some((p) => p.userId === userId);
 
@@ -108,7 +110,9 @@ export function TeamGame({ code }: { code: string }) {
 
   if (finished && !reveal) {
     if (!result.data) return <PageLoader message="Adding up the scores..." />;
-    return <FinishedView state={state} myTeamId={myTeamId} isHost={isHost} result={result.data} />;
+    return (
+      <FinishedView state={state} myTeamId={myTeamId} isHost={isHost && !isTopic} result={result.data} />
+    );
   }
 
   const header = (
@@ -116,7 +120,9 @@ export function TeamGame({ code }: { code: string }) {
       <div className="min-w-0">
         <h1 className="text-2xl font-bold text-white font-fredoka break-words">{state.quiz.title}</h1>
         <p className="text-white/60 text-sm">
-          Team quiz hosted by {isHost ? "you" : state.host.name}
+          {isTopic
+            ? `Team game · started by ${isHost ? "you" : state.host.name}`
+            : `Team quiz hosted by ${isHost ? "you" : state.host.name}`}
           {!connected && (
             <span className="ml-2 inline-flex items-center gap-1 text-yellow-300">
               <WifiOff className="h-3.5 w-3.5" /> Reconnecting...
@@ -147,7 +153,7 @@ export function TeamGame({ code }: { code: string }) {
             {state.status === "lobby" ? "Cancel game" : "End game"}
           </Button>
         )}
-        {!isHost && state.status === "lobby" && inGame && (
+        {(!isHost || isTopic) && state.status === "lobby" && inGame && (
           <Button
             variant="ghost"
             size="sm"
@@ -186,7 +192,15 @@ export function TeamGame({ code }: { code: string }) {
           <DialogHeader>
             <DialogTitle>Manage teams</DialogTitle>
           </DialogHeader>
-          <TeamRoster state={state} userId={userId} isHost myTeamId={myTeamId} act={run} pending={pending} />
+          <TeamRoster
+            state={state}
+            userId={userId}
+            isHost
+            hostPlays={isTopic}
+            myTeamId={myTeamId}
+            act={run}
+            pending={pending}
+          />
         </DialogContent>
       </Dialog>
     </>
@@ -203,7 +217,15 @@ export function TeamGame({ code }: { code: string }) {
           {header}
           <LobbyPanel state={state} isHost={isHost} run={run} pending={pending} />
           <div className={myTeam ? "grid gap-6 lg:grid-cols-[1fr_20rem]" : ""}>
-            <TeamRoster state={state} userId={userId} isHost={isHost} myTeamId={myTeamId} act={run} pending={pending} />
+            <TeamRoster
+              state={state}
+              userId={userId}
+              isHost={isHost}
+              hostPlays={isTopic}
+              myTeamId={myTeamId}
+              act={run}
+              pending={pending}
+            />
             {chat}
           </div>
         </div>
@@ -269,7 +291,7 @@ export function TeamGame({ code }: { code: string }) {
               </>
             )}
 
-            {!myTeam && !isHost && (
+            {!myTeam && (!isHost || isTopic) && (
               <section className="space-y-3">
                 <h2 className="font-fredoka text-lg font-bold text-white">Join a team to play</h2>
                 <TeamRoster state={state} userId={userId} isHost={false} myTeamId={null} act={run} pending={pending} />
@@ -385,9 +407,12 @@ function LobbyPanel({
               <p className="text-sm text-white/50">At least 2 teams need players before you can start.</p>
             )}
             <p className="text-xs text-white/40">
-              You run the game and don&apos;t play in it. The first player on each team leads it. Use
-              the crown to change a leader, or the menu to move a player. Empty teams are left out
-              when the game starts.
+              {state.kind === "topic"
+                ? "You play too: pick your team below, then start when everyone is in. "
+                : "You run the game and don't play in it. "}
+              After each turn, a team&apos;s lead passes to its next player, so everyone gets a go.
+              Use the crown to change a leader, or the menu to move a player. Empty teams are left
+              out when the game starts.
             </p>
           </div>
         ) : (
@@ -437,8 +462,16 @@ function FinishedView({
         <ShareResultActions result={result} cardRef={cardRef} />
         <div className="flex justify-center">
           <Button asChild variant="ghost" className="text-white/60 hover:text-white">
-            <Link href={isHost ? routes.USER.MY_QUIZZES : routes.USER.HOME}>
-              {isHost ? "Back to my quizzes" : "Done"}
+            <Link
+              href={
+                isHost
+                  ? routes.USER.MY_QUIZZES
+                  : state.kind === "topic"
+                  ? routes.TEAM_GAME_NEW
+                  : routes.USER.HOME
+              }
+            >
+              {isHost ? "Back to my quizzes" : state.kind === "topic" ? "Play another team game" : "Done"}
             </Link>
           </Button>
         </div>

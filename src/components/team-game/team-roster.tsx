@@ -14,6 +14,8 @@ interface TeamRosterProps {
   state: TeamGameState;
   userId: string | null;
   isHost: boolean;
+  /** A topic game's host plays too, so they also get the join buttons. */
+  hostPlays?: boolean;
   myTeamId: string | null;
   act: (path: string, body?: unknown, method?: "post" | "patch") => Promise<boolean>;
   pending?: boolean;
@@ -23,12 +25,20 @@ interface TeamRosterProps {
  * Every team and its players. Players join a team here (switching freely until the game
  * starts); the host can rename teams in the lobby, move anyone, and choose leaders.
  */
-export function TeamRoster({ state, userId, isHost, myTeamId, act, pending = false }: TeamRosterProps) {
+export function TeamRoster({
+  state,
+  userId,
+  isHost,
+  hostPlays = false,
+  myTeamId,
+  act,
+  pending = false,
+}: TeamRosterProps) {
   const inLobby = state.status === "lobby";
   const code = state.code;
   // Once play starts a player's team is fixed, but someone who has no team can still join one.
-  // The host runs the game and never plays in it.
-  const canJoin = !isHost && (inLobby || (state.status === "playing" && !myTeamId));
+  // A quiz host runs the game and never plays in it; a topic game's host plays like anyone.
+  const canJoin = (!isHost || hostPlays) && (inLobby || (state.status === "playing" && !myTeamId));
 
   const move = (person: TeamGamePerson, value: string) =>
     act(ENDPOINTS.TEAM_GAME_MOVE_PLAYER(code, person.userId), {

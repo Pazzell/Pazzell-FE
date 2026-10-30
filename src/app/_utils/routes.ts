@@ -13,6 +13,8 @@ export const routes = {
   PAYMENT_VERIFY: "/payment/verify",
   QUIZ_SHARE: (slug: string) => `/q/${slug}`,
   TEAM_GAME: (code: string) => `/team/${code}`,
+  // Self-serve team game from a General Trivia topic: pick a topic, teams and timer.
+  TEAM_GAME_NEW: "/play-in-teams",
   TEAM_GAME_RESULT: (code: string) => `/team/${code}/result`,
 
   // User (gamer)

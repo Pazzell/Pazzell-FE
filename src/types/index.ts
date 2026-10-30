@@ -797,10 +797,15 @@ export interface TeamGameBoard {
   cells: TeamGameCell[];
 }
 
+/** quiz: a host's own team quiz, run by a host who doesn't play. topic: self-serve, from a General Trivia topic. */
+export type TeamGameKind = "quiz" | "topic";
+
 export interface TeamGameState {
   code: string;
   status: TeamGameStatus;
-  quiz: { id: string; title: string; coverImageUrl: string | null };
+  kind?: TeamGameKind;
+  quiz: { id: string | null; title: string; coverImageUrl: string | null };
+  topic?: { id: string; name: string } | null;
   host: TeamGamePerson;
   timerSeconds: number;
   board: TeamGameBoard;
