@@ -767,7 +767,8 @@ export interface AppAnalyticsResponse {
 
 // Team games: a custom quiz played as tic-tac-toe between teams (see /team/:code)
 export type TeamGameStatus = "lobby" | "playing" | "finished" | "cancelled";
-export type TeamGameEndReason = "line" | "board_full" | "host_ended";
+/** forfeit: in a topic game, the team in turn did not choose a question in time. */
+export type TeamGameEndReason = "line" | "board_full" | "host_ended" | "forfeit";
 export type TeamPlayOutcome = "correct" | "wrong" | "timeout";
 
 export interface TeamGamePerson {
@@ -812,6 +813,8 @@ export interface TeamGameState {
   teams: TeamGameTeam[];
   unassigned: TeamGamePerson[];
   turnTeamId: string | null;
+  /** Topic games: when the team in turn must have chosen a question by, or it forfeits. */
+  pickDeadlineAt?: string | null;
   current: {
     cellIndex: number;
     number: number;
@@ -838,6 +841,8 @@ export interface TeamGameState {
   } | null;
   playCount: number;
   winnerTeamId: string | null;
+  /** The team that ran out of time to choose, when endReason is forfeit. */
+  forfeitTeamId?: string | null;
   winningLine: number[] | null;
   isDraw: boolean;
   endReason: TeamGameEndReason | null;
@@ -889,6 +894,8 @@ export interface TeamGameResult {
   endReason: TeamGameEndReason | null;
   isDraw: boolean;
   winnerTeamId: string | null;
+  /** The team that ran out of time to choose, when endReason is forfeit. */
+  forfeitTeamId?: string | null;
   board: TeamGameBoard;
   winningLine: number[] | null;
   teams: TeamGameResultTeam[];

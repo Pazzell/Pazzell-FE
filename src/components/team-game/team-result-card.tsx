@@ -59,7 +59,11 @@ export const TeamResultCard = forwardRef<HTMLDivElement, { result: TeamGameResul
           )}
           {result.endReason && (
             <p className="text-sm text-white/60">
-              {isTopic && result.endReason === "host_ended"
+              {result.endReason === "forfeit"
+                ? `Game abandoned: ${
+                    result.teams.find((t) => t.id === result.forfeitTeamId)?.name ?? "a team"
+                  } didn't choose in time`
+                : isTopic && result.endReason === "host_ended"
                 ? "Ended early: the highest score wins"
                 : END_REASON[result.endReason]}
             </p>

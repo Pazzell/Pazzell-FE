@@ -23,6 +23,7 @@ import {
   useWinnerConfetti,
 } from "@/components/team-game/team-result-card";
 import { leaderName, TEAM_TIMER_CHOICES, teamById } from "@/components/team-game/team-helpers";
+import { PickCountdown } from "@/components/team-game/pick-countdown";
 import { useTeamGame } from "@/hooks/use-team-game";
 import { api } from "@/lib/api";
 import { playSuccessSound, playWrongSound } from "@/lib/sound";
@@ -142,7 +143,8 @@ export function TeamGame({ code }: { code: string }) {
             Manage teams
           </Button>
         )}
-        {isHost && !finished && (
+        {/* A topic game's creator is playing too, so a started game can't be ended. */}
+        {isHost && !finished && !(isTopic && state.status === "playing") && (
           <Button
             variant="outline"
             size="sm"
@@ -241,6 +243,14 @@ export function TeamGame({ code }: { code: string }) {
   const shown = state.current ?? reveal?.current ?? null;
   const askedTeam = teamById(state, shown?.teamId);
 
+  // On a forfeit the game goes to the best of the other teams, if one is ahead.
+  const waitingTeam = (() => {
+    const others = state.teams.filter((t) => t.id !== turnTeam?.id);
+    const top = Math.max(...others.map((t) => t.score));
+    const best = others.filter((t) => t.score === top);
+    return best.length === 1 ? best[0] : null;
+  })();
+
   let prompt: string;
   if (!turnTeam) prompt = "Waiting for the next turn...";
   else if (!turnTeam.leaderId) prompt = `${turnTeam.name} has no leader. The host needs to choose one.`;
@@ -278,6 +288,16 @@ export function TeamGame({ code }: { code: string }) {
                   {isTurnLeader && <Crown className="inline h-5 w-5 mr-1 text-yellow-300" />}
                   {prompt}
                 </p>
+                {state.pickDeadlineAt && turnTeam && (
+                  <PickCountdown
+                    key={`${state.turnTeamId}-${state.pickDeadlineAt}`}
+                    deadlineAt={state.pickDeadlineAt}
+                    serverTime={state.serverTime}
+                    teamName={turnTeam.name}
+                    waitingTeamName={waitingTeam?.name ?? null}
+                    isMyTeam={turnTeam.id === myTeamId}
+                  />
+                )}
                 <TeamBoard
                   board={state.board}
                   teams={state.teams}
@@ -446,7 +466,10 @@ function FinishedView({
   // The winners celebrate; so do the host and anyone watching without a team.
   useWinnerConfetti(winner?.color, Boolean(winner) && (myTeamId === winner?.id || !myTeamId));
 
-  const headline = !winner
+  const forfeited = result.endReason === "forfeit";
+  const headline = forfeited
+    ? "Game abandoned"
+    : !winner
     ? "It's a draw!"
     : myTeamId === winner.id
     ? "Your team wins!"
@@ -458,6 +481,13 @@ function FinishedView({
     <MainLayout maxWidth="3xl">
       <div className="space-y-6 py-2">
         <h1 className="text-center text-3xl font-bold text-white font-fredoka">{headline}</h1>
+        {forfeited && (
+          <p className="text-center text-white/70">
+            {result.teams.find((t) => t.id === result.forfeitTeamId)?.name ?? "A team"} didn&apos;t choose a
+            question in time.{" "}
+            {winner ? (myTeamId === winner.id ? "Your team wins!" : `${winner.name} wins.`) : "It's a draw."}
+          </p>
+        )}
         <TeamResultCard ref={cardRef} result={result} />
         <ShareResultActions result={result} cardRef={cardRef} />
         <div className="flex justify-center">
