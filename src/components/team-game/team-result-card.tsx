@@ -22,6 +22,8 @@ const END_REASON: Record<string, string> = {
 export const TeamResultCard = forwardRef<HTMLDivElement, { result: TeamGameResult }>(
   function TeamResultCard({ result }, ref) {
     const winner = result.teams.find((t) => t.isWinner) ?? null;
+    // A topic game has no host running it: whoever started it played too.
+    const isTopic = result.kind === "topic";
     // The board only needs each team's id and colour.
     const boardTeams = result.teams.map(
       (t): TeamGameTeam => ({ id: t.id, name: t.name, color: t.color, leaderId: null, score: t.score, members: [] })
@@ -41,7 +43,9 @@ export const TeamResultCard = forwardRef<HTMLDivElement, { result: TeamGameResul
               : "linear-gradient(180deg, rgba(148,163,184,0.25), transparent)",
           }}
         >
-          <p className="text-xs uppercase tracking-widest text-white/60">Team quiz result</p>
+          <p className="text-xs uppercase tracking-widest text-white/60">
+            {isTopic ? "Team game result" : "Team quiz result"}
+          </p>
           <h2 className="font-fredoka text-xl font-bold break-words">{result.quiz.title}</h2>
           {winner ? (
             <div className="flex flex-col items-center gap-1 pt-2">
@@ -53,7 +57,17 @@ export const TeamResultCard = forwardRef<HTMLDivElement, { result: TeamGameResul
           ) : (
             <p className="font-fredoka text-3xl font-bold pt-2">It&apos;s a draw!</p>
           )}
-          {result.endReason && <p className="text-sm text-white/60">{END_REASON[result.endReason]}</p>}
+          {result.endReason && (
+            <p className="text-sm text-white/60">
+              {result.endReason === "forfeit"
+                ? `Game abandoned: ${
+                    result.teams.find((t) => t.id === result.forfeitTeamId)?.name ?? "a team"
+                  } didn't choose in time`
+                : isTopic && result.endReason === "host_ended"
+                ? "Ended early: the highest score wins"
+                : END_REASON[result.endReason]}
+            </p>
+          )}
         </div>
 
         <div className="px-6 pb-2">
@@ -101,7 +115,7 @@ export const TeamResultCard = forwardRef<HTMLDivElement, { result: TeamGameResul
 
         <p className="flex items-center justify-center gap-1.5 border-t border-white/10 px-6 py-3 text-xs text-white/40">
           <Users className="h-3.5 w-3.5" />
-          Hosted by {result.host.name}
+          {isTopic ? "Started by" : "Hosted by"} {result.host.name}
           {date && ` · ${date}`} · {result.questionsPlayed} questions · Pazzell
         </p>
       </div>
@@ -143,7 +157,11 @@ export function ShareResultActions({
   const share = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Team quiz result", text, url: result.resultUrl });
+        await navigator.share({
+          title: result.kind === "topic" ? "Team game result" : "Team quiz result",
+          text,
+          url: result.resultUrl,
+        });
         return;
       } catch (error) {
         if ((error as Error)?.name === "AbortError") return;

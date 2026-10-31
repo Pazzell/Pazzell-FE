@@ -8,7 +8,8 @@ import { ENDPOINTS } from "@/app/_utils/endpoints";
 import type { CampaignNextResponse, TriviaTopicsResponse } from "@/types";
 import { routes } from "@/app/_utils/routes";
 import Link from "next/link";
-import { Brain, Layers } from "lucide-react";
+import { Brain, Layers, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageError } from "@/components/ui/page-error";
 import { CampaignGate } from "@/components/trivia/campaign-gate";
@@ -37,14 +38,26 @@ export default function TriviaTopicsPage() {
     <MainLayout maxWidth="5xl">
       <div className="space-y-8">
         <TriviaKindTabs active="general" />
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2 font-fredoka flex items-center gap-2">
-            <Brain className="h-7 w-7 text-blue-400" />
-            General Trivia
-          </h1>
-          <p className="text-white/70">
-            Pick a topic and start the quiz. Turn on Practice to have the correct option pointed out.
-          </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2 font-fredoka flex items-center gap-2">
+              <Brain className="h-7 w-7 text-blue-400" />
+              General Trivia
+            </h1>
+            <p className="text-white/70">
+              Pick a topic and start the quiz. Turn on Practice to have the correct option pointed out.
+            </p>
+          </div>
+          <Button
+            asChild
+            variant="outline"
+            className="border-secondary/60 text-white hover:bg-secondary/10 font-fredoka"
+          >
+            <Link href={routes.TEAM_GAME_NEW}>
+              <Users className="h-4 w-4 mr-2" />
+              Play in teams
+            </Link>
+          </Button>
         </div>
 
         {gate?.required && gate.campaign && <CampaignGate campaign={gate.campaign} />}

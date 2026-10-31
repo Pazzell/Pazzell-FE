@@ -14,6 +14,8 @@ interface TeamRosterProps {
   state: TeamGameState;
   userId: string | null;
   isHost: boolean;
+  /** A topic game's host plays too, so they also get the join buttons. */
+  hostPlays?: boolean;
   myTeamId: string | null;
   act: (path: string, body?: unknown, method?: "post" | "patch") => Promise<boolean>;
   pending?: boolean;
@@ -23,12 +25,20 @@ interface TeamRosterProps {
  * Every team and its players. Players join a team here (switching freely until the game
  * starts); the host can rename teams in the lobby, move anyone, and choose leaders.
  */
-export function TeamRoster({ state, userId, isHost, myTeamId, act, pending = false }: TeamRosterProps) {
+export function TeamRoster({
+  state,
+  userId,
+  isHost,
+  hostPlays = false,
+  myTeamId,
+  act,
+  pending = false,
+}: TeamRosterProps) {
   const inLobby = state.status === "lobby";
   const code = state.code;
   // Once play starts a player's team is fixed, but someone who has no team can still join one.
-  // The host runs the game and never plays in it.
-  const canJoin = !isHost && (inLobby || (state.status === "playing" && !myTeamId));
+  // A quiz host runs the game and never plays in it; a topic game's host plays like anyone.
+  const canJoin = (!isHost || hostPlays) && (inLobby || (state.status === "playing" && !myTeamId));
 
   const move = (person: TeamGamePerson, value: string) =>
     act(ENDPOINTS.TEAM_GAME_MOVE_PLAYER(code, person.userId), {
@@ -119,14 +129,15 @@ export function TeamRoster({ state, userId, isHost, myTeamId, act, pending = fal
                 {team.members.map((member) => {
                   const isLeader = member.userId === team.leaderId;
                   return (
-                    <li key={member.userId} className="flex items-center gap-2 text-sm text-white">
+                    // Wraps in a narrow card so the host controls never squeeze the name away.
+                    <li key={member.userId} className="flex flex-wrap items-center gap-2 text-sm text-white">
                       {member.avatar ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={member.avatar} alt="" className="h-6 w-6 rounded-full object-cover" />
                       ) : (
                         <UserRound className="h-6 w-6 rounded-full bg-white/10 p-1 text-white/60" />
                       )}
-                      <span className="truncate">
+                      <span className="min-w-[5rem] flex-1 truncate">
                         {member.name}
                         {member.userId === userId && <span className="text-white/40"> (you)</span>}
                       </span>
@@ -135,7 +146,6 @@ export function TeamRoster({ state, userId, isHost, myTeamId, act, pending = fal
                           <Crown className="h-3 w-3" /> Leader
                         </span>
                       )}
-                      <span className="ml-auto" />
                       {hostControls(member, team.id, isLeader)}
                     </li>
                   );

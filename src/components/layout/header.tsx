@@ -23,7 +23,7 @@ import {
 
 // Which top-menu item a page belongs to: Trivia covers General Trivia and everything under
 // Create Trivia (AI generated and written by hand).
-const TRIVIA_AREAS = ["/trivia", "/create-trivia", "/ai-trivia"];
+const TRIVIA_AREAS = ["/trivia", "/create-trivia", "/ai-trivia", "/play-in-teams"];
 const inArea = (pathname: string, prefixes: string[]) =>
   prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
