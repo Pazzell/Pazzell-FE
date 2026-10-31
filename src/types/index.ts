@@ -883,6 +883,7 @@ export interface TeamGameResultTeam {
 
 export interface TeamGameResult {
   code: string;
+  kind?: TeamGameKind;
   quiz: { title: string; coverImageUrl: string | null };
   host: { name: string; avatar: string | null };
   endReason: TeamGameEndReason | null;
