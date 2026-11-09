@@ -13,7 +13,6 @@ import { PageError } from "@/components/ui/page-error";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QuizDetailsForm, type QuizDetailsValues } from "@/components/quizzes/quiz-details-form";
 import { CardManager } from "@/components/cards/card-manager";
-import { QUIZ_CARD_OPTIONS } from "@/components/cards/card-form-dialog";
 import { api, getApiError } from "@/lib/api";
 import { ENDPOINTS } from "@/app/_utils/endpoints";
 import { routes } from "@/app/_utils/routes";
@@ -129,7 +128,6 @@ export default function EditPersonalTriviaPage() {
         <CardManager
           cards={cards}
           onChanged={refresh}
-          optionCount={QUIZ_CARD_OPTIONS}
           endpoints={{
             create: ENDPOINTS.CUSTOM_QUIZ_CARDS(id),
             bulk: ENDPOINTS.CUSTOM_QUIZ_CARDS_BULK(id),

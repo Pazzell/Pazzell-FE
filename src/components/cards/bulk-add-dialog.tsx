@@ -15,26 +15,23 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { api, getApiError } from "@/lib/api";
-import { TOPIC_CARD_OPTIONS, validateCard } from "@/components/cards/card-form-dialog";
+import { CARD_OPTIONS, validateCard } from "@/components/cards/card-form-dialog";
 import type { TriviaCardInput } from "@/types";
 
 const MAX_BULK_CARDS = 100;
 
-/** How one line is written: the question, the correct option, then the others. */
-export function bulkFormat(optionCount: number): string {
-  return optionCount === 2
-    ? "question | correct option | other option"
-    : `question | correct option | ${Array.from({ length: optionCount - 1 }, (_, i) => `wrong ${i + 1}`).join(" | ")}`;
-}
+/** How one line is written: the question, the correct option, then the three wrong ones. */
+export const BULK_FORMAT = `question | correct option | ${Array.from(
+  { length: CARD_OPTIONS - 1 },
+  (_, i) => `wrong ${i + 1}`
+).join(" | ")}`;
 
 /**
- * Parses one text card per line: the question, the correct option, then the wrong ones
- * (one for a 2-option card, three for a 4-option card). Returns the cards, or the first
- * problem found with its line number.
+ * Parses one text card per line: the question, the correct option, then the three wrong
+ * ones. Returns the cards, or the first problem found with its line number.
  */
 export function parseBulkCards(
-  raw: string,
-  optionCount: number = TOPIC_CARD_OPTIONS
+  raw: string
 ): { cards: TriviaCardInput[]; error: null } | { cards: null; error: string } {
   const lines = raw
     .split("\n")
@@ -48,8 +45,8 @@ export function parseBulkCards(
   const cards: TriviaCardInput[] = [];
   for (let i = 0; i < lines.length; i++) {
     const parts = lines[i].split("|").map((part) => part.trim());
-    if (parts.length !== optionCount + 1) {
-      return { cards: null, error: `Line ${i + 1}: use "${bulkFormat(optionCount)}".` };
+    if (parts.length !== CARD_OPTIONS + 1) {
+      return { cards: null, error: `Line ${i + 1}: use "${BULK_FORMAT}".` };
     }
     const card: TriviaCardInput = {
       type: "definition",
@@ -69,8 +66,6 @@ interface BulkAddDialogProps {
   onOpenChange: (open: boolean) => void;
   endpoint: string;
   onSaved: () => void;
-  /** Options each card has: 2 (topics, campaigns) or 4 (custom quizzes). */
-  optionCount?: number;
 }
 
 export function BulkAddDialog({
@@ -78,7 +73,6 @@ export function BulkAddDialog({
   onOpenChange,
   endpoint,
   onSaved,
-  optionCount = TOPIC_CARD_OPTIONS,
 }: BulkAddDialogProps) {
   const [raw, setRaw] = useState("");
 
@@ -97,7 +91,7 @@ export function BulkAddDialog({
   });
 
   const handleSave = () => {
-    const parsed = parseBulkCards(raw, optionCount);
+    const parsed = parseBulkCards(raw);
     if (parsed.error !== null) {
       toast.error(parsed.error);
       return;
@@ -112,7 +106,7 @@ export function BulkAddDialog({
           <DialogTitle className="text-white font-fredoka text-xl">Add many cards</DialogTitle>
           <DialogDescription className="text-white/70">
             One text card per line, written as{" "}
-            <code className="text-white">{bulkFormat(optionCount)}</code>. The
+            <code className="text-white">{BULK_FORMAT}</code>. The
             options are shuffled when the quiz is played. Image cards are added one at a time.
           </DialogDescription>
         </DialogHeader>
@@ -122,9 +116,7 @@ export function BulkAddDialog({
           rows={8}
           aria-label="Cards, one per line"
           placeholder={
-            optionCount === 2
-              ? "Capital of Nigeria | Abuja | Lagos\nLargest planet | Jupiter | Saturn"
-              : "Capital of Nigeria | Abuja | Lagos | Kano | Ibadan\nLargest planet | Jupiter | Saturn | Mars | Venus"
+            "Capital of Nigeria | Abuja | Lagos | Kano | Ibadan\nLargest planet | Jupiter | Saturn | Mars | Venus"
           }
           className="bg-white/5 border-white/10 text-white font-mono text-sm"
         />

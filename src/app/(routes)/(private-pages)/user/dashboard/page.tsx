@@ -28,7 +28,7 @@ export default function UserDashboardPage() {
             Welcome back{user?.firstName ? `, ${user.firstName}` : ""}!
           </h1>
           <p className="text-white/70">
-            Pick a topic and play: pictures and short definitions, two options, one tap.
+            Pick a topic and play: pictures and short definitions, four options, one tap.
           </p>
         </div>
 

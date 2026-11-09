@@ -131,7 +131,7 @@ export default function Home() {
             </h1>
             <p className="text-lg sm:text-xl text-white/70 mb-8 leading-relaxed">
               Pazzell is a quick trivia that trains recognition and recall. See
-              a picture or a short definition and choose between two options.
+              a picture or a short definition and choose from four options.
               Or make your own trivia: share the link for everyone to play,
               or host it as a team game on a tic-tac-toe board.
             </p>
@@ -165,8 +165,8 @@ export default function Home() {
             },
             {
               icon: MousePointerClick,
-              title: "Two options, one tap",
-              text: "Every question has two choices. Tap one and you're done.",
+              title: "Four options, one tap",
+              text: "Every question has four choices. Tap one and you're done.",
             },
             {
               icon: Timer,
@@ -354,7 +354,7 @@ export default function Home() {
               {
                 icon: PencilLine,
                 title: "Build your cards",
-                text: "Add a picture or a definition, two options, and mark the right one. Add cards one by one or many at once.",
+                text: "Add a picture or a definition, four options, and mark the right one. Add cards one by one or many at once.",
               },
               {
                 icon: Link2,

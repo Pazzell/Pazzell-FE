@@ -23,10 +23,9 @@ import type { TriviaCard, TriviaCardInput } from "@/types";
 
 export const CARD_TEXT_MAX = 300;
 export const CARD_OPTION_MAX = 80;
-// Options on a card: General Trivia topics and campaigns have two, custom quizzes
-// (broadcast, team and personal) have four.
-export const TOPIC_CARD_OPTIONS = 2;
-export const QUIZ_CARD_OPTIONS = 4;
+// Options on every new card (topics, campaigns and custom quizzes). Cards saved before
+// that may still have two; editing one fills in the other two.
+export const CARD_OPTIONS = 4;
 
 export interface CardEndpoints {
   create: string;
@@ -41,13 +40,10 @@ export function validateCard(card: TriviaCardInput): string | null {
   if (card.type === "definition" && !text) return "Add the question or definition text.";
   if (card.type === "image" && !card.imageUrl) return "Add an image for this card.";
   if (text.length > CARD_TEXT_MAX) return `Text can be at most ${CARD_TEXT_MAX} characters.`;
-  if (options.some((option) => !option)) {
-    return options.length === 2 ? "Fill in both options." : `Fill in all ${options.length} options.`;
-  }
+  if (options.length !== CARD_OPTIONS) return `A card needs ${CARD_OPTIONS} options.`;
+  if (options.some((option) => !option)) return `Fill in all ${CARD_OPTIONS} options.`;
   if (new Set(options.map((option) => option.toLowerCase())).size !== options.length) {
-    return options.length === 2
-      ? "The two options must be different."
-      : "The options must all be different.";
+    return "The options must all be different.";
   }
   if (options.some((option) => option.length > CARD_OPTION_MAX)) {
     return `Options can be at most ${CARD_OPTION_MAX} characters.`;
@@ -55,9 +51,9 @@ export function validateCard(card: TriviaCardInput): string | null {
   return null;
 }
 
-/** A card's options padded with empty ones (an older 2-option quiz card) up to `count`. */
-const optionsFor = (card: TriviaCard | null | undefined, count: number): string[] =>
-  Array.from({ length: count }, (_, i) => card?.options[i] ?? "");
+/** A card's options, padded with empty ones (an older 2-option card) up to four. */
+const optionsFor = (card: TriviaCard | null | undefined): string[] =>
+  Array.from({ length: CARD_OPTIONS }, (_, i) => card?.options[i] ?? "");
 
 interface CardFormDialogProps {
   open: boolean;
@@ -66,8 +62,6 @@ interface CardFormDialogProps {
   card?: TriviaCard | null;
   endpoints: CardEndpoints;
   onSaved: () => void;
-  /** Options each card has: 2 (topics, campaigns) or 4 (custom quizzes). */
-  optionCount?: number;
 }
 
 export function CardFormDialog({
@@ -76,12 +70,11 @@ export function CardFormDialog({
   card,
   endpoints,
   onSaved,
-  optionCount = TOPIC_CARD_OPTIONS,
 }: CardFormDialogProps) {
   const [type, setType] = useState<TriviaCardInput["type"]>("definition");
   const [text, setText] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [options, setOptions] = useState<string[]>(() => optionsFor(null, optionCount));
+  const [options, setOptions] = useState<string[]>(() => optionsFor(null));
   const [correct, setCorrect] = useState(0);
 
   useEffect(() => {
@@ -89,9 +82,9 @@ export function CardFormDialog({
     setType(card?.type ?? "definition");
     setText(card?.text ?? "");
     setImageUrl(card?.imageUrl ?? null);
-    setOptions(optionsFor(card, optionCount));
+    setOptions(optionsFor(card));
     setCorrect(card?.correctOptionIndex ?? 0);
-  }, [open, card, optionCount]);
+  }, [open, card]);
 
   const save = useMutation({
     mutationFn: (input: TriviaCardInput) =>
@@ -137,7 +130,7 @@ export function CardFormDialog({
             {card ? "Edit card" : "Add a card"}
           </DialogTitle>
           <DialogDescription className="text-white/70">
-            A card is a question with {optionCount === 2 ? "two" : optionCount} options, one of
+            A card is a question with four options, one of
             them correct.
           </DialogDescription>
         </DialogHeader>

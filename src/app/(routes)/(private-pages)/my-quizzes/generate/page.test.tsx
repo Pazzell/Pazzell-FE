@@ -35,7 +35,7 @@ const generateInfo = (overrides: object = {}) => ({
 const draft = (n: number) => ({
   type: "definition",
   text: `Question ${n}?`,
-  options: [`Right ${n}`, `Wrong ${n}`],
+  options: [`Right ${n}`, `Wrong ${n}`, `Other ${n}`, `Last ${n}`],
   correctOptionIndex: 0,
   quote: `Sentence ${n} from the notes.`,
 });
@@ -155,7 +155,7 @@ describe("Quiz from a document", { timeout: 20000 }, () => {
         {
           type: "definition",
           text: "What do assets equal?",
-          options: ["Right 1", "Wrong 1"],
+          options: ["Right 1", "Wrong 1", "Other 1", "Last 1"],
           correctOptionIndex: 1,
         },
       ],
