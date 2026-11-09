@@ -115,7 +115,7 @@ export default function AdminGenerateCardsPage() {
           Cards from a document
         </h1>
         <p className="text-white/70 mt-1">
-          Upload a document about this topic. Text questions with two options are written from
+          Upload a document about this topic. Text questions with four options are written from
           it, and you check them before anything is saved. Pictures in the document are not read.
         </p>
       </div>

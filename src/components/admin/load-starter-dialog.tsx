@@ -19,6 +19,17 @@ import { cn } from "@/lib/utils";
 import type { StarterLoadResponse, StarterLoadResult, StarterTopicsResponse } from "@/types";
 
 const questions = (count: number) => `${count} ${count === 1 ? "question" : "questions"}`;
+const topicsCount = (count: number) => `${count} ${count === 1 ? "topic" : "topics"}`;
+
+/** What a load did: questions added, old two-option ones given four, or nothing. */
+function resultMessage(created: number, upgraded: number, topics: number): string {
+  if (created > 0 && upgraded > 0) {
+    return `Added ${questions(created)} and gave ${questions(upgraded)} four options across ${topicsCount(topics)}.`;
+  }
+  if (created > 0) return `Added ${questions(created)} to ${topicsCount(topics)}.`;
+  if (upgraded > 0) return `Gave ${questions(upgraded)} four options in ${topicsCount(topics)}.`;
+  return "Nothing to add: these topics already have every starter question.";
+}
 
 interface LoadStarterDialogProps {
   open: boolean;
@@ -28,7 +39,8 @@ interface LoadStarterDialogProps {
 
 /**
  * Adds the server's built-in definition questions to their topics. Only the questions a
- * topic doesn't have yet are added, so loading again never creates duplicates.
+ * topic doesn't have yet are added, so loading again never creates duplicates. Built-in
+ * questions still on their original two options are given all four.
  */
 export function LoadStarterDialog({ open, onOpenChange, onLoaded }: LoadStarterDialogProps) {
   const queryClient = useQueryClient();
@@ -44,10 +56,12 @@ export function LoadStarterDialog({ open, onOpenChange, onLoaded }: LoadStarterD
   });
 
   const topics = data ?? [];
-  const selected = picked ?? topics.filter((t) => t.missing > 0).map((t) => t.slug);
-  const toAdd = topics
-    .filter((t) => selected.includes(t.slug))
-    .reduce((sum, t) => sum + t.missing, 0);
+  // Anything to do: questions to add, or old two-option ones to bring up to four.
+  const pending = (t: { missing: number; outdated?: number }) => t.missing + (t.outdated ?? 0);
+  const selected = picked ?? topics.filter((t) => pending(t) > 0).map((t) => t.slug);
+  const chosen = topics.filter((t) => selected.includes(t.slug));
+  const toAdd = chosen.reduce((sum, t) => sum + t.missing, 0);
+  const toUpgrade = chosen.reduce((sum, t) => sum + (t.outdated ?? 0), 0);
 
   useEffect(() => {
     if (open) {
@@ -75,7 +89,10 @@ export function LoadStarterDialog({ open, onOpenChange, onLoaded }: LoadStarterD
   const toggle = (slug: string) =>
     setPicked(selected.includes(slug) ? selected.filter((s) => s !== slug) : [...selected, slug]);
 
-  const added = result ? result.topics.filter((t) => t.created > 0) : [];
+  const changed = result
+    ? result.topics.filter((t) => t.created > 0 || (t.upgraded ?? 0) > 0)
+    : [];
+  const upgradedTotal = result?.upgraded ?? 0;
 
   return (
     <Dialog open={open} onOpenChange={(next) => !loading && onOpenChange(next)}>
@@ -87,7 +104,8 @@ export function LoadStarterDialog({ open, onOpenChange, onLoaded }: LoadStarterD
           </DialogTitle>
           <DialogDescription className="text-white/70">
             Adds the built-in text questions to their topics, creating a topic if it doesn&apos;t
-            exist yet. Questions a topic already has are left alone. They are live for players
+            exist yet. Questions a topic already has are left alone, except that unedited ones
+            from before every card had four options get all four. They are live for players
             straight away.
           </DialogDescription>
         </DialogHeader>
@@ -97,18 +115,20 @@ export function LoadStarterDialog({ open, onOpenChange, onLoaded }: LoadStarterD
             <p className="flex items-start gap-2 text-white">
               <CheckCircle2 className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
               <span>
-                {result.created > 0
-                  ? `Added ${questions(result.created)} to ${added.length} ${
-                      added.length === 1 ? "topic" : "topics"
-                    }.`
-                  : "Nothing to add: these topics already have every starter question."}
+                {resultMessage(result.created, upgradedTotal, changed.length)}
               </span>
             </p>
-            {added.length > 0 && (
+            {changed.length > 0 && (
               <ul className="text-white/60 text-sm space-y-1">
-                {added.map((topic) => (
+                {changed.map((topic) => (
                   <li key={topic.slug}>
-                    {topic.name}: {questions(topic.created)}
+                    {topic.name}:{" "}
+                    {[
+                      topic.created > 0 && questions(topic.created),
+                      (topic.upgraded ?? 0) > 0 && `${topic.upgraded} given four options`,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
                     {topic.topicCreated && " (new topic)"}
                   </li>
                 ))}
@@ -134,7 +154,8 @@ export function LoadStarterDialog({ open, onOpenChange, onLoaded }: LoadStarterD
           <ul className="space-y-2">
             {topics.map((topic) => {
               const checked = selected.includes(topic.slug);
-              const complete = topic.missing === 0;
+              const outdated = topic.outdated ?? 0;
+              const complete = pending(topic) === 0;
               return (
                 <li key={topic.slug}>
                   <button
@@ -165,9 +186,13 @@ export function LoadStarterDialog({ open, onOpenChange, onLoaded }: LoadStarterD
                       <span className="block text-white/50 text-xs">
                         {complete
                           ? `All ${questions(topic.total)} loaded`
-                          : topic.missing === topic.total
-                            ? `${questions(topic.total)} to add`
-                            : `${topic.missing} of ${questions(topic.total)} to add`}
+                          : topic.missing === 0
+                            ? null
+                            : topic.missing === topic.total
+                              ? `${questions(topic.total)} to add`
+                              : `${topic.missing} of ${questions(topic.total)} to add`}
+                        {outdated > 0 &&
+                          `${topic.missing > 0 ? " · " : ""}${questions(outdated)} to update to four options`}
                         {!topic.topicId && " · creates the topic"}
                       </span>
                     </span>
@@ -206,7 +231,13 @@ export function LoadStarterDialog({ open, onOpenChange, onLoaded }: LoadStarterD
                 ) : (
                   <Library className="h-4 w-4 mr-2" />
                 )}
-                {loading ? "Loading" : toAdd > 0 ? `Add ${questions(toAdd)}` : "Add questions"}
+                {loading
+                  ? "Loading"
+                  : toAdd > 0
+                    ? `Add ${questions(toAdd)}`
+                    : toUpgrade > 0
+                      ? `Update ${questions(toUpgrade)}`
+                      : "Add questions"}
               </Button>
             </>
           )}

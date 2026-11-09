@@ -322,7 +322,7 @@ export interface TriviaCard {
   type: "image" | "definition";
   imageUrl: string | null;
   text: string | null;
-  /** 2 options (General Trivia, campaigns) or 4 (custom quizzes). */
+  /** 4 options (older cards may still have 2). */
   options: string[];
   correctOptionIndex: number;
   attribution?: string | null;
@@ -334,7 +334,7 @@ export interface TriviaCardInput {
   type: "image" | "definition";
   text?: string;
   imageUrl?: string;
-  /** 2 options (General Trivia, campaigns) or 4 (custom quizzes). */
+  /** 4 options (older cards may still have 2). */
   options: string[];
   correctOptionIndex: number;
 }
@@ -389,7 +389,7 @@ export interface CustomQuizResponse {
 export interface DraftTriviaCard {
   type: "definition";
   text: string;
-  /** 2 options (General Trivia, campaigns) or 4 (custom quizzes). */
+  /** 4 options (older cards may still have 2). */
   options: string[];
   correctOptionIndex: number;
   /** The sentence in the document that supports the answer. Not saved with the card. */
@@ -689,6 +689,8 @@ export interface StarterTopic {
   total: number;
   /** How many of the built-in questions the topic doesn't have yet. */
   missing: number;
+  /** Built-in questions it holds with the 2 options they were first loaded with; loading gives them 4. */
+  outdated: number;
 }
 
 export interface StarterTopicsResponse {
@@ -698,7 +700,15 @@ export interface StarterTopicsResponse {
 
 export interface StarterLoadResult {
   created: number;
-  topics: { slug: string; name: string; topicId: string; topicCreated: boolean; created: number }[];
+  upgraded: number;
+  topics: {
+    slug: string;
+    name: string;
+    topicId: string;
+    topicCreated: boolean;
+    created: number;
+    upgraded: number;
+  }[];
 }
 
 export interface StarterLoadResponse {

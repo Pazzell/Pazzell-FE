@@ -1,4 +1,4 @@
-/** "A" to "D" beside an option on a card with more than two options. */
+/** "A" to "D" beside each option (older two-option cards go without). */
 export function OptionLetter({ index }: { index: number }) {
   return (
     <span

@@ -21,7 +21,7 @@ const NOTES = "A sharp raises a note by a semitone. A flat lowers a note by a se
 const draft = (n: number) => ({
   type: "definition",
   text: `Question ${n}?`,
-  options: [`Right ${n}`, `Wrong ${n}`],
+  options: [`Right ${n}`, `Wrong ${n}`, `Other ${n}`, `Last ${n}`],
   correctOptionIndex: 0,
   quote: `Sentence ${n} from the notes.`,
 });
@@ -109,7 +109,7 @@ describe("Admin: cards from a document", { timeout: 20000 }, () => {
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/admin/topics/t1"));
     expect(api.post).toHaveBeenCalledWith("/admin/trivia/topics/t1/cards/bulk", {
       cards: [
-        { type: "definition", text: "Question 1?", options: ["Right 1", "Wrong 1"], correctOptionIndex: 1 },
+        { type: "definition", text: "Question 1?", options: ["Right 1", "Wrong 1", "Other 1", "Last 1"], correctOptionIndex: 1 },
       ],
     });
   });

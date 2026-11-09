@@ -18,49 +18,57 @@ import { validateImageFile } from "@/lib/upload";
 import { formatPrice } from "@/lib/utils";
 
 describe("validateCard", () => {
-  const card = { type: "definition", text: "Capital of Nigeria", options: ["Abuja", "Lagos"], correctOptionIndex: 0 } as const;
+  const card = {
+    type: "definition" as const,
+    text: "Capital of Nigeria",
+    options: ["Abuja", "Lagos", "Kano", "Ibadan"],
+    correctOptionIndex: 0,
+  };
 
   it("accepts a complete text card", () => {
-    expect(validateCard({ ...card, options: ["Abuja", "Lagos"] })).toBeNull();
+    expect(validateCard(card)).toBeNull();
   });
 
   it("needs text on a text card and an image on an image card", () => {
-    expect(validateCard({ ...card, text: "  ", options: ["Abuja", "Lagos"] })).toMatch(/text/);
-    expect(validateCard({ ...card, type: "image", options: ["Abuja", "Lagos"] })).toMatch(/image/);
+    expect(validateCard({ ...card, text: "  " })).toMatch(/text/);
+    expect(validateCard({ ...card, type: "image" })).toMatch(/image/);
     expect(
-      validateCard({ ...card, type: "image", text: "", imageUrl: "https://x/a.webp", options: ["Abuja", "Lagos"] })
+      validateCard({ ...card, type: "image", text: "", imageUrl: "https://x/a.webp" })
     ).toBeNull();
   });
 
-  it("needs two different, non-empty options within the length limit", () => {
-    expect(validateCard({ ...card, options: ["Abuja", " "] })).toMatch(/both options/);
-    expect(validateCard({ ...card, options: ["Abuja", "abuja "] })).toMatch(/different/);
-    expect(validateCard({ ...card, options: ["Abuja", "x".repeat(81)] })).toMatch(/80/);
+  it("needs four different, non-empty options within the length limit", () => {
+    expect(validateCard({ ...card, options: ["Abuja", "Lagos"] })).toMatch(/4 options/);
+    expect(validateCard({ ...card, options: ["Abuja", " ", "Kano", "Ibadan"] })).toMatch(/all 4 options/);
+    expect(validateCard({ ...card, options: ["Abuja", "abuja ", "Kano", "Ibadan"] })).toMatch(/different/);
+    expect(validateCard({ ...card, options: ["Abuja", "x".repeat(81), "Kano", "Ibadan"] })).toMatch(/80/);
   });
 
   it("limits the text length", () => {
-    expect(validateCard({ ...card, text: "x".repeat(301), options: ["Abuja", "Lagos"] })).toMatch(/300/);
+    expect(validateCard({ ...card, text: "x".repeat(301) })).toMatch(/300/);
   });
 });
 
 describe("parseBulkCards", () => {
   it("turns each line into a text card with the first option correct", () => {
-    const parsed = parseBulkCards("Capital of Nigeria | Abuja | Lagos\n\n  Largest planet|Jupiter|Saturn  ");
+    const parsed = parseBulkCards(
+      "Capital of Nigeria | Abuja | Lagos | Kano | Ibadan\n\n  Largest planet|Jupiter|Saturn|Mars|Venus  "
+    );
     expect(parsed.error).toBeNull();
     expect(parsed.cards).toEqual([
-      { type: "definition", text: "Capital of Nigeria", options: ["Abuja", "Lagos"], correctOptionIndex: 0 },
-      { type: "definition", text: "Largest planet", options: ["Jupiter", "Saturn"], correctOptionIndex: 0 },
+      { type: "definition", text: "Capital of Nigeria", options: ["Abuja", "Lagos", "Kano", "Ibadan"], correctOptionIndex: 0 },
+      { type: "definition", text: "Largest planet", options: ["Jupiter", "Saturn", "Mars", "Venus"], correctOptionIndex: 0 },
     ]);
   });
 
   it("names the line that is wrong", () => {
-    expect(parseBulkCards("A | B | C\nonly two | parts").error).toMatch(/^Line 2:/);
-    expect(parseBulkCards("A | Same | same").error).toMatch(/^Line 1:.*different/);
+    expect(parseBulkCards("A | B | C | D | E\nonly two | parts").error).toMatch(/^Line 2:/);
+    expect(parseBulkCards("A | Same | same | C | D").error).toMatch(/^Line 1:.*different/);
   });
 
   it("rejects nothing at all and more than 100 cards", () => {
     expect(parseBulkCards(" \n ").error).toMatch(/at least one/);
-    const many = Array.from({ length: 101 }, (_, i) => `Q${i} | A | B`).join("\n");
+    const many = Array.from({ length: 101 }, (_, i) => `Q${i} | A | B | C | D`).join("\n");
     expect(parseBulkCards(many).error).toMatch(/100/);
   });
 });

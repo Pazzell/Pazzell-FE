@@ -135,7 +135,7 @@ export function ImportCardsDialog({ open, onOpenChange, topic, onImported }: Imp
           </DialogTitle>
           <DialogDescription className="text-white/70">
             Fetches the best-known entries of a category, each with a freely licensed picture,
-            and adds them as image cards with two options. They are live for players straight
+            and adds them as image cards with four options. They are live for players straight
             away.
           </DialogDescription>
         </DialogHeader>

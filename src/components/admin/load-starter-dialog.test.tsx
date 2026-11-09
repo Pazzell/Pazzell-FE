@@ -12,20 +12,29 @@ vi.mock("@/lib/api", () => ({
 
 import { LoadStarterDialog } from "./load-starter-dialog";
 
-const topic = (slug: string, name: string, total: number, missing: number, topicId: string | null) => ({
+const topic = (
+  slug: string,
+  name: string,
+  total: number,
+  missing: number,
+  topicId: string | null,
+  outdated = 0
+) => ({
   slug,
   name,
   description: "",
   topicId,
   total,
   missing,
+  outdated,
 });
 
 const loaded = {
   created: 54,
+  upgraded: 0,
   topics: [
-    { slug: "music-theory-beginner", name: "Music Theory: Beginner", topicId: "t1", topicCreated: true, created: 44 },
-    { slug: "biology", name: "Biology", topicId: "t2", topicCreated: false, created: 10 },
+    { slug: "music-theory-beginner", name: "Music Theory: Beginner", topicId: "t1", topicCreated: true, created: 44, upgraded: 0 },
+    { slug: "biology", name: "Biology", topicId: "t2", topicCreated: false, created: 10, upgraded: 0 },
   ],
 };
 
@@ -85,6 +94,32 @@ describe("LoadStarterDialog", () => {
 
     expect(screen.getByRole("button", { name: "Add questions" })).toBeDisabled();
     expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it("offers to give old two-option starter questions all four", async () => {
+    api.get.mockResolvedValue({
+      data: { topics: [topic("football", "Football", 20, 0, "t0", 20), topic("biology", "Biology", 20, 0, "t2")] },
+    });
+    api.post.mockResolvedValue({
+      data: {
+        loaded: {
+          created: 0,
+          upgraded: 20,
+          topics: [{ slug: "football", name: "Football", topicId: "t0", topicCreated: false, created: 0, upgraded: 20 }],
+        },
+      },
+    });
+    renderWithQuery(<LoadStarterDialog open onOpenChange={vi.fn()} onLoaded={vi.fn()} />);
+
+    expect(await screen.findByRole("checkbox", { name: "Football" })).toBeChecked();
+    expect(screen.getByText("20 questions to update to four options")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Biology" })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("button", { name: "Update 20 questions" }));
+
+    expect(await screen.findByText("Gave 20 questions four options in 1 topic.")).toBeInTheDocument();
+    expect(screen.getByText("Football: 20 given four options")).toBeInTheDocument();
+    expect(api.post).toHaveBeenCalledWith("/admin/trivia/starter", { slugs: ["football"] });
   });
 
   it("stays on the list when the server refuses", async () => {

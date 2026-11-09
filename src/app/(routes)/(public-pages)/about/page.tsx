@@ -16,7 +16,7 @@ const WHAT_WE_DO = [
   {
     icon: Brain,
     title: "Trivia that trains",
-    text: "Short sessions of picture cards and one-line definitions. Each question has two options and a few seconds on the clock.",
+    text: "Short sessions of picture cards and one-line definitions. Each question has four options and a few seconds on the clock.",
   },
   {
     icon: Share2,
@@ -59,7 +59,7 @@ export default function AboutPage() {
           </h1>
           <p className="text-lg text-white/70 leading-relaxed">
             Pazzell is a trivia app for sharpening your mind a few seconds at a time. You see a
-            picture or a short definition, choose between two options, and move on to the next
+            picture or a short definition, choose from four options, and move on to the next
             card.
           </p>
         </section>
